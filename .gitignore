@@ -1,0 +1,65 @@
+# ==============================
+# General
+# ==============================
+.DS_Store
+HELP.md
+
+# Ignore local env files
+.env
+.env.local
+.env.*.local
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor-specific files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.iws
+*.iml
+*.ipr
+
+# ==============================
+# Frontend (Vue)
+# ==============================
+frontend/node_modules/
+frontend/dist/
+
+# ==============================
+# Backend (Spring Boot)
+# ==============================
+backend/target/
+backend/build/
+backend/.mvn/wrapper/maven-wrapper.jar
+# Backend configuration files
+backend/src/main/resources/application.properties
+
+# Gradle / Maven / STS specific
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# Prevent IDE from ignoring source code inside target/build if necessary
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
