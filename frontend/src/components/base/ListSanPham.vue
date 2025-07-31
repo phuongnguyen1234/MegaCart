@@ -51,7 +51,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
-import CardSanPham from "@/components/base/CardSanPham.vue";
+import CardSanPham from "@/components/base/card/CardSanPham.vue";
 import type { SanPham } from "@/types/SanPham";
 
 const props = defineProps<{

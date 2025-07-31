@@ -1,6 +1,6 @@
 <template>
   <CustomerWithNav>
-    <ThemVaoGioHang
+    <ThemVaoGioHangModal
       :visible="isThemVaoGioHangModalVisible"
       :sanPham="sanPhamDuocChon"
       @close="dongThemVaoGioHangModal"
@@ -30,8 +30,8 @@ import CustomerWithNav from "@/components/layouts/CustomerWithNav.vue";
 import BannerSlider from "@/components/trangchu/BannerSlider.vue";
 import { useToast } from "@/composables/useToast";
 import type { SanPham } from "@/types/SanPham.ts";
-import ThemVaoGioHang from "@/components/base/ThemVaoGioHang.vue";
 import ListSanPham from "@/components/base/ListSanPham.vue";
+import ThemVaoGioHangModal from "@/components/base/modals/ThemVaoGioHangModal.vue";
 
 const { showToast } = useToast();
 

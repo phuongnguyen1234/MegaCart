@@ -70,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import CardSanPham from "@/components/base/CardSanPham.vue";
+import CardSanPham from "@/components/base/card/CardSanPham.vue";
 import type { SanPham } from "@/types/SanPham";
 
 defineProps<{

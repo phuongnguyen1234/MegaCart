@@ -1,8 +1,8 @@
 <template>
-  <Overlay :visible="visible" z-index="z-[1002]" @close="huy">
+  <Overlay :visible="hienThi" z-index="z-[1002]" @close="huy">
     <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
-      <h3 class="text-lg font-bold text-gray-800 mb-4">{{ title }}</h3>
-      <p class="text-gray-600 mb-6">{{ message }}</p>
+      <h3 class="text-lg font-bold text-gray-800 mb-4">{{ tieuDe }}</h3>
+      <p class="text-gray-600 mb-6">{{ noiDung }}</p>
       <div class="flex justify-end space-x-4">
         <button
           @click="huy"
@@ -22,11 +22,11 @@
 </template>
 
 <script setup lang="ts">
-import Overlay from "./Overlay.vue";
+import Overlay from "@/components/base/Overlay.vue";
 defineProps<{
-  visible: boolean;
-  title: string;
-  message: string;
+  hienThi: boolean;
+  tieuDe: string;
+  noiDung: string;
 }>();
 
 const emit = defineEmits(["xacNhan", "huy"]);

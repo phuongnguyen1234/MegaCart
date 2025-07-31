@@ -67,7 +67,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
-import Overlay from "./Overlay.vue";
+import Overlay from "@/components/base/Overlay.vue";
 import type { SanPham } from "@/types/SanPham";
 
 const props = withDefaults(

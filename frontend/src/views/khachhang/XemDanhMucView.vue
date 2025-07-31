@@ -1,6 +1,6 @@
 <template>
   <CustomerWithNav>
-    <ThemVaoGioHang
+    <ThemVaoGioHangModal
       :visible="isAddToCartModalVisible"
       :sanPham="selectedProduct"
       @close="closeAddToCartModal"
@@ -67,10 +67,10 @@ import { useRoute } from "vue-router";
 import CustomerWithNav from "@/components/layouts/CustomerWithNav.vue";
 import AccordionSanPham from "@/components/base/AccordionSanPham.vue";
 import GridSanPham from "@/components/base/GridSanPham.vue";
-import ThemVaoGioHang from "@/components/base/ThemVaoGioHang.vue";
 import Breadcrumbs from "@/components/base/Breadcrumbs.vue";
 import type { SanPham } from "@/types/SanPham";
 import { useToast } from "@/composables/useToast";
+import ThemVaoGioHangModal from "@/components/base/modals/ThemVaoGioHangModal.vue";
 
 // Route & từ khóa
 const route = useRoute();
