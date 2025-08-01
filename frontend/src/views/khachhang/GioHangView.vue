@@ -185,6 +185,8 @@ const sanPhamTrongGio = ref([
     soLuong: 2,
     daChon: true,
     hinhAnh: "https://picsum.photos/100?random=1",
+    danhMucCha: "thuc-pham",
+    danhMucCon: "banh-mi",
   },
   {
     id: 2,
@@ -194,6 +196,8 @@ const sanPhamTrongGio = ref([
     soLuong: 1,
     daChon: false,
     hinhAnh: "https://picsum.photos/100?random=2",
+    danhMucCha: "thuc-pham",
+    danhMucCon: "gia-vi",
   },
   {
     id: 3,
@@ -203,6 +207,8 @@ const sanPhamTrongGio = ref([
     soLuong: 1,
     daChon: true,
     hinhAnh: "https://picsum.photos/100?random=3",
+    danhMucCha: "thuc-pham",
+    danhMucCon: "trung",
   },
 ]);
 

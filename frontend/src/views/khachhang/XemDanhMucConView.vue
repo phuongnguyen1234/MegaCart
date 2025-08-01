@@ -40,7 +40,7 @@
 
         <!-- Nội dung chính -->
         <main class="flex-1">
-          <h1 class="text-xl font-bold mb-2">Danh mục: {{ tenDanhMuc }}</h1>
+          <h1 class="text-xl font-bold mb-2">Danh mục: {{ danhMucCon }}</h1>
           <p class="text-sm text-gray-600 mb-4">
             Tìm thấy {{ productsInCategory.length }} sản phẩm.
           </p>
@@ -69,14 +69,15 @@ import AccordionSanPham from "@/components/base/AccordionSanPham.vue";
 import GridSanPham from "@/components/base/GridSanPham.vue";
 import Breadcrumbs from "@/components/base/Breadcrumbs.vue";
 import type { SanPham } from "@/types/SanPham";
-import { useToast } from "@/composables/useToast";
 import ThemVaoGioHangModal from "@/components/base/modals/ThemVaoGioHangModal.vue";
+import { useBreadcrumbs } from "@/composables/useBreadcrumbs";
+import { useToast } from "@/composables/useToast";
 
 // Route & từ khóa
 const route = useRoute();
-const tenDanhMuc = computed(
-  () => (route.params.categoryName as string) || "Tất cả"
-);
+const danhMucCha = computed(() => route.params.danhMucCha as string);
+const danhMucCon = computed(() => route.params.danhMucCon as string);
+
 const { showToast } = useToast();
 
 const isFilterVisibleOnMobile = ref(false);
@@ -120,12 +121,10 @@ for (let i = 1; i <= 1000; i++) {
 
 // Lọc theo danh mục
 const productsInCategory = computed(() => {
-  if (!tenDanhMuc.value || tenDanhMuc.value === "Tất cả") {
-    return dsSanPhamMau.value;
-  }
   return dsSanPhamMau.value.filter(
-    (product) =>
-      product.danhMucCon.toLowerCase() === tenDanhMuc.value.toLowerCase()
+    (p) =>
+      p.danhMucCha.toLowerCase() === danhMucCha.value.toLowerCase() &&
+      p.danhMucCon.toLowerCase() === danhMucCon.value.toLowerCase()
   );
 });
 
@@ -183,9 +182,9 @@ function handleAddToCart(payload: { sanPham: SanPham; soLuong: number }) {
 }
 
 // Breadcrumb items
-const breadcrumbItems = computed(() => [
-  { text: "Trang chủ", to: "/" },
-  { text: "Danh mục", to: "/danh-muc" },
-  { text: tenDanhMuc.value },
+const tailBreadcrumbs = computed(() => [
+  { text: danhMucCha.value, to: `/${danhMucCha.value}` },
+  { text: danhMucCon.value },
 ]);
+const breadcrumbItems = useBreadcrumbs(tailBreadcrumbs);
 </script>

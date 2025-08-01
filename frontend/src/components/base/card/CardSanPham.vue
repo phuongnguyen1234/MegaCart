@@ -12,7 +12,9 @@
 
     <!-- Ảnh sản phẩm -->
     <div class="relative group overflow-hidden">
-      <a :href="`/san-pham/${sanPham.maSanPham}`">
+      <a
+        :href="`/${sanPham.danhMucCha}/${sanPham.danhMucCon}/${sanPham.maSanPham}`"
+      >
         <img
           :src="sanPham.anhMinhHoa[0]"
           :alt="sanPham.tenSanPham"
@@ -31,7 +33,7 @@
     <!-- Thông tin -->
     <div class="p-3 flex-grow flex flex-col justify-between">
       <a
-        :href="`/san-pham/${sanPham.maSanPham}`"
+        :href="`/${sanPham.danhMucCha}/${sanPham.danhMucCon}/${sanPham.maSanPham}`"
         class="font-semibold text-gray-800 text-sm truncate hover:underline"
       >
         {{ sanPham.tenSanPham }}

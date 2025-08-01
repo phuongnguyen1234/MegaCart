@@ -23,14 +23,19 @@
     <div class="text-sm text-right">
       <p><strong>Tổng tiền:</strong> {{ formatPrice(donHang.tongTien) }} VND</p>
       <p><strong>Thời gian đặt:</strong> {{ donHang.thoiGianDat }}</p>
-      <p>
-        <a href="#" class="text-blue-600 hover:underline">Xem chi tiết</a>
-      </p>
+      <button
+        class="text-blue-600 hover:underline"
+        @click="$emit('xemChiTiet')"
+      >
+        Xem chi tiết
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
+defineEmits(["xemChiTiet"]);
+
 const props = defineProps({
   donHang: Object,
 });

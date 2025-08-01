@@ -7,7 +7,14 @@
       class="cursor-pointer"
     />
     <router-link
-      :to="{ name: 'ChiTietSanPham', params: { id: sanPham.id } }"
+      :to="{
+        name: 'ChiTietSanPham',
+        params: {
+          id: sanPham.id,
+          danhMucCha: sanPham.danhMucCha,
+          danhMucCon: sanPham.danhMucCon,
+        },
+      }"
       class="shrink-0"
     >
       <div class="w-16 h-16 bg-gray-200 rounded"></div>
@@ -16,7 +23,14 @@
     <div class="flex-1">
       <h3 class="text-blue-700 font-semibold">
         <router-link
-          :to="{ name: 'ChiTietSanPham', params: { id: sanPham.id } }"
+          :to="{
+            name: 'ChiTietSanPham',
+            params: {
+              id: sanPham.id,
+              danhMucCha: sanPham.danhMucCha,
+              danhMucCon: sanPham.danhMucCon,
+            },
+          }"
           class="hover:underline"
           >{{ sanPham.ten }}</router-link
         >

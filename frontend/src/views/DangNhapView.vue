@@ -94,6 +94,15 @@
           />
         </div>
 
+        <div class="text-right mb-4">
+          <router-link
+            :to="{ name: 'DatLaiMatKhau' }"
+            class="text-sm text-[#0D47A1] hover:underline"
+          >
+            Bạn quên mật khẩu?
+          </router-link>
+        </div>
+
         <button
           @click="handleLogin"
           class="select-none w-full h-[52px] border-0 rounded-[8px] text-[25px] text-[white] cursor-pointer bg-gradient-to-br from-[#2196F3] to-[#1565C0] hover:bg-gradient-to-br hover:from-[#1976D2] hover:to-[#0D47A1]"

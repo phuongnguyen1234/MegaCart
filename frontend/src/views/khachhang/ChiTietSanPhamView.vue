@@ -93,16 +93,17 @@
 <script setup lang="ts">
 import CustomerWithNav from "@/components/layouts/CustomerWithNav.vue";
 import Breadcrumbs from "@/components/base/Breadcrumbs.vue";
+import { useBreadcrumbs } from "@/composables/useBreadcrumbs";
 import { useToast } from "@/composables/useToast";
 import { ref, computed } from "vue";
 
-// Breadcrumb sử dụng 'to' thay vì 'href'
-const breadcrumbs = [
-  { text: "Trang chủ", to: "/" },
+// Breadcrumb
+const tailBreadcrumbs = ref([
   { text: "Thực phẩm", to: "/thuc-pham" },
   { text: "Bánh mì", to: "/thuc-pham/banh-mi" },
   { text: "Bánh mì" }, // Không có `to` vì đây là trang hiện tại
-];
+]);
+const breadcrumbs = useBreadcrumbs(tailBreadcrumbs);
 
 // Dữ liệu sản phẩm mẫu
 const sanPham = {
