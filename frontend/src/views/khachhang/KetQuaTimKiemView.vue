@@ -49,13 +49,11 @@
 
             <GridSanPham
               :ds-san-pham="paginatedProducts"
-              :trang-hien-tai="trangHienTai"
-              :tong-so-trang="tongSoTrang"
-              :trang-bat-dau="trangBatDau"
-              :trang-ket-thuc="trangKetThuc"
-              :so-trang-hien-thi="soTrangHienThi"
               @them-vao-gio-hang="showAddToCartModal"
-              @chuyen-trang="(trang:number) => (trangHienTai = trang)"
+            />
+            <PhanTrang
+              v-model:trangHienTai="trangHienTai"
+              :tong-so-trang="tongSoTrang"
             />
           </template>
 
@@ -94,6 +92,7 @@ import CustomerWithNav from "@/components/layouts/CustomerWithNav.vue";
 import AccordionSanPham from "@/components/base/AccordionSanPham.vue";
 import ThemVaoGioHangModal from "@/components/base/modals/ThemVaoGioHangModal.vue";
 import GridSanPham from "@/components/base/GridSanPham.vue";
+import PhanTrang from "@/components/base/PhanTrang.vue";
 import type { SanPham } from "@/types/SanPham";
 
 // Lấy từ khóa tìm kiếm từ query
@@ -150,29 +149,6 @@ const trangHienTai = ref(0);
 const tongSoTrang = computed(() =>
   Math.ceil(productsByKeyword.value.length / soSPMoiTrang)
 );
-
-const maxVisiblePages = 5;
-
-const trangBatDau = computed(() => {
-  const mid = Math.floor(maxVisiblePages / 2);
-  if (tongSoTrang.value <= maxVisiblePages) return 1;
-  if (trangHienTai.value + 1 <= mid + 1) return 1;
-  if (trangHienTai.value + 1 >= tongSoTrang.value - mid)
-    return tongSoTrang.value - maxVisiblePages + 1;
-  return trangHienTai.value - mid + 1;
-});
-
-const trangKetThuc = computed(() => {
-  return Math.min(trangBatDau.value + maxVisiblePages - 1, tongSoTrang.value);
-});
-
-const soTrangHienThi = computed(() => {
-  const pages = [];
-  for (let i = trangBatDau.value; i <= trangKetThuc.value; i++) {
-    pages.push(i);
-  }
-  return pages;
-});
 
 // Lấy sản phẩm cho trang hiện tại
 const paginatedProducts = computed(() => {

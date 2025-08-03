@@ -10,6 +10,12 @@ import ChiTietSanPhamView from "@/views/khachhang/ChiTietSanPhamView.vue";
 import LichSuMuaHangView from "@/views/khachhang/LichSuMuaHangView.vue";
 import DatLaiMatKhauView from "@/views/khachhang/DatLaiMatKhauView.vue";
 
+// Import layout và các view cho trang Admin
+import AdminLayout from "@/components/layouts/AdminLayout.vue";
+import ThongKeView from "@/views/nhanvien/ThongKeView.vue";
+import QuanLiDonHangView from "@/views/nhanvien/QuanLiDonHangView.vue";
+// import OrdersView from "@/views/admin/OrdersView.vue";
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -65,6 +71,26 @@ const router = createRouter({
       path: "/dat-lai-mat-khau",
       name: "DatLaiMatKhau",
       component: DatLaiMatKhauView,
+    },
+    // === ADMIN ROUTES ===
+    {
+      path: "/admin",
+      component: AdminLayout,
+      // meta: { requiresAuth: true, role: 'admin' }, // Thêm để bảo vệ route
+      children: [
+        { path: "", redirect: "/admin/dashboard" }, // Redirect /admin to /admin/dashboard
+        { path: "dashboard", name: "ThongKe", component: ThongKeView },
+        { path: "don-hang", name: "DonHang", component: QuanLiDonHangView },
+        // { path: 'shipping', name: 'AdminShipping', component: ShippingView },
+        // { path: 'products', name: 'AdminProducts', component: ProductsView },
+        // { path: 'categories', name: 'AdminCategories', component: CategoriesView },
+        // { path: 'customers', name: 'AdminCustomers', component: CustomersView },
+        // { path: 'staff', name: 'AdminStaff', component: StaffView },
+        // ---
+        // Để các route trên hoạt động, bạn cần tạo các component View tương ứng
+        // Ví dụ: src/views/admin/DashboardView.vue
+        // ---
+      ],
     },
   ],
 });
