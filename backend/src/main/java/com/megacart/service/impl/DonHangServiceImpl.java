@@ -69,10 +69,9 @@ public class DonHangServiceImpl implements DonHangService {
                 .sdtNhanHang(request.getSdtNhanHang())
                 .hinhThucNhanHang(request.getHinhThucNhanHang())
                 .hinhThucThanhToan(request.getHinhThucThanhToan())
-                .ghiChu(request.getGhiChu())
                 .thoiGianDatHang(thoiGianDatHang)
                 .trangThai(trangThaiDonHang)
-                .trangThaiXuLi(TrangThaiXuLi.CHUA_XU_LY)
+                .trangThaiXuLi(TrangThaiXuLi.KHONG)
                 .trangThaiThanhToan(TrangThaiThanhToan.CHUA_THANH_TOAN) // Mặc định là chưa thanh toán
                 .duKienGiaoHang(ThoiGianGiaoHangUtils.tinhThoiGianGiaoHangDuKien(thoiGianDatHang))
                 .build();
@@ -84,7 +83,6 @@ public class DonHangServiceImpl implements DonHangService {
                     .sanPham(sanPham)
                     .tenSanPham(sanPham.getTenSanPham())
                     .anhMinhHoa(ImageUtils.getAnhMinhHoaChinhUrl(sanPham.getAnhMinhHoas()))
-                    .nhaSanXuat(sanPham.getNhaSanXuat())
                     .donGia(sanPham.getDonGia())
                     .donVi(sanPham.getDonVi())
                     .soLuong(item.getSoLuong())

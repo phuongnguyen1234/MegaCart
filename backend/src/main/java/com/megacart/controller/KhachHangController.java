@@ -40,7 +40,7 @@ public class KhachHangController {
      * @param request Dữ liệu cập nhật.
      * @return Một response cho biết kết quả và hành động tiếp theo (nếu có).
      */
-    @PutMapping("/ho-so")
+    @PatchMapping("/ho-so")
     public ResponseEntity<CapNhatHoSoResponse> capNhatHoSo(@AuthenticationPrincipal TaiKhoan taiKhoan, @Valid @RequestBody CapNhatHoSoRequest request) {
         CapNhatHoSoResponse response = khachHangService.capNhatHoSo(taiKhoan.getMaTaiKhoan(), request);
         return ResponseEntity.ok(response);

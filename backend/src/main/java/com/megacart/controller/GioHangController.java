@@ -1,7 +1,7 @@
 package com.megacart.controller;
 
 import com.megacart.dto.request.ThemVaoGioHangRequest;
-import com.megacart.dto.response.GioHangResponse;
+import com.megacart.dto.response.ThemVaoGioHangResponse;
 import com.megacart.dto.response.ThongTinThanhToanResponse;
 import com.megacart.model.TaiKhoan;
 import com.megacart.service.GioHangService;
@@ -25,11 +25,11 @@ public class GioHangController {
     private final GioHangService gioHangService;
 
     @PostMapping("/them")
-    public ResponseEntity<GioHangResponse> themVaoGioHang(
+    public ResponseEntity<ThemVaoGioHangResponse> themVaoGioHang(
             @Valid @RequestBody ThemVaoGioHangRequest request,
             @AuthenticationPrincipal TaiKhoan taiKhoan) {
-        GioHangResponse gioHangResponse = gioHangService.themVaoGioHang(request, taiKhoan);
-        return ResponseEntity.ok(gioHangResponse);
+        ThemVaoGioHangResponse response = gioHangService.themVaoGioHang(request, taiKhoan);
+        return ResponseEntity.ok(response);
     }
 
     /**

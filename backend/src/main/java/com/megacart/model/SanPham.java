@@ -1,5 +1,7 @@
 package com.megacart.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.megacart.enumeration.DonVi;
 import com.megacart.enumeration.NhanSanPham;
 import com.megacart.enumeration.TrangThaiSanPham;
@@ -30,6 +32,7 @@ public class SanPham {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MaDanhMucCon", nullable = false)
     @ToString.Exclude
+    @JsonBackReference("danhmuc-sanpham")
     private DanhMuc danhMuc;
 
     @Column(name = "TenSanPham", nullable = false)
@@ -61,14 +64,17 @@ public class SanPham {
 
     @OneToMany(mappedBy = "sanPham", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
+    @JsonManagedReference("sanpham-anhminhhoa")
     private List<AnhMinhHoa> anhMinhHoas = new ArrayList<>();
 
     @OneToMany(mappedBy = "sanPham", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
+    @JsonManagedReference("sanpham-chitietgiohang")
     private Set<ChiTietGioHang> chiTietGioHangs = new HashSet<>();
 
     @OneToMany(mappedBy = "sanPham")
     @ToString.Exclude
+    @JsonManagedReference("sanpham-chitietdonhang")
     private List<ChiTietDonHang> chiTietDonHangs = new ArrayList<>();
 
     @OneToOne(mappedBy = "sanPham", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
