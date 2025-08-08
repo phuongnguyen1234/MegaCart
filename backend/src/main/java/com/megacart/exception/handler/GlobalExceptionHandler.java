@@ -1,9 +1,14 @@
 package com.megacart.exception.handler;
 
 import com.megacart.dto.response.ErrorResponse;
+import com.megacart.exception.InvalidOtpException;
+import com.megacart.exception.PhoneNumberAlreadyInUseException;
 import com.megacart.exception.ResourceNotFoundException;
+import com.megacart.exception.UserAlreadyExistsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -35,6 +40,25 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    // Xử lý lỗi xác thực (email không tồn tại, sai mật khẩu)
+    @ExceptionHandler({UsernameNotFoundException.class, BadCredentialsException.class})
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(RuntimeException ex, WebRequest request) {
+        // Luôn trả về thông báo chung chung để tăng cường bảo mật, tránh việc dò tài khoản
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Tài khoản hoặc mật khẩu không chính xác.", request);
+    }
+
+    // Xử lý lỗi tài nguyên đã tồn tại (email, sđt)
+    @ExceptionHandler({UserAlreadyExistsException.class, PhoneNumberAlreadyInUseException.class})
+    public ResponseEntity<ErrorResponse> handleConflictException(RuntimeException ex, WebRequest request) {
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    // Xử lý lỗi OTP không hợp lệ
+    @ExceptionHandler(InvalidOtpException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidOtpException(InvalidOtpException ex, WebRequest request) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, String message, WebRequest request) {

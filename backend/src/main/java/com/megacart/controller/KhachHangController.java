@@ -1,8 +1,9 @@
 package com.megacart.controller;
 
-import com.megacart.dto.request.CapNhatThongTinCoBanRequest;
-import com.megacart.dto.request.KhoiTaoDoiEmailRequest;
+import com.megacart.dto.request.CapNhatHoSoRequest;
 import com.megacart.dto.request.XacNhanDoiEmailRequest;
+import com.megacart.dto.response.AuthResponse;
+import com.megacart.dto.response.CapNhatHoSoResponse;
 import com.megacart.dto.response.ThongTinKhachHangResponse;
 import com.megacart.model.TaiKhoan;
 import com.megacart.service.KhachHangService;
@@ -33,32 +34,26 @@ public class KhachHangController {
     }
 
     /**
-     * Cập nhật thông tin cơ bản (tên, sđt, địa chỉ) không cần OTP.
+     * Cập nhật thông tin hồ sơ một cách thông minh.
+     * Tự động xử lý cập nhật thông tin cơ bản và/hoặc khởi tạo luồng thay đổi email.
      * @param taiKhoan Đối tượng TaiKhoan của người dùng đang đăng nhập.
      * @param request Dữ liệu cập nhật.
-     * @return Thông tin đã được cập nhật.
+     * @return Một response cho biết kết quả và hành động tiếp theo (nếu có).
      */
     @PutMapping("/ho-so")
-    public ResponseEntity<ThongTinKhachHangResponse> capNhatThongTinCoBan(@AuthenticationPrincipal TaiKhoan taiKhoan, @Valid @RequestBody CapNhatThongTinCoBanRequest request) {
-        ThongTinKhachHangResponse response = khachHangService.capNhatThongTinCoBan(taiKhoan.getMaTaiKhoan(), request);
+    public ResponseEntity<CapNhatHoSoResponse> capNhatHoSo(@AuthenticationPrincipal TaiKhoan taiKhoan, @Valid @RequestBody CapNhatHoSoRequest request) {
+        CapNhatHoSoResponse response = khachHangService.capNhatHoSo(taiKhoan.getMaTaiKhoan(), request);
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Bước 1: Gửi yêu cầu thay đổi email. Hệ thống sẽ gửi OTP đến email CŨ để xác thực.
-     */
-    @PostMapping("/email/yeu-cau")
-    public ResponseEntity<Void> khoiTaoDoiEmail(@AuthenticationPrincipal TaiKhoan taiKhoan, @Valid @RequestBody KhoiTaoDoiEmailRequest request) {
-        khachHangService.khoiTaoDoiEmail(taiKhoan.getMaTaiKhoan(), request);
-        return ResponseEntity.ok().build();
-    }
-
-    /**
+    /*
+     * Endpoint này vẫn cần thiết để hoàn tất việc thay đổi email.
+     * Nó được gọi sau khi người dùng nhận được OTP từ việc cập nhật hồ sơ.
      * Bước 2: Gửi OTP để xác nhận và hoàn tất việc thay đổi email.
      */
     @PostMapping("/email/xac-nhan")
-    public ResponseEntity<ThongTinKhachHangResponse> xacNhanDoiEmail(@AuthenticationPrincipal TaiKhoan taiKhoan, @Valid @RequestBody XacNhanDoiEmailRequest request) {
-        ThongTinKhachHangResponse response = khachHangService.xacNhanDoiEmail(taiKhoan.getMaTaiKhoan(), request.getOtp());
+    public ResponseEntity<AuthResponse> xacNhanDoiEmail(@AuthenticationPrincipal TaiKhoan taiKhoan, @Valid @RequestBody XacNhanDoiEmailRequest request) {
+        AuthResponse response = khachHangService.xacNhanDoiEmail(taiKhoan.getMaTaiKhoan(), request.getOtp());
         return ResponseEntity.ok(response);
     }
 }
