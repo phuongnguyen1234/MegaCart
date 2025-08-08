@@ -51,7 +51,12 @@
             />
           </div>
           <div class="mt-auto pt-2 text-right">
-            <a href="#" class="text-xs text-blue-600">Xem chi tiết</a>
+            <button
+              @click="openDoanhThuThangModal"
+              class="text-xs text-blue-600 hover:underline"
+            >
+              Xem chi tiết
+            </button>
           </div>
         </div>
 
@@ -91,9 +96,9 @@
           </div>
           <div class="relative mt-2 h-60">
             <BieuDoGauge
-              :tienDo="50"
-              :mucTieu="20000000"
-              :tienDoHienTai="10000000"
+              :tienDo="tienDoPhanTram"
+              :mucTieu="mucTieuHienTai"
+              :tienDoHienTai="tienDoHienTai"
             />
           </div>
         </div>
@@ -181,7 +186,12 @@
             />
           </div>
           <div class="mt-auto pt-2 text-right">
-            <a href="#" class="text-xs text-blue-600">Xem chi tiết</a>
+            <button
+              @click="openDonHangThangModal"
+              class="text-xs text-blue-600 hover:underline"
+            >
+              Xem chi tiết
+            </button>
           </div>
         </div>
 
@@ -228,7 +238,12 @@
             />
           </div>
           <div class="mt-auto pt-2 text-right">
-            <a href="#" class="text-xs text-blue-600">Xem thêm</a>
+            <button
+              @click="openSanPhamBanChayModal"
+              class="text-xs text-blue-600 hover:underline"
+            >
+              Xem thêm
+            </button>
           </div>
         </div>
 
@@ -244,30 +259,133 @@
         </div>
       </div>
     </section>
+
+    <!-- Modal Chi tiết Doanh thu theo tháng -->
+    <BaseModal
+      :visible="isDoanhThuThangModalVisible"
+      title="Chi tiết doanh thu theo tháng"
+      @close="closeDoanhThuThangModal"
+      width-class="w-[800px]"
+    >
+      <DataTable
+        :headers="doanhThuThangModalHeaders"
+        :rows="doanhThuThangModalRows"
+      />
+    </BaseModal>
+
+    <!-- Modal Chi tiết Đơn hàng theo tháng -->
+    <BaseModal
+      :visible="isDonHangThangModalVisible"
+      title="Chi tiết đơn hàng theo tháng"
+      @close="closeDonHangThangModal"
+      width-class="w-[800px]"
+    >
+      <DataTable
+        :headers="donHangThangModalHeaders"
+        :rows="donHangThangModalRows"
+      />
+    </BaseModal>
+
+    <!-- Modal Chi tiết Sản phẩm bán chạy -->
+    <BaseModal
+      :visible="isSanPhamBanChayModalVisible"
+      title="Chi tiết sản phẩm bán chạy"
+      @close="closeSanPhamBanChayModal"
+      width-class="w-[800px]"
+    >
+      <DataTable
+        :headers="sanPhamBanChayModalHeaders"
+        :rows="sanPhamBanChayModalRows"
+      />
+    </BaseModal>
+
+    <!-- Modal Cập nhật mục tiêu -->
+    <BaseModal
+      :visible="isMucTieuModalVisible"
+      title="Cập nhật mục tiêu doanh thu"
+      @close="closeMucTieuModal"
+    >
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700"
+            >Mục tiêu hiện tại</label
+          >
+          <p class="mt-1 text-lg font-semibold text-gray-900">
+            {{ formatCurrency(mucTieuHienTai) }}
+          </p>
+        </div>
+        <div>
+          <label
+            for="muc-tieu-moi"
+            class="block text-sm font-medium text-gray-700"
+            >Mục tiêu mới</label
+          >
+          <input
+            type="number"
+            id="muc-tieu-moi"
+            v-model.number="mucTieuMoi"
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Nhập mục tiêu mới"
+          />
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end">
+          <button
+            @click="saveMucTieuMoi"
+            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Lưu thay đổi
+          </button>
+        </div>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import StatCard from "@/components/dashboard/StatCard.vue";
 import BieuDoGauge from "@/components/dashboard/BieuDoGauge.vue";
 import DataTable from "@/components/base/DataTable.vue";
 import BieuDoCot from "@/components/dashboard/BieuDoCot.vue";
 import BieuDoDuong from "@/components/dashboard/BieuDoDuong.vue";
 import BieuDoTron from "@/components/dashboard/BieuDoTron.vue";
+import BaseModal from "@/components/base/modals/BaseModal.vue";
 
 // --- Logic cho menu dropdown "Mục tiêu doanh thu" ---
 const isMenuOpen = ref(false);
 const menuRef = ref<HTMLElement | null>(null);
+const isMucTieuModalVisible = ref(false);
+const tienDoHienTai = ref(10000000);
+const mucTieuHienTai = ref(20000000);
+const mucTieuMoi = ref<number | null>(null);
+
+const tienDoPhanTram = computed(() =>
+  mucTieuHienTai.value > 0
+    ? (tienDoHienTai.value / mucTieuHienTai.value) * 100
+    : 0
+);
 
 /**
  * Xử lý sự kiện khi người dùng click vào mục "Cập nhật mục tiêu".
  * Bạn có thể thêm logic mở modal hoặc các hành động khác tại đây.
  */
 const handleUpdateTarget = () => {
-  console.log("Hành động 'Cập nhật mục tiêu' được gọi từ ThongKeView.vue");
-  // Ví dụ: Mở một modal
+  mucTieuMoi.value = mucTieuHienTai.value;
+  isMucTieuModalVisible.value = true;
   isMenuOpen.value = false; // Đóng menu sau khi click
+};
+
+const closeMucTieuModal = () => {
+  isMucTieuModalVisible.value = false;
+};
+
+const saveMucTieuMoi = () => {
+  if (mucTieuMoi.value !== null && mucTieuMoi.value > 0) {
+    mucTieuHienTai.value = mucTieuMoi.value;
+  }
+  closeMucTieuModal();
 };
 
 /**
@@ -277,6 +395,136 @@ const handleClickOutside = (event: MouseEvent) => {
   if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
     isMenuOpen.value = false;
   }
+};
+
+// --- Logic cho modal chi tiết doanh thu tháng ---
+const isDoanhThuThangModalVisible = ref(false);
+
+const doanhThuThangModalHeaders = ref([
+  "Tháng",
+  "Mục tiêu",
+  "Doanh thu",
+  "Đạt mục tiêu",
+  "Tăng trưởng",
+  "Trung bình mỗi đơn",
+]);
+
+const doanhThuThangModalRows = ref([
+  ["1/2025", "20,000,000 VND", "18,500,000 VND", "92.5%", "-", "250,000 VND"],
+  [
+    "2/2025",
+    "20,000,000 VND",
+    "21,000,000 VND",
+    "105%",
+    "+13.5%",
+    "260,000 VND",
+  ],
+  [
+    "3/2025",
+    "22,000,000 VND",
+    "23,000,000 VND",
+    "104.5%",
+    "+9.5%",
+    "275,000 VND",
+  ],
+  [
+    "4/2025",
+    "22,000,000 VND",
+    "21,500,000 VND",
+    "97.7%",
+    "-6.5%",
+    "270,000 VND",
+  ],
+  [
+    "5/2025",
+    "25,000,000 VND",
+    "26,000,000 VND",
+    "104%",
+    "+20.9%",
+    "280,000 VND",
+  ],
+  [
+    "6/2025",
+    "25,000,000 VND",
+    "28,000,000 VND",
+    "112%",
+    "+7.7%",
+    "290,000 VND",
+  ],
+]);
+
+const openDoanhThuThangModal = () => {
+  isDoanhThuThangModalVisible.value = true;
+};
+const closeDoanhThuThangModal = () => {
+  isDoanhThuThangModalVisible.value = false;
+};
+
+// --- Logic cho modal chi tiết đơn hàng tháng ---
+const isDonHangThangModalVisible = ref(false);
+
+const donHangThangModalHeaders = ref([
+  "Tháng",
+  "Số đơn",
+  "Tăng trưởng",
+  "Trung bình mỗi đơn",
+  "Đơn giao thành công",
+  "Đơn bị hủy",
+]);
+
+const donHangThangModalRows = ref([
+  ["1/2025", "80", "-", "250,000 VND", "75 (93.8%)", "5 (6.2%)"],
+  ["2/2025", "90", "+12.5%", "260,000 VND", "83 (92.2%)", "7 (7.8%)"],
+  ["3/2025", "100", "+11.1%", "275,000 VND", "92 (92.0%)", "8 (8.0%)"],
+  ["4/2025", "120", "+20.0%", "270,000 VND", "110 (91.7%)", "10 (8.3%)"],
+  ["5/2025", "140", "+16.7%", "280,000 VND", "129 (92.1%)", "11 (7.9%)"],
+  ["6/2025", "160", "+14.3%", "290,000 VND", "148 (92.5%)", "12 (7.5%)"],
+]);
+
+const openDonHangThangModal = () => {
+  isDonHangThangModalVisible.value = true;
+};
+const closeDonHangThangModal = () => {
+  isDonHangThangModalVisible.value = false;
+};
+
+// --- Logic cho modal sản phẩm bán chạy ---
+const isSanPhamBanChayModalVisible = ref(false);
+
+const sanPhamBanChayModalHeaders = ref([
+  "STT",
+  "Mã sản phẩm",
+  "Tên sản phẩm",
+  "Số lượng bán ra",
+  "Số lượng/đơn",
+  "Số đơn đặt",
+]);
+
+const sanPhamBanChayModalRows = ref([
+  ["1", "#SP001", "Sản phẩm A", "190", "1.5", "127"],
+  ["2", "#SP002", "Sản phẩm B", "180", "1.2", "150"],
+  ["3", "#SP003", "Sản phẩm C", "170", "1.8", "94"],
+  ["4", "#SP004", "Sản phẩm D", "160", "1.1", "145"],
+  ["5", "#SP005", "Sản phẩm E", "150", "2.0", "75"],
+  ["6", "#SP006", "Sản phẩm F", "140", "1.4", "100"],
+  ["7", "#SP007", "Sản phẩm G", "130", "1.3", "100"],
+  ["8", "#SP008", "Sản phẩm H", "120", "1.0", "120"],
+  ["9", "#SP009", "Sản phẩm I", "110", "1.1", "100"],
+  ["10", "#SP010", "Sản phẩm J", "100", "1.0", "100"],
+]);
+
+const openSanPhamBanChayModal = () => {
+  isSanPhamBanChayModalVisible.value = true;
+};
+const closeSanPhamBanChayModal = () => {
+  isSanPhamBanChayModalVisible.value = false;
+};
+
+const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(value);
 };
 
 onMounted(() => {

@@ -65,7 +65,7 @@
             <input
               type="text"
               v-model="nguoiNhan"
-              class="w-full border rounded px-3 py-2"
+              class="w-full border rounded px-3 py-2 disabled:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed"
               :disabled="suDungThongTinTaiKhoan"
             />
           </div>
@@ -75,7 +75,7 @@
             <input
               type="text"
               v-model="diaChiNhan"
-              class="w-full border rounded px-3 py-2"
+              class="w-full border rounded px-3 py-2 disabled:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed"
               :disabled="suDungThongTinTaiKhoan"
             />
           </div>
@@ -87,7 +87,7 @@
             <input
               type="text"
               v-model="soDienThoai"
-              class="w-full border rounded px-3 py-2"
+              class="w-full border rounded px-3 py-2 disabled:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed"
               :disabled="suDungThongTinTaiKhoan"
             />
           </div>
@@ -168,8 +168,8 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useToast } from "@/composables/useToast";
 import CustomerNoNav from "@/components/layouts/CustomerNoNav.vue";
-import CardSanPhamGioHang from "@/components/base/card/CardSanPhamGioHang.vue";
-import XacNhanDonHangModal from "@/components/base/modals/XacNhanDonHangModal.vue";
+import CardSanPhamGioHang from "@/components/dathang/CardSanPhamGioHang.vue";
+import XacNhanDonHangModal from "@/components/dathang/XacNhanDonHangModal.vue";
 
 const router = useRouter();
 const { showToast } = useToast();

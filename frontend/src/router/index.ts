@@ -2,8 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import TrangChuView from "../views/khachhang/TrangChuView.vue";
 import DangNhapView from "../views/DangNhapView.vue";
 import KetQuaTimKiemView from "../views/khachhang/KetQuaTimKiemView.vue";
-import XemDanhMucChaView from "../views/khachhang/XemDanhMucChaView.vue";
-import XemDanhMucConView from "../views/khachhang/XemDanhMucConView.vue";
+import XemDanhMucView from "@/views/khachhang/XemDanhMucView.vue";
 import CapNhatTaiKhoanView from "../views/khachhang/CapNhatTaiKhoanView.vue";
 import GioHangView from "@/views/khachhang/GioHangView.vue";
 import ChiTietSanPhamView from "@/views/khachhang/ChiTietSanPhamView.vue";
@@ -14,6 +13,14 @@ import DatLaiMatKhauView from "@/views/khachhang/DatLaiMatKhauView.vue";
 import AdminLayout from "@/components/layouts/AdminLayout.vue";
 import ThongKeView from "@/views/nhanvien/ThongKeView.vue";
 import QuanLiDonHangView from "@/views/nhanvien/QuanLiDonHangView.vue";
+import QuanLiGiaoHangView from "@/views/nhanvien/QuanLiGiaoHangView.vue";
+import QuanLiSanPhamView from "@/views/nhanvien/QuanLiSanPhamView.vue";
+import QuanLiDanhMucView from "@/views/nhanvien/QuanLiDanhMucView.vue";
+import QuanLiKhachHangView from "@/views/nhanvien/QuanLiKhachHangView.vue";
+import QuanLiKhoView from "@/views/nhanvien/QuanLiKhoView.vue";
+import QuanLiNhanVienView from "@/views/nhanvien/QuanLiNhanVienView.vue";
+
+import GiaoHangView from "@/views/nhanvien/GiaoHangView.vue";
 // import OrdersView from "@/views/admin/OrdersView.vue";
 
 const router = createRouter({
@@ -36,10 +43,19 @@ const router = createRouter({
       component: KetQuaTimKiemView,
     },
     {
-      // Đường dẫn cho trang xem danh mục, ví dụ: /Quan-ao
       path: "/:danhMucCha",
-      name: "XemDanhMucCha",
-      component: XemDanhMucChaView,
+      name: "DanhMucCha",
+      component: XemDanhMucView,
+    },
+    {
+      path: "/:danhMucCha/:danhMucCon",
+      name: "DanhMucCon",
+      component: XemDanhMucView,
+    },
+    {
+      path: "/:danhMucCha/:danhMucCon/:maSanPham",
+      name: "ChiTietSanPham",
+      component: ChiTietSanPhamView,
     },
     {
       path: "/tai-khoan",
@@ -52,20 +68,9 @@ const router = createRouter({
       component: GioHangView,
     },
     {
-      // Đường dẫn cho trang chi tiết sản phẩm, ví dụ: /san-pham/123
-      path: "/:danhMucCha/:danhMucCon/:id",
-      name: "ChiTietSanPham",
-      component: ChiTietSanPhamView,
-    },
-    {
       path: "/lich-su-mua-hang",
       name: "LichSuMuaHang",
       component: LichSuMuaHangView,
-    },
-    {
-      path: "/:danhMucCha/:danhMucCon",
-      name: "XemDanhMucCon",
-      component: XemDanhMucConView,
     },
     {
       path: "/dat-lai-mat-khau",
@@ -81,16 +86,26 @@ const router = createRouter({
         { path: "", redirect: "/admin/dashboard" }, // Redirect /admin to /admin/dashboard
         { path: "dashboard", name: "ThongKe", component: ThongKeView },
         { path: "don-hang", name: "DonHang", component: QuanLiDonHangView },
-        // { path: 'shipping', name: 'AdminShipping', component: ShippingView },
-        // { path: 'products', name: 'AdminProducts', component: ProductsView },
-        // { path: 'categories', name: 'AdminCategories', component: CategoriesView },
-        // { path: 'customers', name: 'AdminCustomers', component: CustomersView },
-        // { path: 'staff', name: 'AdminStaff', component: StaffView },
-        // ---
-        // Để các route trên hoạt động, bạn cần tạo các component View tương ứng
-        // Ví dụ: src/views/admin/DashboardView.vue
-        // ---
+        { path: "giao-hang", name: "GiaoHang", component: QuanLiGiaoHangView },
+        { path: "san-pham", name: "SanPham", component: QuanLiSanPhamView },
+        { path: "danh-muc", name: "DanhMuc", component: QuanLiDanhMucView },
+        { path: "kho-hang", name: "KhoHang", component: QuanLiKhoView },
+        {
+          path: "khach-hang",
+          name: "KhachHang",
+          component: QuanLiKhachHangView,
+        },
+        {
+          path: "nhan-vien",
+          name: "NhanVien",
+          component: QuanLiNhanVienView,
+        },
       ],
+    },
+    {
+      path: "/giao-hang",
+      name: "GiaoHang",
+      component: GiaoHangView,
     },
   ],
 });

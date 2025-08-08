@@ -43,6 +43,19 @@
           </router-link>
         </li>
 
+        <!-- Kho hàng -->
+        <li>
+          <router-link
+            to="/admin/kho-hang"
+            class="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-gray-700 transition-colors duration-300"
+            active-class="bg-sky-600 font-bold text-white"
+            exact
+          >
+            <Icon icon="lucide:warehouse" class="w-5 h-5" />
+            <span>Kho hàng</span>
+          </router-link>
+        </li>
+
         <!-- Sản phẩm - Danh mục (Accordion) -->
         <li>
           <div

@@ -3,8 +3,8 @@
     <ThemVaoGioHangModal
       :visible="isAddToCartModalVisible"
       :sanPham="selectedProduct"
-      @close="closeAddToCartModal"
-      @add="handleAddToCart"
+      @dong="dongThemVaoGioHangModal"
+      @them="handleThemVaoGioHang"
     />
     <div class="max-w-7xl mx-auto px-4 py-6">
       <!-- Nút Lọc cho di động -->
@@ -31,7 +31,7 @@
           class="w-full lg:w-64 shrink-0"
           :class="isFilterVisibleOnMobile ? 'block' : 'hidden lg:block'"
         >
-          <AccordionSanPham :categories="dsDanhMuc" :manufacturers="dsNSX" />
+          <AccordionSanPham :danhMucCon="dsDanhMucCon" :nhaSanXuat="dsNSX" />
         </aside>
 
         <!-- Nội dung chính -->
@@ -48,12 +48,14 @@
             </p>
 
             <GridSanPham
-              :ds-san-pham="paginatedProducts"
-              @them-vao-gio-hang="showAddToCartModal"
-            />
-            <PhanTrang
-              v-model:trangHienTai="trangHienTai"
-              :tong-so-trang="tongSoTrang"
+              :dsSanPham="paginatedProducts"
+              :trangHienTai="currentPage"
+              :tongSoTrang="totalPages"
+              :trangBatDau="startPage"
+              :trangKetThuc="endPage"
+              :soTrangHienThi="pagesToShow"
+              @them-vao-gio-hang="hienThiThemVaoGioHangModal"
+              @chuyen-trang="(trang: number) => (currentPage = trang)"
             />
           </template>
 
@@ -90,9 +92,8 @@ import { useRoute } from "vue-router";
 import { useToast } from "@/composables/useToast";
 import CustomerWithNav from "@/components/layouts/CustomerWithNav.vue";
 import AccordionSanPham from "@/components/base/AccordionSanPham.vue";
-import ThemVaoGioHangModal from "@/components/base/modals/ThemVaoGioHangModal.vue";
+import ThemVaoGioHangModal from "@/components/xemsanpham/ThemVaoGioHangModal.vue";
 import GridSanPham from "@/components/base/GridSanPham.vue";
-import PhanTrang from "@/components/base/PhanTrang.vue";
 import type { SanPham } from "@/types/SanPham";
 
 // Lấy từ khóa tìm kiếm từ query
@@ -115,21 +116,23 @@ const dsTenSanPham = [
   "Mũ Lưỡi Trai",
 ];
 const dsNSX = ["Nike", "Adidas", "Puma", "Gucci", "LV", "Zara", "H&M"];
-const dsDanhMuc = ["Quần áo", "Phụ kiện", "Giày dép"];
+const dsDanhMucCha = ["Thời trang", "Phụ kiện", "Giày dép"];
+const dsDanhMucCon = ["Áo", "Quần", "Giày", "Túi", "Đồng hồ", "Kính"];
 
 // Tạo 100 sản phẩm giả để demo
 for (let i = 1; i <= 1000; i++) {
   const name = dsTenSanPham[i % dsTenSanPham.length];
   dsSanPhamMau.value.push({
     maSanPham: i,
-    tenSanPham: `${name} mẫu ${i}`,
+    tenSanPham: `${name} ${i}`,
     donGia: Math.floor(Math.random() * 1000) * 1000 + 100000,
     anhMinhHoa: [`https://picsum.photos/300?random=${i}`],
     nhan: i % 5 === 0 ? "Bán chạy" : i % 3 === 0 ? "Mới" : undefined,
     donVi: "Cái",
     nhaSanXuat: dsNSX[i % dsNSX.length],
-    danhMucCha: dsDanhMuc[i % dsDanhMuc.length],
-    danhMucCon: dsDanhMuc[i % dsDanhMuc.length],
+    danhMucCha: dsDanhMucCha[i % dsDanhMucCha.length],
+    danhMucCon: dsDanhMucCon[i % dsDanhMucCon.length],
+    trangThai: "Đang bán",
   });
 }
 
@@ -144,17 +147,37 @@ const productsByKeyword = computed(() => {
 });
 
 // Phân trang
-const soSPMoiTrang = 40; // Hiển thị 40 sản phẩm mỗi trang (tương đương 10 hàng x 4 cột)
-const trangHienTai = ref(0);
-const tongSoTrang = computed(() =>
-  Math.ceil(productsByKeyword.value.length / soSPMoiTrang)
+const pageSize = 40;
+const currentPage = ref(0);
+const totalPages = computed(() =>
+  Math.ceil(productsByKeyword.value.length / pageSize)
 );
+const maxVisiblePages = 5;
+
+const startPage = computed(() => {
+  const mid = Math.floor(maxVisiblePages / 2);
+  if (totalPages.value <= maxVisiblePages) return 1;
+  if (currentPage.value + 1 <= mid + 1) return 1;
+  if (currentPage.value + 1 >= totalPages.value - mid)
+    return totalPages.value - maxVisiblePages + 1;
+  return currentPage.value - mid + 1;
+});
+const endPage = computed(() => {
+  return Math.min(startPage.value + maxVisiblePages - 1, totalPages.value);
+});
+const pagesToShow = computed(() => {
+  const pages = [];
+  for (let i = startPage.value; i <= endPage.value; i++) {
+    pages.push(i);
+  }
+  return pages;
+});
 
 // Lấy sản phẩm cho trang hiện tại
 const paginatedProducts = computed(() => {
   return productsByKeyword.value.slice(
-    trangHienTai.value * soSPMoiTrang,
-    (trangHienTai.value + 1) * soSPMoiTrang
+    currentPage.value * pageSize,
+    (currentPage.value + 1) * pageSize
   );
 });
 
@@ -162,24 +185,24 @@ const paginatedProducts = computed(() => {
 const isAddToCartModalVisible = ref(false);
 const selectedProduct = ref<SanPham | null>(null);
 
-function showAddToCartModal(product: SanPham) {
+function hienThiThemVaoGioHangModal(product: SanPham) {
   selectedProduct.value = product;
   isAddToCartModalVisible.value = true;
 }
 
-function closeAddToCartModal() {
+function dongThemVaoGioHangModal() {
   isAddToCartModalVisible.value = false;
   selectedProduct.value = null;
 }
 
-function handleAddToCart(payload: { sanPham: SanPham; soLuong: number }) {
+function handleThemVaoGioHang(payload: { sanPham: SanPham; soLuong: number }) {
   console.log(
     "🛒 Thêm sản phẩm vào giỏ:",
     payload.sanPham,
     "Số lượng:",
     payload.soLuong
   );
-  closeAddToCartModal();
+  dongThemVaoGioHangModal();
   showToast({
     thongBao: `Đã thêm "${payload.soLuong} ${payload.sanPham.tenSanPham}" vào giỏ hàng!`,
     loai: "thanhCong",

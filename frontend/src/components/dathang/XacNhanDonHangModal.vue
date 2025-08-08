@@ -77,7 +77,7 @@
   </Overlay>
 </template>
 <script setup lang="ts">
-import Overlay from "../Overlay.vue";
+import Overlay from "../base/Overlay.vue";
 import CardSanPhamDonHang from "@/components/base/card/CardSanPhamDonHang.vue";
 
 defineProps<{

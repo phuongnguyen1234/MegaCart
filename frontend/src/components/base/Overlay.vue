@@ -15,9 +15,9 @@ defineProps<{
   zIndex?: string;
 }>();
 
-const emit = defineEmits(["dong"]);
+const emit = defineEmits(["close"]);
 
 const handleOverlayClick = () => {
-  emit("dong");
+  emit("close");
 };
 </script>

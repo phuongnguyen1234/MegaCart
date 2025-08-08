@@ -8,4 +8,5 @@ export interface SanPham {
   nhaSanXuat: string;
   danhMucCha: string; // Danh mục cha, ví dụ: "Thực phẩm"
   danhMucCon: string; // Danh mục con, ví dụ: "Bơ sữa"
+  trangThai: "Đang bán" | "Ngừng bán";
 }

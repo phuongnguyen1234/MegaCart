@@ -3,8 +3,8 @@
     <ThemVaoGioHangModal
       :visible="isThemVaoGioHangModalVisible"
       :sanPham="sanPhamDuocChon"
-      @close="dongThemVaoGioHangModal"
-      @add="handleThemVaoGioHang"
+      @dong="dongThemVaoGioHangModal"
+      @them="handleThemVaoGioHang"
     />
     <BannerSlider />
 
@@ -31,7 +31,7 @@ import BannerSlider from "@/components/trangchu/BannerSlider.vue";
 import { useToast } from "@/composables/useToast";
 import type { SanPham } from "@/types/SanPham.ts";
 import ListSanPham from "@/components/base/ListSanPham.vue";
-import ThemVaoGioHangModal from "@/components/base/modals/ThemVaoGioHangModal.vue";
+import ThemVaoGioHangModal from "@/components/xemsanpham/ThemVaoGioHangModal.vue";
 
 const { showToast } = useToast();
 
@@ -47,6 +47,7 @@ const dsSanPhamMoi: SanPham[] = [
     nhaSanXuat: "Township",
     danhMucCha: "Quần áo",
     danhMucCon: "Giày dép",
+    trangThai: "Đang bán",
   },
   {
     maSanPham: 2,
@@ -58,6 +59,7 @@ const dsSanPhamMoi: SanPham[] = [
     nhaSanXuat: "Urban Outfit",
     danhMucCha: "Quần áo",
     danhMucCon: "Áo sơ mi",
+    trangThai: "Đang bán",
   },
   {
     maSanPham: 5,
@@ -69,6 +71,7 @@ const dsSanPhamMoi: SanPham[] = [
     nhaSanXuat: "Urban Outfit",
     danhMucCha: "Quần áo",
     danhMucCon: "Áo sơ mi",
+    trangThai: "Đang bán",
   },
   {
     maSanPham: 6,
@@ -80,6 +83,7 @@ const dsSanPhamMoi: SanPham[] = [
     nhaSanXuat: "Urban Outfit",
     danhMucCha: "Quần áo",
     danhMucCon: "Áo sơ mi",
+    trangThai: "Đang bán",
   },
   {
     maSanPham: 7,
@@ -91,11 +95,12 @@ const dsSanPhamMoi: SanPham[] = [
     nhaSanXuat: "Urban Outfit",
     danhMucCha: "Quần áo",
     danhMucCon: "Áo sơ mi",
+    trangThai: "Đang bán",
   },
 ];
 
 // Mock data bán chạy
-const dsBanChay = [
+const dsBanChay: SanPham[] = [
   {
     maSanPham: 3,
     tenSanPham: "Balo thời trang",
@@ -106,6 +111,7 @@ const dsBanChay = [
     nhaSanXuat: "GearBag",
     danhMucCha: "Khác",
     danhMucCon: "Balo và túi xách",
+    trangThai: "Đang bán",
   },
   {
     maSanPham: 4,
@@ -116,6 +122,7 @@ const dsBanChay = [
     nhaSanXuat: "DenimX",
     danhMucCha: "Quần áo",
     danhMucCon: "Quần jeans",
+    trangThai: "Đang bán",
   },
 ];
 

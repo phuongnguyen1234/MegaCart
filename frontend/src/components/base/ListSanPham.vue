@@ -38,7 +38,7 @@
           v-for="sanPham in pagedProducts"
           :key="sanPham.maSanPham"
           :sanPham="sanPham"
-          @add-to-cart="$emit('themVaoGioHang', sanPham)"
+          @mo-modal-them="$emit('themVaoGioHang', sanPham)"
         />
       </div>
     </div>

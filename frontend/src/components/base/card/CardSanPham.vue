@@ -57,8 +57,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "themVaoGioHang", product: SanPham): void;
+  (e: "mo-modal-them", product: SanPham): void;
 }>();
 
-const onAdd = () => emit("themVaoGioHang", props.sanPham);
+const onAdd = () => emit("mo-modal-them", props.sanPham);
 </script>
