@@ -77,38 +77,43 @@
           Đăng nhập
         </h1>
 
-        <div class="mb-[15px] flex flex-col">
-          <input
-            v-model="loginEmail"
-            type="email"
-            placeholder="Email"
-            class="h-[42px] px-[10px] border-0 border-b-2 border-[#0D47A1] bg-transparent text-[16px] focus:outline-none"
-          />
-        </div>
-        <div class="mb-[15px] flex flex-col">
-          <input
-            v-model="loginPassword"
-            type="password"
-            placeholder="Mật khẩu"
-            class="h-[42px] px-[10px] border-0 border-b-2 border-[#0D47A1] bg-transparent text-[16px] focus:outline-none"
-          />
-        </div>
+        <form @submit.prevent="handleLogin">
+          <div class="mb-[15px] flex flex-col">
+            <input
+              v-model="loginEmail"
+              type="email"
+              placeholder="Email"
+              required
+              class="h-[42px] px-[10px] border-0 border-b-2 border-[#0D47A1] bg-transparent text-[16px] focus:outline-none"
+            />
+          </div>
+          <div class="mb-[15px] flex flex-col">
+            <input
+              v-model="loginPassword"
+              type="password"
+              placeholder="Mật khẩu"
+              required
+              class="h-[42px] px-[10px] border-0 border-b-2 border-[#0D47A1] bg-transparent text-[16px] focus:outline-none"
+            />
+          </div>
 
-        <div class="text-right mb-4">
-          <router-link
-            :to="{ name: 'DatLaiMatKhau' }"
-            class="text-sm text-[#0D47A1] hover:underline"
+          <div class="text-right mb-4">
+            <router-link
+              :to="{ name: 'DatLaiMatKhau' }"
+              class="text-sm text-[#0D47A1] hover:underline"
+            >
+              Bạn quên mật khẩu?
+            </router-link>
+          </div>
+
+          <button
+            type="submit"
+            :disabled="isLoading"
+            class="select-none w-full h-[52px] border-0 rounded-[8px] text-[25px] text-[white] cursor-pointer bg-gradient-to-br from-[#2196F3] to-[#1565C0] hover:bg-gradient-to-br hover:from-[#1976D2] hover:to-[#0D47A1] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Bạn quên mật khẩu?
-          </router-link>
-        </div>
-
-        <button
-          @click="handleLogin"
-          class="select-none w-full h-[52px] border-0 rounded-[8px] text-[25px] text-[white] cursor-pointer bg-gradient-to-br from-[#2196F3] to-[#1565C0] hover:bg-gradient-to-br hover:from-[#1976D2] hover:to-[#0D47A1]"
-        >
-          Đăng nhập
-        </button>
+            Đăng nhập
+          </button>
+        </form>
 
         <div
           class="absolute bottom-[40px] left-[100px] right-[100px] flex items-center justify-center"
@@ -133,6 +138,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useToast } from "@/composables/useToast";
 import Loading from "@/components/base/Loading.vue";
+import { login } from "@/service/taikhoan.service";
 
 const isRegisterPanelActive = ref(false); // false = login visible, true = register visible
 const router = useRouter();
@@ -151,19 +157,42 @@ const moveToLogin = () => {
 
 const isLoading = ref(false);
 
-const handleLogin = () => {
-  if (loginEmail.value.trim() !== "" && loginPassword.value.trim() !== "") {
-    isLoading.value = true;
-
-    setTimeout(() => {
-      isLoading.value = false;
-      router.push({ name: "TrangChu" });
-    }, 3000);
-  } else {
+const handleLogin = async () => {
+  if (!loginEmail.value || !loginPassword.value) {
     showToast({
       thongBao: "Vui lòng nhập đầy đủ email và mật khẩu.",
       loai: "loi",
     });
+    return;
+  }
+
+  isLoading.value = true;
+  try {
+    const response = await login({
+      email: loginEmail.value,
+      password: loginPassword.value,
+    });
+
+    // Lưu token vào localStorage để sử dụng cho các request sau
+    localStorage.setItem("access_token", response.accessToken);
+
+    // Điều hướng dựa trên vai trò
+    const userRole = response.user.vaiTro;
+    if (userRole === "ADMIN" || userRole === "NHAN_VIEN") {
+      router.push({ name: "ThongKe" }); // Hoặc trang dashboard admin
+    } else {
+      router.push({ name: "TrangChu" });
+    }
+  } catch (error: any) {
+    // Hiển thị lỗi từ API (nếu có) hoặc lỗi chung
+    const errorMessage =
+      error.response?.data?.message || "Đăng nhập thất bại. Vui lòng thử lại.";
+    showToast({
+      thongBao: errorMessage,
+      loai: "loi",
+    });
+  } finally {
+    isLoading.value = false;
   }
 };
 </script>
