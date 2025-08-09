@@ -107,6 +107,7 @@ const breadcrumbs = useBreadcrumbs(tailBreadcrumbs);
 
 // Dữ liệu sản phẩm mẫu
 const sanPham = {
+  maSanPham: 1,
   ten: "Bánh mì",
   donGia: 7000,
   donVi: "Cái",

@@ -10,7 +10,7 @@
       :to="{
         name: 'ChiTietSanPham',
         params: {
-          id: sanPham.id,
+          maSanPham: sanPham.id,
           danhMucCha: sanPham.danhMucCha,
           danhMucCon: sanPham.danhMucCon,
         },
@@ -26,7 +26,7 @@
           :to="{
             name: 'ChiTietSanPham',
             params: {
-              id: sanPham.id,
+              maSanPham: sanPham.id,
               danhMucCha: sanPham.danhMucCha,
               danhMucCon: sanPham.danhMucCon,
             },

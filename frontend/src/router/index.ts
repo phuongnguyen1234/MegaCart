@@ -1,27 +1,29 @@
 import { createRouter, createWebHistory } from "vue-router";
-import TrangChuView from "../views/khachhang/TrangChuView.vue";
-import DangNhapView from "../views/DangNhapView.vue";
-import KetQuaTimKiemView from "../views/khachhang/KetQuaTimKiemView.vue";
+
+// --- General & Customer Views ---
+import DangNhapView from "@/views/DangNhapView.vue";
+import TrangChuView from "@/views/khachhang/TrangChuView.vue";
+import KetQuaTimKiemView from "@/views/khachhang/KetQuaTimKiemView.vue";
 import XemDanhMucView from "@/views/khachhang/XemDanhMucView.vue";
-import CapNhatTaiKhoanView from "../views/khachhang/CapNhatTaiKhoanView.vue";
-import GioHangView from "@/views/khachhang/GioHangView.vue";
 import ChiTietSanPhamView from "@/views/khachhang/ChiTietSanPhamView.vue";
+import GioHangView from "@/views/khachhang/GioHangView.vue";
+import CapNhatTaiKhoanView from "@/views/khachhang/CapNhatTaiKhoanView.vue";
 import LichSuMuaHangView from "@/views/khachhang/LichSuMuaHangView.vue";
 import DatLaiMatKhauView from "@/views/khachhang/DatLaiMatKhauView.vue";
 
-// Import layout và các view cho trang Admin
+// --- Admin/Employee Layout & Views ---
 import AdminLayout from "@/components/layouts/AdminLayout.vue";
 import ThongKeView from "@/views/nhanvien/ThongKeView.vue";
 import QuanLiDonHangView from "@/views/nhanvien/QuanLiDonHangView.vue";
 import QuanLiGiaoHangView from "@/views/nhanvien/QuanLiGiaoHangView.vue";
 import QuanLiSanPhamView from "@/views/nhanvien/QuanLiSanPhamView.vue";
 import QuanLiDanhMucView from "@/views/nhanvien/QuanLiDanhMucView.vue";
-import QuanLiKhachHangView from "@/views/nhanvien/QuanLiKhachHangView.vue";
 import QuanLiKhoView from "@/views/nhanvien/QuanLiKhoView.vue";
+import QuanLiKhachHangView from "@/views/nhanvien/QuanLiKhachHangView.vue";
 import QuanLiNhanVienView from "@/views/nhanvien/QuanLiNhanVienView.vue";
 
+// --- Standalone Employee Views ---
 import GiaoHangView from "@/views/nhanvien/GiaoHangView.vue";
-// import OrdersView from "@/views/admin/OrdersView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -86,7 +88,11 @@ const router = createRouter({
         { path: "", redirect: "/admin/dashboard" }, // Redirect /admin to /admin/dashboard
         { path: "dashboard", name: "ThongKe", component: ThongKeView },
         { path: "don-hang", name: "DonHang", component: QuanLiDonHangView },
-        { path: "giao-hang", name: "GiaoHang", component: QuanLiGiaoHangView },
+        {
+          path: "giao-hang",
+          name: "QuanLiGiaoHang",
+          component: QuanLiGiaoHangView,
+        },
         { path: "san-pham", name: "SanPham", component: QuanLiSanPhamView },
         { path: "danh-muc", name: "DanhMuc", component: QuanLiDanhMucView },
         { path: "kho-hang", name: "KhoHang", component: QuanLiKhoView },
