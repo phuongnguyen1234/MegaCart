@@ -66,6 +66,9 @@ public class DonHang {
     @Column(name = "DuKienGiaoHang")
     private LocalDateTime duKienGiaoHang;
 
+    @Column(name = "ThoiGianThanhToan")
+    private LocalDateTime thoiGianThanhToan;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "TrangThai", nullable = false)
     private TrangThaiDonHang trangThai;
