@@ -44,12 +44,14 @@ const router = createRouter({
       path: "/trang-chu",
       name: "TrangChu",
       component: TrangChuView,
+      meta: { customerOnly: true },
     },
     {
       // Đường dẫn cho trang kết quả tìm kiếm, ví dụ: /tim-kiem?q=laptop
       path: "/tim-kiem",
       name: "KetQuaTimKiem",
       component: KetQuaTimKiemView,
+      meta: { customerOnly: true },
     },
     {
       path: "/tai-khoan",
@@ -107,6 +109,7 @@ const router = createRouter({
       path: "/giao-hang",
       name: "GiaoHang",
       component: GiaoHangView,
+      meta: { requiresAuth: true, roles: ["ADMIN", "NHAN_VIEN"] },
     },
     // --- DYNAMIC ROUTES (PRODUCT/CATEGORY) ---
     // Phải được đặt ở cuối để không ghi đè các route tĩnh ở trên.
@@ -115,11 +118,13 @@ const router = createRouter({
       path: "/:danhMucCha/:danhMucCon/:maSanPham",
       name: "ChiTietSanPham",
       component: ChiTietSanPhamView,
+      meta: { customerOnly: true },
     },
     {
       path: "/:danhMucCha/:danhMucCon",
       name: "DanhMucCon",
       component: XemDanhMucView,
+      meta: { customerOnly: true },
     },
     {
       // Route này sẽ bắt các URL như /thoi-trang-nam, /dien-tu, v.v.
@@ -127,6 +132,7 @@ const router = createRouter({
       path: "/:danhMucCha",
       name: "DanhMucCha",
       component: XemDanhMucView,
+      meta: { customerOnly: true },
     },
   ],
 });
@@ -151,6 +157,9 @@ router.beforeEach((to, from, next) => {
   const requiredRoles = to.matched.flatMap(
     (record) => record.meta.roles || []
   ) as string[];
+  const isCustomerOnlyRoute = to.matched.some(
+    (record) => record.meta.customerOnly
+  );
 
   // Luồng 1: Đã đăng nhập nhưng vào trang guest (vd: /dang-nhap)
   // Chuyển hướng về trang chủ/dashboard tương ứng.
@@ -159,6 +168,16 @@ router.beforeEach((to, from, next) => {
       return next({ path: "/admin/dashboard" });
     }
     return next({ name: "TrangChu" });
+  }
+
+  // Luồng 1.5 (Mới): Admin/Nhân viên đã đăng nhập và cố gắng truy cập trang chỉ dành cho khách hàng.
+  // Chuyển hướng họ về trang dashboard.
+  if (
+    token &&
+    (userRole === "ADMIN" || userRole === "NHAN_VIEN") &&
+    isCustomerOnlyRoute
+  ) {
+    return next({ path: "/admin/dashboard" });
   }
 
   // Luồng 2: Chưa đăng nhập nhưng vào trang cần xác thực
