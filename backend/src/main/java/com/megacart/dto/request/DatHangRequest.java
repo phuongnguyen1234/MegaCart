@@ -30,8 +30,6 @@ public class DatHangRequest {
     @NotNull(message = "Hình thức thanh toán không được để trống")
     private HinhThucThanhToan hinhThucThanhToan;
 
-    private String ghiChu;
-
     @NotEmpty(message = "Phải chọn ít nhất một sản phẩm để đặt hàng")
     @Valid
     private List<SanPhamDatHang> items;

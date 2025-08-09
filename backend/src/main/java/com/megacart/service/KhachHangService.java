@@ -1,15 +1,14 @@
 package com.megacart.service;
 
-import com.megacart.dto.request.CapNhatThongTinCoBanRequest;
-import com.megacart.dto.request.KhoiTaoDoiEmailRequest;
+import com.megacart.dto.request.CapNhatHoSoRequest;
+import com.megacart.dto.response.CapNhatHoSoResponse;
+import com.megacart.dto.response.AuthResponse;
 import com.megacart.dto.response.ThongTinKhachHangResponse;
 
 public interface KhachHangService {
     ThongTinKhachHangResponse getThongTinKhachHang(Integer maKhachHang);
 
-    ThongTinKhachHangResponse capNhatThongTinCoBan(Integer maKhachHang, CapNhatThongTinCoBanRequest request);
+    CapNhatHoSoResponse capNhatHoSo(Integer maKhachHang, CapNhatHoSoRequest request);
 
-    void khoiTaoDoiEmail(Integer maKhachHang, KhoiTaoDoiEmailRequest request);
-
-    ThongTinKhachHangResponse xacNhanDoiEmail(Integer maKhachHang, String otp);
+    AuthResponse xacNhanDoiEmail(Integer maKhachHang, String otp);
 }

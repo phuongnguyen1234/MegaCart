@@ -17,11 +17,15 @@ import java.util.Objects;
 @IdClass(ChiTietDonHangId.class)
 public class ChiTietDonHang {
 
+    // --- CÂY CẦU NỐI TỚI DỮ LIỆU HIỆN TẠI ---
+    // Các mối quan hệ này được giữ lại để phục vụ cho việc phân tích, báo cáo,
+    // và các tính năng như "Mua lại". Chúng không được dùng để hiển thị thông tin đơn hàng cũ.
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MaDonHang", referencedColumnName = "MaDonHang")
     @ToString.Exclude
     private DonHang donHang;
+
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
@@ -29,15 +33,14 @@ public class ChiTietDonHang {
     @ToString.Exclude
     private SanPham sanPham;
 
-    // Sao chép thông tin sản phẩm tại thời điểm đặt hàng để đảm bảo tính toàn vẹn
+    // --- DỮ LIỆU SNAPSHOT (BẢN GHI LỊCH SỬ) ---
+    // Các trường dưới đây sao chép thông tin sản phẩm tại thời điểm đặt hàng
+    // để đảm bảo tính toàn vẹn của đơn hàng, không bị ảnh hưởng bởi các thay đổi trong tương lai.
     @Column(name = "TenSanPham", nullable = false)
     private String tenSanPham;
 
     @Column(name = "AnhMinhHoa")
     private String anhMinhHoa;
-
-    @Column(name = "NhaSanXuat", nullable = false)
-    private String nhaSanXuat;
 
     @Column(name = "DonGia", nullable = false)
     private Integer donGia;

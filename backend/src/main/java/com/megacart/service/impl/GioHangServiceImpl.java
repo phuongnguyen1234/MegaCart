@@ -1,6 +1,7 @@
 package com.megacart.service.impl;
 
 import com.megacart.dto.request.ThemVaoGioHangRequest;
+import com.megacart.dto.response.ThemVaoGioHangResponse;
 import com.megacart.dto.response.GioHangResponse;
 import com.megacart.dto.response.ThongTinKhachHangResponse;
 import com.megacart.dto.response.ThongTinThanhToanResponse;
@@ -17,6 +18,7 @@ import com.megacart.service.KhachHangService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Optional;
 
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +36,7 @@ public class GioHangServiceImpl implements GioHangService {
 
     @Override
     @Transactional
-    public GioHangResponse themVaoGioHang(ThemVaoGioHangRequest request, TaiKhoan taiKhoan) {
+    public ThemVaoGioHangResponse themVaoGioHang(ThemVaoGioHangRequest request, TaiKhoan taiKhoan) {
         // 1. Tìm sản phẩm và kiểm tra tồn kho
         SanPham sanPham = sanPhamRepository.findById(request.getMaSanPham())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + request.getMaSanPham()));
@@ -51,29 +53,39 @@ public class GioHangServiceImpl implements GioHangService {
                     return gioHangRepository.save(newCart);
                 });
 
-        // 3. Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
-        ChiTietGioHangId chiTietId = new ChiTietGioHangId(sanPham.getMaSanPham(), gioHang.getMaKhachHang());
-        ChiTietGioHang chiTietGioHang = chiTietGioHangRepository.findById(chiTietId)
-                .map(item -> {
-                    // Nếu đã có, cập nhật số lượng
-                    item.setSoLuong(item.getSoLuong() + request.getSoLuong());
-                    return item;
-                })
-                .orElseGet(() -> {
-                    // Nếu chưa có, tạo mới
-                    return ChiTietGioHang.builder()
-                            .id(chiTietId)
-                            .gioHang(gioHang)
-                            .sanPham(sanPham)
-                            .soLuong(request.getSoLuong())
-                            .build();
-                });
+        // 3. Tìm sản phẩm trong giỏ hàng đã được tải sẵn (nhờ @EntityGraph)
+        //    Điều này tránh được lỗi NonUniqueObjectException bằng cách không query lại DB
+        Optional<ChiTietGioHang> existingItemOpt = gioHang.getChiTietGioHangs().stream()
+                .filter(item -> item.getSanPham().getMaSanPham().equals(request.getMaSanPham()))
+                .findFirst();
 
-        // 4. Lưu lại chi tiết giỏ hàng
-        chiTietGioHangRepository.save(chiTietGioHang);
+        if (existingItemOpt.isPresent()) {
+            // Nếu sản phẩm đã có, chỉ cần cập nhật số lượng trên đối tượng đã có
+            ChiTietGioHang existingItem = existingItemOpt.get();
+            existingItem.setSoLuong(existingItem.getSoLuong() + request.getSoLuong());
+        } else {
+            // Nếu sản phẩm chưa có, tạo mới và thêm vào collection của giỏ hàng
+            ChiTietGioHang newItem = ChiTietGioHang.builder()
+                    .id(new ChiTietGioHangId(sanPham.getMaSanPham(), gioHang.getMaKhachHang()))
+                    .gioHang(gioHang)
+                    .sanPham(sanPham)
+                    .soLuong(request.getSoLuong())
+                    .build();
+            // Do có CascadeType.ALL, Hibernate sẽ tự động lưu newItem khi transaction commit
+            gioHang.getChiTietGioHangs().add(newItem);
+        }
 
-        // 5. Trả về thông tin giỏ hàng đã cập nhật
-        return buildGioHangResponse(gioHang);
+        // 4. Tính toán các thông số cần thiết cho response
+        int tongSoLuongSanPham = gioHang.getChiTietGioHangs().size();
+        int tongSoLuongDonVi = gioHang.getChiTietGioHangs().stream()
+                .mapToInt(ChiTietGioHang::getSoLuong)
+                .sum();
+
+        return ThemVaoGioHangResponse.builder()
+                .message("Sản phẩm đã được thêm vào giỏ hàng thành công.")
+                .tongSoLuongSanPham(tongSoLuongSanPham)
+                .tongSoLuongDonVi(tongSoLuongDonVi)
+                .build();
     }
 
     @Override

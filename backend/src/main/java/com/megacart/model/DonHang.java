@@ -1,5 +1,7 @@
 package com.megacart.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.megacart.enumeration.HinhThucNhanHang;
 import com.megacart.enumeration.HinhThucThanhToan;
 import com.megacart.enumeration.TrangThaiDonHang;

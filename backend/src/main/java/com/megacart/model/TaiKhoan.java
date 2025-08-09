@@ -53,6 +53,10 @@ public class TaiKhoan implements UserDetails {
     @ToString.Exclude // **QUAN TRỌNG: Ngắt vòng lặp trong toString()**
     private KhachHang khachHang;
 
+    @OneToOne(mappedBy = "taiKhoan", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    private NhanVien nhanVien;
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
