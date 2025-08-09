@@ -12,34 +12,43 @@
         <h1 class="text-center mb-5 text-[#0D47A1] text-3xl font-bold">
           Đăng kí
         </h1>
+        <form @submit.prevent="handleRegister">
+          <div class="mb-[15px] flex flex-col">
+            <input
+              v-model="registerEmail"
+              type="email"
+              placeholder="Email"
+              required
+              class="h-[42px] px-[10px] border-0 border-b-2 border-[#0D47A1] bg-transparent text-[16px] focus:outline-none"
+            />
+          </div>
+          <div class="mb-[15px] flex flex-col">
+            <input
+              v-model="registerPassword"
+              type="password"
+              placeholder="Mật khẩu"
+              required
+              class="h-[42px] px-[10px] border-0 border-b-2 border-[#0D47A1] bg-transparent text-[16px] focus:outline-none"
+            />
+          </div>
+          <div class="mb-[15px] flex flex-col">
+            <input
+              v-model="registerConfirmPassword"
+              type="password"
+              placeholder="Xác nhận mật khẩu"
+              required
+              class="h-[42px] px-[10px] border-0 border-b-2 border-[#0D47A1] bg-transparent text-[16px] focus:outline-none"
+            />
+          </div>
 
-        <div class="mb-[15px] flex flex-col">
-          <input
-            type="email"
-            placeholder="Email"
-            class="h-[42px] px-[10px] border-0 border-b-2 border-[#0D47A1] bg-transparent text-[16px] focus:outline-none"
-          />
-        </div>
-        <div class="mb-[15px] flex flex-col">
-          <input
-            type="password"
-            placeholder="Mật khẩu"
-            class="h-[42px] px-[10px] border-0 border-b-2 border-[#0D47A1] bg-transparent text-[16px] focus:outline-none"
-          />
-        </div>
-        <div class="mb-[15px] flex flex-col">
-          <input
-            type="password"
-            placeholder="Xác nhận mật khẩu"
-            class="h-[42px] px-[10px] border-0 border-b-2 border-[#0D47A1] bg-transparent text-[16px] focus:outline-none"
-          />
-        </div>
-
-        <button
-          class="select-none w-full h-[52px] border-0 rounded-[8px] text-[25px] text-white cursor-pointer bg-gradient-to-br from-[#2196F3] to-[#1565C0] hover:bg-gradient-to-br hover:from-[#1976D2] hover:to-[#0D47A1]"
-        >
-          Đăng kí
-        </button>
+          <button
+            type="submit"
+            :disabled="isLoading"
+            class="select-none w-full h-[52px] border-0 rounded-[8px] text-[25px] text-white cursor-pointer bg-gradient-to-br from-[#2196F3] to-[#1565C0] hover:bg-gradient-to-br hover:from-[#1976D2] hover:to-[#0D47A1] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Đăng kí
+          </button>
+        </form>
 
         <div
           class="absolute bottom-[40px] left-[100px] right-[100px] flex items-center justify-center"
@@ -138,14 +147,20 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useToast } from "@/composables/useToast";
 import Loading from "@/components/base/Loading.vue";
-import { login } from "@/service/taikhoan.service";
+import { useAuthStore } from "@/store/auth.store";
+import { decodeJwtPayload } from "@/utils/jwt";
 
 const isRegisterPanelActive = ref(false); // false = login visible, true = register visible
 const router = useRouter();
 const { showToast } = useToast();
+const authStore = useAuthStore();
 
 const loginEmail = ref("");
 const loginPassword = ref("");
+
+const registerEmail = ref("");
+const registerPassword = ref("");
+const registerConfirmPassword = ref("");
 
 const moveToSignup = () => {
   isRegisterPanelActive.value = true;
@@ -168,18 +183,29 @@ const handleLogin = async () => {
 
   isLoading.value = true;
   try {
-    const response = await login({
+    await authStore.login({
       email: loginEmail.value,
-      password: loginPassword.value,
+      matKhau: loginPassword.value,
     });
 
-    // Lưu token vào localStorage để sử dụng cho các request sau
-    localStorage.setItem("access_token", response.accessToken);
+    // Đăng nhập thành công, token đã được lưu trong localStorage bởi authStore
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      // Trường hợp hiếm gặp, nhưng nên xử lý
+      throw new Error("Không tìm thấy token sau khi đăng nhập.");
+    }
 
-    // Điều hướng dựa trên vai trò
-    const userRole = response.user.vaiTro;
+    const payload = decodeJwtPayload(token);
+    // Ghi log payload để debug ngay sau khi đăng nhập
+    console.log("Decoded JWT Payload on Login:", payload);
+    // SỬA LỖI: Dùng 'vaiTro' để nhất quán với router guard
+    const userRole = payload?.role;
+
+    showToast({ thongBao: "Đăng nhập thành công!", loai: "thanhCong" });
+
+    // Chuyển hướng dựa trên vai trò
     if (userRole === "ADMIN" || userRole === "NHAN_VIEN") {
-      router.push({ name: "ThongKe" }); // Hoặc trang dashboard admin
+      router.push({ path: "/admin/dashboard" });
     } else {
       router.push({ name: "TrangChu" });
     }
@@ -191,6 +217,33 @@ const handleLogin = async () => {
       thongBao: errorMessage,
       loai: "loi",
     });
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const handleRegister = async () => {
+  if (registerPassword.value !== registerConfirmPassword.value) {
+    showToast({
+      thongBao: "Mật khẩu xác nhận không khớp.",
+      loai: "loi",
+    });
+    return;
+  }
+
+  isLoading.value = true;
+  try {
+    // TODO: Gọi API đăng ký ở đây
+    console.log("Đăng ký với:", registerEmail.value, registerPassword.value);
+    showToast({
+      thongBao: "Đăng ký thành công! Vui lòng đăng nhập.",
+      loai: "thanhCong",
+    });
+    moveToLogin(); // Chuyển sang form đăng nhập sau khi đăng ký thành công
+  } catch (error: any) {
+    const errorMessage =
+      error.response?.data?.message || "Đăng ký thất bại. Vui lòng thử lại.";
+    showToast({ thongBao: errorMessage, loai: "loi" });
   } finally {
     isLoading.value = false;
   }

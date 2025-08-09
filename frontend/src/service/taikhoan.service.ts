@@ -3,9 +3,9 @@ import apiClient from "./apiClient";
 // --- Interfaces for Type Safety ---
 
 // Dữ liệu cần thiết để đăng nhập
-interface LoginCredentials {
+export interface LoginCredentials {
   email: string;
-  password: string;
+  matKhau: string;
 }
 
 // Thông tin người dùng trả về từ API
@@ -17,9 +17,8 @@ interface User {
 }
 
 // Phản hồi từ API đăng nhập
-interface LoginResponse {
-  accessToken: string;
-  user: User;
+export interface LoginResponse {
+  token: string;
 }
 
 // --- Service Functions ---
@@ -27,13 +26,22 @@ interface LoginResponse {
 /**
  * Gửi yêu cầu đăng nhập đến API.
  * @param credentials - Thông tin email và mật khẩu của người dùng.
- * @returns Promise chứa token và thông tin người dùng.
+ * @returns Promise chứa JWT.
  */
 export const login = (
   credentials: LoginCredentials
 ): Promise<LoginResponse> => {
+  // Kiểm tra đầu vào ở phía client trước khi gửi request
+  // để tránh các lỗi validation không cần thiết từ server.
+  if (!credentials.email || !credentials.matKhau) {
+    return Promise.reject(new Error("Email và mật khẩu không được để trống."));
+  }
   // Giả định endpoint của backend là /api/auth/dang-nhap
   return apiClient.post("/auth/dang-nhap", credentials);
+};
+
+export const logout = async () => {
+  await apiClient.post("/auth/dang-xuat");
 };
 
 // Có thể thêm các hàm khác liên quan đến tài khoản ở đây trong tương lai

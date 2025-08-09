@@ -28,10 +28,15 @@ apiClient.interceptors.response.use(
     if (error.response) {
       // Backend trả lỗi
       console.error("API Error:", error.response.status, error.response.data);
-      if (error.response.status === 401) {
-        // Ví dụ: token hết hạn → logout
+      // Lấy URL của request gây ra lỗi
+      const requestUrl = error.config.url;
+
+      // Chỉ chuyển hướng về trang login nếu lỗi 401 không phải từ API đăng nhập
+      // Điều này để tránh vòng lặp chuyển hướng khi người dùng nhập sai mật khẩu.
+      if (error.response.status === 401 && requestUrl !== "/auth/dang-nhap") {
+        // Token hết hạn hoặc không hợp lệ, thực hiện logout
         localStorage.removeItem("access_token");
-        window.location.href = "/login";
+        window.location.href = "/dang-nhap"; // Sửa thành route đăng nhập chính xác
       }
     } else if (error.request) {
       // Không nhận được phản hồi

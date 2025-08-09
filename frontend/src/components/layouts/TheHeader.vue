@@ -47,12 +47,16 @@
 
     <!-- User & Cart -->
     <div class="flex items-center gap-[20px] relative">
+      <!-- Hiển thị khi người dùng đã đăng nhập -->
       <div
+        v-if="authStore.isLoggedIn"
         @click="toggleProfileMenu"
         class="relative flex items-center text-white no-underline cursor-pointer"
       >
         <i class="fi fi-rr-user text-[24px]"></i>
-        <span class="select-none pl-[10px]">Đăng nhập</span>
+        <span class="select-none pl-[10px] whitespace-nowrap"
+          >Xin chào, {{ authStore.userName }}!</span
+        >
         <i
           :class="
             isProfileMenuOpen
@@ -99,6 +103,16 @@
         </div>
       </div>
 
+      <!-- Hiển thị khi người dùng chưa đăng nhập -->
+      <router-link
+        v-else
+        :to="{ name: 'DangNhap' }"
+        class="flex items-center text-white no-underline cursor-pointer"
+      >
+        <i class="fi fi-rr-user text-[24px]"></i>
+        <span class="select-none pl-[10px]">Đăng nhập</span>
+      </router-link>
+
       <router-link
         to="/gio-hang"
         class="relative flex items-center no-underline text-white"
@@ -131,6 +145,7 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import Loading from "@/components/base/Loading.vue";
 import ConfirmModal from "@/components/base/modals/ConfirmModal.vue";
+import { useAuthStore } from "@/store/auth.store";
 
 const isProfileMenuOpen = ref(false);
 const toggleProfileMenu = () => {
@@ -148,6 +163,7 @@ const goToOrderHistory = () => {
 };
 
 const router = useRouter();
+const authStore = useAuthStore();
 const isLogoutModalVisible = ref(false);
 const isLoading = ref(false);
 
@@ -160,15 +176,17 @@ const hideLogoutConfirm = () => {
   isLogoutModalVisible.value = false;
 };
 
-const handleLogout = () => {
+const handleLogout = async () => {
   hideLogoutConfirm();
   isLoading.value = true;
-
-  setTimeout(() => {
+  try {
+    // Hành động logout trong store đã xử lý việc xóa dữ liệu và chuyển hướng.
+    await authStore.logout();
+  } catch (error) {
+    console.error("Đăng xuất thất bại:", error);
+  } finally {
     isLoading.value = false;
-    console.log("Đăng xuất thành công!");
-    router.push({ name: "DangNhap" });
-  }, 3000);
+  }
 };
 
 const searchQuery = ref("");
