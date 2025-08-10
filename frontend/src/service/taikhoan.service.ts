@@ -8,6 +8,12 @@ export interface LoginCredentials {
   matKhau: string;
 }
 
+// Dữ liệu cần thiết để đăng ký
+export interface RegisterCredentials {
+  email: string;
+  matKhau: string;
+}
+
 // Thông tin người dùng trả về từ API
 interface User {
   id: string;
@@ -40,6 +46,19 @@ export const login = (
   return apiClient.post("/auth/dang-nhap", credentials);
 };
 
+/**
+ * Gửi yêu cầu đăng ký đến API.
+ * @param credentials - Thông tin đăng ký của người dùng (email, mật khẩu).
+ * @returns Promise<void>
+ */
+export const register = (credentials: RegisterCredentials): Promise<void> => {
+  if (!credentials.email || !credentials.matKhau) {
+    return Promise.reject(new Error("Email và mật khẩu không được để trống."));
+  }
+  // Giả định endpoint của backend là /api/auth/dang-ky
+  return apiClient.post("/auth/dang-ky", credentials);
+};
+
 export const logout = async () => {
   await apiClient.post("/auth/dang-xuat");
 };
@@ -48,3 +67,20 @@ export const logout = async () => {
 // Ví dụ:
 // export const register = (data) => apiClient.post('/auth/dang-ky', data);
 // export const getProfile = () => apiClient.get('/tai-khoan/me');
+
+export const guiEmailQuenMatKhau = (email: string) => {
+  return apiClient.post("/auth/quen-mat-khau", { email });
+};
+
+export const xacThucOtp = (email: string, otp: string) => {
+  return apiClient.post("/auth/xac-thuc-otp", { email, otp });
+};
+
+// Đặt lại mật khẩu
+export const datLaiMatKhau = (
+  email: string,
+  otp: string,
+  matKhauMoi: string
+) => {
+  return apiClient.post("/auth/dat-lai-mat-khau", { email, otp, matKhauMoi });
+};

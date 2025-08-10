@@ -17,6 +17,7 @@
     >
       <input
         v-model="searchQuery"
+        @input="fetchSuggestions"
         @keydown.enter="performSearch"
         type="text"
         placeholder="Tìm kiếm sản phẩm..."
@@ -31,11 +32,11 @@
 
       <!-- Danh sách gợi ý -->
       <ul
-        v-if="filteredSuggestions.length > 0"
+        v-if="suggestions.length > 0"
         class="absolute top-full mt-1 w-full max-h-[250px] overflow-y-auto bg-white border border-gray-300 rounded-[10px] shadow z-[1001]"
       >
         <li
-          v-for="(item, index) in filteredSuggestions"
+          v-for="(item, index) in suggestions"
           :key="index"
           class="px-4 py-2 hover:bg-blue-100 cursor-pointer"
           @click="selectSuggestion(item)"
@@ -141,11 +142,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import Loading from "@/components/base/Loading.vue";
 import ConfirmModal from "@/components/base/modals/ConfirmModal.vue";
 import { useAuthStore } from "@/store/auth.store";
+import { goiYTimKiem } from "@/service/sanpham.service";
 
 const isProfileMenuOpen = ref(false);
 const toggleProfileMenu = () => {
@@ -190,35 +192,37 @@ const handleLogout = async () => {
 };
 
 const searchQuery = ref("");
-const suggestions = ref([
-  "Laptop ASUS ROG",
-  "iPhone 15 Pro Max",
-  "Samsung Galaxy S24",
-  "Chuột không dây Logitech",
-  "Bàn phím cơ Keychron",
-  "Tai nghe Bluetooth Sony",
-  "Màn hình LG 4K",
-  "MacBook Air M2",
-  "iPad Pro 2024",
-  "Ổ cứng SSD Samsung",
-  "iPad Pro 2024",
-]);
+const suggestions = ref<string[]>([]);
+let debounceTimer: number | undefined;
 
-const filteredSuggestions = computed(() => {
-  const rawQuery = searchQuery.value.trim().toLowerCase();
-  if (!rawQuery) return [];
+const fetchSuggestions = () => {
+  clearTimeout(debounceTimer);
 
-  return suggestions.value.filter((product) =>
-    product.toLowerCase().startsWith(rawQuery)
-  );
-});
+  const query = searchQuery.value.trim();
+  if (!query) {
+    suggestions.value = [];
+    return;
+  }
+
+  // Chỉ gọi API sau khi người dùng ngừng gõ 300ms
+  debounceTimer = window.setTimeout(async () => {
+    try {
+      suggestions.value = await goiYTimKiem(query);
+    } catch (error) {
+      console.error("Lỗi khi lấy gợi ý tìm kiếm:", error);
+      suggestions.value = []; // Xóa gợi ý nếu có lỗi
+    }
+  }, 300);
+};
 
 const performSearch = () => {
   const query = searchQuery.value.trim();
   if (query) {
     router.push({ name: "KetQuaTimKiem", query: { q: query } });
-    searchQuery.value = ""; // Xóa input và ẩn gợi ý sau khi tìm kiếm
   }
+  // Xóa input và ẩn gợi ý sau khi tìm kiếm
+  searchQuery.value = "";
+  suggestions.value = [];
 };
 
 const selectSuggestion = (item: string) => {

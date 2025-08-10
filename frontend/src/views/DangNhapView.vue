@@ -149,6 +149,7 @@ import { useToast } from "@/composables/useToast";
 import Loading from "@/components/base/Loading.vue";
 import { useAuthStore } from "@/store/auth.store";
 import { decodeJwtPayload } from "@/utils/jwt";
+import { register } from "@/service/taikhoan.service";
 
 const isRegisterPanelActive = ref(false); // false = login visible, true = register visible
 const router = useRouter();
@@ -223,6 +224,18 @@ const handleLogin = async () => {
 };
 
 const handleRegister = async () => {
+  if (
+    !registerEmail.value ||
+    !registerPassword.value ||
+    !registerConfirmPassword.value
+  ) {
+    showToast({
+      thongBao: "Vui lòng điền đầy đủ thông tin đăng ký.",
+      loai: "loi",
+    });
+    return;
+  }
+
   if (registerPassword.value !== registerConfirmPassword.value) {
     showToast({
       thongBao: "Mật khẩu xác nhận không khớp.",
@@ -233,19 +246,24 @@ const handleRegister = async () => {
 
   isLoading.value = true;
   try {
-    // TODO: Gọi API đăng ký ở đây
-    console.log("Đăng ký với:", registerEmail.value, registerPassword.value);
+    await register({
+      email: registerEmail.value,
+      matKhau: registerPassword.value,
+    });
     showToast({
-      thongBao: "Đăng ký thành công! Vui lòng đăng nhập.",
+      thongBao: "Đăng ký thành công! Tự động đăng nhập...",
       loai: "thanhCong",
     });
-    moveToLogin(); // Chuyển sang form đăng nhập sau khi đăng ký thành công
+    // Đăng ký thành công, tự động đăng nhập
+    loginEmail.value = registerEmail.value;
+    loginPassword.value = registerPassword.value;
+    await handleLogin();
   } catch (error: any) {
     const errorMessage =
       error.response?.data?.message || "Đăng ký thất bại. Vui lòng thử lại.";
     showToast({ thongBao: errorMessage, loai: "loi" });
-  } finally {
-    isLoading.value = false;
+    isLoading.value = false; // Chỉ tắt loading khi đăng ký thất bại
   }
+  // handleLogin sẽ tự xử lý tắt loading nếu đăng ký thành công
 };
 </script>
