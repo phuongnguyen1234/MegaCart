@@ -29,14 +29,6 @@ public class DonHangController {
 
     private final DonHangService donHangService;
 
-    @PostMapping("/dat-hang")
-    public ResponseEntity<DatHangResponse> datHang(
-            @Valid @RequestBody DatHangRequest request,
-            @AuthenticationPrincipal TaiKhoan taiKhoan) {
-        DatHangResponse response = donHangService.datHang(request, taiKhoan);
-        return ResponseEntity.ok(response);
-    }
-
     @GetMapping("/lich-su")
     public ResponseEntity<PagedResponse<LichSuDonHangResponse>> getLichSuMuaHang(
             @AuthenticationPrincipal TaiKhoan taiKhoan,

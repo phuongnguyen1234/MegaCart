@@ -18,11 +18,13 @@ import java.util.List;
 public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaSpecificationExecutor<SanPham> {
 
     /**
-     * Tìm kiếm tên sản phẩm để gợi ý (autocomplete).
-     * Chỉ lấy tên sản phẩm để tối ưu performance.
+     * Tìm kiếm tên sản phẩm để gợi ý (autocomplete) dựa trên tiền tố (prefix search).
+     * Chỉ lấy tên sản phẩm để tối ưu performance và tận dụng index.
+     * Tìm kiếm không phân biệt chữ hoa/thường.
      */
-    @Query("SELECT sp.tenSanPham FROM SanPham sp WHERE sp.tenSanPham LIKE %:tuKhoa% AND sp.trangThai = 'DANG_BAN'")
-    List<String> findTenSanPhamByTuKhoa(@Param("tuKhoa") String tuKhoa, Pageable pageable);
+    // Bỏ hàm LOWER() vì CSDL đã được cấu hình Collation case-insensitive
+    @Query("SELECT sp.tenSanPham FROM SanPham sp WHERE sp.tenSanPham LIKE :searchPattern AND sp.trangThai = :trangThai")
+    List<String> findTenSanPhamByPrefixAndStatus(@Param("searchPattern") String searchPattern, @Param("trangThai") TrangThaiSanPham trangThai, Pageable pageable);
 
     /**
      * Tìm kiếm sản phẩm đầy đủ thông tin theo từ khóa, có phân trang.

@@ -40,7 +40,9 @@ public class SanPhamServiceImpl implements SanPhamService {
     @Transactional(readOnly = true)
     public List<String> goiYTimKiem(String tuKhoa) {
         Pageable limit = PageRequest.of(0, GOI_Y_LIMIT);
-        return sanPhamRepository.findTenSanPhamByTuKhoa(tuKhoa, limit);
+        // Chuẩn bị pattern tìm kiếm ngay tại tầng service
+        String searchPattern = tuKhoa + "%";
+        return sanPhamRepository.findTenSanPhamByPrefixAndStatus(searchPattern, TrangThaiSanPham.DANG_BAN, limit);
     }
 
     @Override
