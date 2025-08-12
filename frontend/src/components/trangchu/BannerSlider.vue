@@ -17,52 +17,55 @@
 
     <!-- Left arrow -->
     <button
-      class="absolute top-1/2 left-4 -translate-y-1/2 w-10 h-10 rounded-full bg-white bg-opacity-50 hover:bg-opacity-80 flex items-center justify-center shadow-md"
+      class="cursor-pointer absolute top-1/2 left-2 -translate-y-1/2"
       @click="prevSlide"
     >
-      <i class="fi fi-rr-angle-left text-xl"></i>
+      <i
+        class="fi fi-rr-angle-small-left text-white text-5xl drop-shadow-lg"
+      ></i>
     </button>
 
     <!-- Right arrow -->
     <button
-      class="absolute top-1/2 right-4 -translate-y-1/2 w-10 h-10 rounded-full bg-white bg-opacity-50 hover:bg-opacity-80 flex items-center justify-center shadow-md"
+      class="cursor-pointer absolute top-1/2 right-2 -translate-y-1/2"
       @click="nextSlide"
     >
-      <i class="fi fi-rr-angle-right text-xl"></i>
+      <i
+        class="fi fi-rr-angle-small-right text-white text-5xl drop-shadow-lg"
+      ></i>
     </button>
   </div>
 </template>
 
-
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from "vue";
 
 const images = [
-  'https://picsum.photos/id/1015/1200/300',
-  'https://picsum.photos/id/1016/1200/300',
-  'https://picsum.photos/id/1018/1200/300',
-  'https://picsum.photos/id/1020/1200/300',
-  'https://picsum.photos/id/1024/1200/300',
-]
+  "https://picsum.photos/id/1015/1200/300",
+  "https://picsum.photos/id/1016/1200/300",
+  "https://picsum.photos/id/1018/1200/300",
+  "https://picsum.photos/id/1020/1200/300",
+  "https://picsum.photos/id/1024/1200/300",
+];
 
-const currentIndex = ref(0)
-let intervalId: ReturnType<typeof setInterval>
+const currentIndex = ref(0);
+let intervalId: ReturnType<typeof setInterval>;
 
 const nextSlide = () => {
-  currentIndex.value = (currentIndex.value + 1) % images.length
-}
+  currentIndex.value = (currentIndex.value + 1) % images.length;
+};
 
 const prevSlide = () => {
-  currentIndex.value = (currentIndex.value - 1 + images.length) % images.length
-}
+  currentIndex.value = (currentIndex.value - 1 + images.length) % images.length;
+};
 
 onMounted(() => {
   intervalId = setInterval(() => {
-    nextSlide()
-  }, 5000)
-})
+    nextSlide();
+  }, 5000);
+});
 
 onUnmounted(() => {
-  clearInterval(intervalId)
-})
+  clearInterval(intervalId);
+});
 </script>
