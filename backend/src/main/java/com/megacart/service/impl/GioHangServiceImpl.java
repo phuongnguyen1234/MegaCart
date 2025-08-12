@@ -1,8 +1,10 @@
 package com.megacart.service.impl;
 
+import com.megacart.dto.request.CapNhatSoLuongRequest;
 import com.megacart.dto.request.ThemVaoGioHangRequest;
 import com.megacart.dto.response.ThemVaoGioHangResponse;
 import com.megacart.dto.response.GioHangResponse;
+import com.megacart.dto.response.XoaKhoiGioHangResponse;
 import com.megacart.dto.response.ThongTinKhachHangResponse;
 import com.megacart.dto.response.ThongTinThanhToanResponse;
 import com.megacart.exception.ResourceNotFoundException;
@@ -117,6 +119,89 @@ public class GioHangServiceImpl implements GioHangService {
                 .hinhThucNhanHangOptions(hinhThucNhanHangOptions)
                 .hinhThucThanhToanOptions(hinhThucThanhToanOptions)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public XoaKhoiGioHangResponse xoaKhoiGioHang(Integer maSanPham, TaiKhoan taiKhoan) {
+        Integer maKhachHang = taiKhoan.getMaTaiKhoan();
+        ChiTietGioHangId id = new ChiTietGioHangId(maSanPham, maKhachHang);
+
+        // Kiểm tra xem sản phẩm có thực sự tồn tại trong giỏ hàng không trước khi xóa
+        if (!chiTietGioHangRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Sản phẩm không có trong giỏ hàng.");
+        }
+
+        chiTietGioHangRepository.deleteById(id);
+
+        // Lấy lại giỏ hàng sau khi xóa để tính toán lại tổng số lượng
+        GioHang gioHang = gioHangRepository.findByKhachHang_MaKhachHang(maKhachHang)
+                .orElse(null); // Sẽ không bao giờ null nếu vừa xóa thành công
+
+        int tongSoLuongSanPham = 0;
+        int tongSoLuongDonVi = 0;
+        if (gioHang != null) {
+            tongSoLuongSanPham = gioHang.getChiTietGioHangs().size();
+            tongSoLuongDonVi = gioHang.getChiTietGioHangs().stream().mapToInt(ChiTietGioHang::getSoLuong).sum();
+        }
+
+        return XoaKhoiGioHangResponse.builder()
+                .message("Đã xóa sản phẩm khỏi giỏ hàng.")
+                .tongSoLuongSanPham(tongSoLuongSanPham)
+                .tongSoLuongDonVi(tongSoLuongDonVi)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public GioHangResponse capNhatSoLuong(Integer maSanPham, CapNhatSoLuongRequest request, TaiKhoan taiKhoan) {
+        Integer soLuongMoi = request.getSoLuong();
+
+        // Nếu số lượng mới là 0, thực hiện xóa sản phẩm
+        if (soLuongMoi == 0) {
+            xoaKhoiGioHang(maSanPham, taiKhoan);
+            // Lấy lại trạng thái giỏ hàng sau khi xóa
+            return gioHangRepository.findByKhachHang_MaKhachHang(taiKhoan.getMaTaiKhoan())
+                    .map(this::buildGioHangResponse)
+                    .orElse(GioHangResponse.builder() // Trả về giỏ hàng rỗng nếu không còn gì
+                            .items(Collections.emptyList())
+                            .tongSoLuongSanPham(0)
+                            .tongTien(0)
+                            .build());
+        }
+
+        // Tìm chi tiết giỏ hàng
+        ChiTietGioHangId id = new ChiTietGioHangId(maSanPham, taiKhoan.getMaTaiKhoan());
+        ChiTietGioHang chiTietGioHang = chiTietGioHangRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không có trong giỏ hàng."));
+
+        // Kiểm tra tồn kho
+        SanPham sanPham = chiTietGioHang.getSanPham();
+        if (sanPham.getKho() == null || sanPham.getKho().getSoLuong() < soLuongMoi) {
+            throw new IllegalArgumentException("Sản phẩm không đủ số lượng yêu cầu trong kho.");
+        }
+
+        // Cập nhật số lượng
+        chiTietGioHang.setSoLuong(soLuongMoi);
+        chiTietGioHangRepository.save(chiTietGioHang);
+
+        // Trả về trạng thái mới của toàn bộ giỏ hàng
+        return buildGioHangResponse(chiTietGioHang.getGioHang());
+    }
+
+    @Override
+    @Transactional
+    public void xoaToanBoGioHang(TaiKhoan taiKhoan) {
+        // Tìm giỏ hàng của khách hàng
+        gioHangRepository.findByKhachHang_MaKhachHang(taiKhoan.getMaTaiKhoan())
+            .ifPresent(gioHang -> {
+                // Nếu giỏ hàng tồn tại và có sản phẩm, xóa tất cả
+                if (gioHang.getChiTietGioHangs() != null && !gioHang.getChiTietGioHangs().isEmpty()) {
+                    // Sử dụng deleteAllInBatch để hiệu quả hơn là xóa từng cái một,
+                    // nó sẽ thực hiện một câu lệnh DELETE duy nhất.
+                    chiTietGioHangRepository.deleteAllInBatch(gioHang.getChiTietGioHangs());
+                }
+            });
     }
 
     private GioHangResponse buildGioHangResponse(GioHang gioHang) {
