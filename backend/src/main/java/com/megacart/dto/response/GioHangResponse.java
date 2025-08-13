@@ -1,6 +1,5 @@
 package com.megacart.dto.response;
 
-import com.megacart.enumeration.DonVi;
 import lombok.Builder;
 import lombok.Data;
 
@@ -20,7 +19,7 @@ public class GioHangResponse {
         private String tenSanPham;
         private String anhMinhHoa;
         private Integer donGia;
-        private DonVi donVi;
+        private String donVi;
         private Integer soLuong;
         private long thanhTien;
     }

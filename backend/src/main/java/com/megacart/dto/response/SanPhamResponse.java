@@ -1,6 +1,5 @@
 package com.megacart.dto.response;
 
-import com.megacart.enumeration.DonVi;
 import com.megacart.enumeration.NhanSanPham;
 import com.megacart.enumeration.TrangThaiTonKho;
 import lombok.Builder;
@@ -12,7 +11,7 @@ public class SanPhamResponse {
     private Integer maSanPham;
     private String tenSanPham;
     private Integer donGia;
-    private DonVi donVi;
+    private String donVi;
     private String nhaSanXuat;
     private NhanSanPham nhan;
     private TrangThaiTonKho trangThaiTonKho; // Trạng thái còn hàng/hết hàng

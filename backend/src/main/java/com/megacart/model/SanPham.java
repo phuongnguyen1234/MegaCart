@@ -2,7 +2,6 @@ package com.megacart.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.megacart.enumeration.DonVi;
 import com.megacart.enumeration.NhanSanPham;
 import com.megacart.enumeration.TrangThaiSanPham;
 import jakarta.persistence.*;
@@ -51,9 +50,8 @@ public class SanPham {
     @Column(name = "DonGia", nullable = false)
     private Integer donGia;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "DonVi", nullable = false, length = 30)
-    private DonVi donVi;
+    private String donVi;
 
     @Column(name = "GhiChu")
     private String ghiChu;

@@ -66,7 +66,8 @@ public class DonHangServiceImpl implements DonHangService {
                 donHangPage.getNumber(),
                 donHangPage.getSize(),
                 donHangPage.getTotalElements(),
-                donHangPage.getTotalPages()
+                donHangPage.getTotalPages(),
+                null
         );
     }
 
