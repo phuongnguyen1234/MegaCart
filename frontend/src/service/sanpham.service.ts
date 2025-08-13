@@ -1,77 +1,19 @@
 import apiClient from "./apiClient";
+import type {
+  PageableParams,
+  PagedResponse,
+  SortDirection,
+} from "@/types/api.types";
+import type {
+  SanPhamResponse,
+  ChiTietSanPhamResponse,
+  TimKiemFilterParams,
+} from "@/types/sanpham.types";
+import { NhanSanPham } from "@/types/sanpham.types";
 
-// --- Enums and Interfaces ---
-
-/**
- * Các nhãn sản phẩm, tương ứng với NhanSanPham.java trên backend.
- */
-export enum NhanSanPham {
-  MOI = "MOI",
-  BAN_CHAY = "BAN_CHAY",
-  KHUYEN_MAI = "KHUYEN_MAI",
-}
-
-/**
- * Dữ liệu phân trang gửi lên API.
- */
-export interface PageableParams {
-  page?: number;
-  size?: number;
-  sort?: string; // Ví dụ: "tenSanPham,asc" hoặc "donGia,desc"
-}
-
-/**
- * Các tham số để lọc và tìm kiếm sản phẩm.
- */
-export interface TimKiemFilterParams {
-  tuKhoa?: string;
-  maDanhMuc?: number;
-  giaToiDa?: number;
-  nhaSanXuat?: string;
-}
-
-/**
- * Cấu trúc phản hồi chung cho các API trả về danh sách có phân trang.
- */
-export interface PagedResponse<T> {
-  content: T[];
-  totalPages: number;
-  totalElements: number;
-  size: number;
-  number: number; // Trang hiện tại (bắt đầu từ 0)
-  last: boolean;
-  first: boolean;
-}
-
-/**
- * Dữ liệu tóm tắt của một sản phẩm, dùng trong danh sách.
- */
-export interface SanPhamResponse {
-  maSanPham: number;
-  tenSanPham: string;
-  hinhAnh: string;
-  donGia: number;
-  giaKhuyenMai?: number;
-}
-
-/**
- * Dữ liệu chi tiết của một sản phẩm.
- */
-export interface ChiTietSanPhamResponse extends SanPhamResponse {
-  moTa: string;
-  nhaSanXuat: string;
-  soLuongTon: number;
-  danhGiaTrungBinh: number;
-  soLuongDaBan: number;
-  tenDanhMuc: string;
-}
+export { NhanSanPham };
 
 // --- Helper Functions (Optional but Recommended) ---
-
-/**
- * Hướng sắp xếp.
- */
-export type SortDirection = "asc" | "desc";
 
 /**
  * Tạo chuỗi sắp xếp một cách an toàn để tránh lỗi chính tả.
@@ -83,7 +25,7 @@ export const createSortString = (
   property: keyof SanPhamResponse,
   direction: SortDirection
 ): string => {
-  return `${property},${direction}`;
+  return `${String(property)},${direction}`;
 };
 
 // --- Service Functions ---

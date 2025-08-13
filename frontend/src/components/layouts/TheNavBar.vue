@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="sticky top-[70px] z-40 flex text-white bg-[linear-gradient(135deg,_#1E88E5,_#1565C0)]"
+    class="sticky z-40 flex text-white bg-[linear-gradient(135deg,_#1E88E5,_#1565C0)]"
   >
     <div class="flex-1 text-center relative group">
       <router-link

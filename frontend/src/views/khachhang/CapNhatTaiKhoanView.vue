@@ -7,8 +7,8 @@
       @close="closeConfirmModal"
     >
       <p class="text-sm text-gray-600 mb-4">
-        Vì bạn đổi email, nên chúng tôi đã gửi một mã OTP đến
-        <strong class="font-semibold">{{ originalEmail }}</strong
+        Chúng tôi đã gửi một mã OTP đến email mới của bạn
+        <strong class="font-semibold">{{ email }}</strong
         >. Vui lòng nhập mã OTP để xác nhận thay đổi.
       </p>
       <div>
@@ -31,8 +31,13 @@
           </button>
           <button
             @click="handleConfirmEmailChange"
-            class="px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700"
+            :disabled="isLoading"
+            class="px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
           >
+            <span
+              v-if="isLoading"
+              class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"
+            ></span>
             Xác nhận
           </button>
         </div>
@@ -43,17 +48,23 @@
       <h2 class="text-xl font-bold mb-4">Thông tin khách hàng</h2>
 
       <div class="mb-4">
-        <label class="block font-medium mb-1" for="hoTen">Họ tên:</label>
+        <label class="flex items-center font-medium mb-1" for="hoTen">
+          <i class="fi fi-rr-id-badge w-5 text-center mr-2 text-gray-500"></i>
+          Họ tên:
+        </label>
         <input
           id="hoTen"
-          v-model="hoTen"
+          v-model="tenKhachHang"
           type="text"
           class="w-full border rounded px-3 py-2"
         />
       </div>
 
       <div class="mb-6">
-        <label class="block font-medium mb-1" for="email">Email:</label>
+        <label class="flex items-center font-medium mb-1" for="email">
+          <i class="fi fi-rr-envelope w-5 text-center mr-2 text-gray-500"></i>
+          Email:
+        </label>
         <input
           id="email"
           v-model="email"
@@ -65,7 +76,10 @@
       <h2 class="text-xl font-bold mb-4">Thông tin giao hàng</h2>
 
       <div class="mb-4">
-        <label class="block font-medium mb-1" for="diaChi">Địa chỉ:</label>
+        <label class="flex items-center font-medium mb-1" for="diaChi">
+          <i class="fi fi-rr-map-marker w-5 text-center mr-2 text-gray-500"></i>
+          Địa chỉ:
+        </label>
         <textarea
           id="diaChi"
           v-model="diaChi"
@@ -75,9 +89,10 @@
       </div>
 
       <div class="mb-6">
-        <label class="block font-medium mb-1" for="soDienThoai"
-          >Số điện thoại:</label
-        >
+        <label class="flex items-center font-medium mb-1" for="soDienThoai">
+          <i class="fi fi-rr-phone-call w-5 text-center mr-2 text-gray-500"></i>
+          Số điện thoại:
+        </label>
         <input
           id="soDienThoai"
           v-model="soDienThoai"
@@ -86,11 +101,16 @@
         />
       </div>
 
-      <div class="text-center">
+      <div class="flex justify-center">
         <button
           @click="luuThayDoi"
-          class="bg-gray-800 text-white px-6 py-2 rounded hover:bg-gray-700"
+          :disabled="isLoading"
+          class="cursor-pointer bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[150px]"
         >
+          <span
+            v-if="isLoading"
+            class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"
+          ></span>
           Lưu thay đổi
         </button>
       </div>
@@ -103,57 +123,132 @@ import CustomerWithNav from "@/components/layouts/CustomerWithNav.vue";
 import BaseModal from "@/components/base/modals/BaseModal.vue";
 import { ref, onMounted } from "vue";
 import { useToast } from "@/composables/useToast";
+import { useAuthStore } from "@/store/auth.store";
+import {
+  layThongTinTaiKhoan,
+  capNhatTaiKhoan,
+  xacNhanDoiEmail,
+} from "@/service/taikhoan.service";
+import type {
+  User,
+  CapNhatHoSoResponse,
+  AuthResponse,
+} from "@/service/taikhoan.service";
 
-const hoTen = ref("Nguyễn Văn A");
-const email = ref("nguyenVanA@gmail.com");
-const diaChi = ref("12 phố A, phường B, quận C, thành phố D");
-const soDienThoai = ref("0987654321");
+const tenKhachHang = ref("");
+const email = ref("");
+const diaChi = ref("");
+const soDienThoai = ref("");
 
 const originalEmail = ref("");
 const isConfirmEmailModalVisible = ref(false);
 const otp = ref("");
+const isLoading = ref(false);
 
 const { showToast } = useToast();
+const authStore = useAuthStore();
 
-// Lưu lại email ban đầu khi component được tải
-onMounted(() => {
-  originalEmail.value = email.value;
-});
-
-const luuThayDoi = () => {
-  if (email.value !== originalEmail.value) {
-    // Nếu email thay đổi, hiển thị modal xác nhận
-    isConfirmEmailModalVisible.value = true;
-    // TODO: Gửi request tới backend để yêu cầu gửi mã OTP đến email cũ
-    console.log(`Yêu cầu gửi OTP đến email cũ: ${originalEmail.value}`);
-  } else {
-    // Nếu không có thay đổi email, lưu thông tin trực tiếp
-    updateProfile();
+const fetchUserData = async () => {
+  isLoading.value = true;
+  try {
+    const userData = await layThongTinTaiKhoan();
+    tenKhachHang.value = userData.tenKhachHang;
+    email.value = userData.email;
+    originalEmail.value = userData.email; // Lưu lại email ban đầu
+    diaChi.value = userData.diaChi || "";
+    soDienThoai.value = userData.soDienThoai || "";
+  } catch (error) {
+    showToast({
+      thongBao: "Không thể tải thông tin tài khoản. Vui lòng thử lại.",
+      loai: "loi",
+    });
+  } finally {
+    isLoading.value = false;
   }
 };
 
-const updateProfile = (otpCode?: string) => {
-  console.log("Lưu thông tin:", {
-    hoTen: hoTen.value,
-    email: email.value,
-    diaChi: diaChi.value,
-    soDienThoai: soDienThoai.value,
-    ...(otpCode && { otp: otpCode }), // Gửi kèm OTP nếu có
-  });
-  // TODO: Gửi request cập nhật lên backend
-  // Sau khi backend xác nhận thành công:
-  originalEmail.value = email.value; // Cập nhật lại email gốc
-  showToast({
-    thongBao: "Cập nhật thông tin tài khoản thành công!",
-    loai: "thanhCong",
-  });
+onMounted(fetchUserData);
+
+const luuThayDoi = async () => {
+  isLoading.value = true;
+  try {
+    const payload: Partial<User> = {
+      tenKhachHang: tenKhachHang.value,
+      email: email.value,
+      diaChi: diaChi.value,
+      soDienThoai: soDienThoai.value,
+    };
+
+    const response: CapNhatHoSoResponse = await capNhatTaiKhoan(payload);
+
+    showToast({
+      thongBao: response.message,
+      loai: "thanhCong",
+    });
+
+    if (response.emailChangeInitiated) {
+      // Luồng thay đổi email đã được kích hoạt, backend đã gửi OTP.
+      // Giờ chỉ cần hiển thị modal để người dùng nhập OTP.
+      isConfirmEmailModalVisible.value = true;
+    } else {
+      // Cập nhật thông tin thành công, không có thay đổi email.
+      // Cập nhật lại email gốc để cho các lần chỉnh sửa sau.
+      originalEmail.value = email.value;
+      // Cập nhật tên người dùng trong store để Header tự động thay đổi
+      authStore.updateUserName(tenKhachHang.value);
+    }
+  } catch (error: any) {
+    const errorMessage =
+      error.response?.data?.message ||
+      "Cập nhật thông tin thất bại. Vui lòng thử lại.";
+    showToast({
+      thongBao: errorMessage,
+      loai: "loi",
+    });
+    // Hoàn tác lại email trên form nếu có lỗi xảy ra
+    email.value = originalEmail.value;
+  } finally {
+    isLoading.value = false;
+  }
 };
 
-const handleConfirmEmailChange = () => {
-  // Giả sử OTP hợp lệ, tiến hành cập nhật
-  updateProfile(otp.value);
-  isConfirmEmailModalVisible.value = false;
-  otp.value = "";
+const handleConfirmEmailChange = async () => {
+  if (!otp.value) {
+    showToast({ thongBao: "Vui lòng nhập mã OTP.", loai: "loi" });
+    return;
+  }
+
+  isLoading.value = true;
+  try {
+    // Gửi OTP lên server để xác nhận
+    const response: AuthResponse = await xacNhanDoiEmail(otp.value);
+
+    // Lưu token mới vì thông tin định danh (email) đã thay đổi
+    localStorage.setItem("access_token", response.token);
+
+    showToast({
+      thongBao: "Thay đổi email thành công!",
+      loai: "thanhCong",
+    });
+
+    // Đóng modal và cập nhật lại trạng thái
+    isConfirmEmailModalVisible.value = false;
+    originalEmail.value = email.value; // Cập nhật email gốc thành email mới
+    otp.value = "";
+
+    // Tải lại trang để cập nhật toàn bộ trạng thái người dùng (ví dụ: ở header)
+    window.location.reload();
+  } catch (error: any) {
+    const errorMessage =
+      error.response?.data?.message ||
+      "Mã OTP không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.";
+    showToast({
+      thongBao: errorMessage,
+      loai: "loi",
+    });
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 const closeConfirmModal = () => {

@@ -1,123 +1,104 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
 import { jwtDecode } from "jwt-decode";
-import {
-  login as loginApi,
-  logout as logoutApi,
-} from "@/service/taikhoan.service";
+import * as taiKhoanService from "@/service/taikhoan.service";
 import type { LoginCredentials } from "@/service/taikhoan.service";
+import router from "@/router";
+import { useCartStore } from "./cart.store";
 
-// Interface cho đối tượng người dùng mà chúng ta sẽ lưu trong store
-interface UserState {
-  id: number;
-  fullName: string;
-  email: string;
-  role: "KHACH_HANG" | "ADMIN" | "NHAN_VIEN";
-}
-
-// Interface cho payload của JWT sau khi được giải mã
-interface DecodedToken {
-  sub: string;
-  role: "KHACH_HANG" | "ADMIN" | "NHAN_VIEN";
-  fullName: string;
-  userId: number;
+interface JwtPayload {
+  sub: string; // User's email
+  name: string; // User's full name
+  roles: string[]; // User's roles
   iat: number;
   exp: number;
 }
 
 export const useAuthStore = defineStore("auth", () => {
-  const router = useRouter();
-
-  // --- STATE ---
-  const user = ref<UserState | null>(null);
   const token = ref<string | null>(localStorage.getItem("access_token"));
+  const userName = ref<string>("");
+  const userEmail = ref<string>("");
 
-  // --- GETTERS (Computed properties) ---
-  const isLoggedIn = computed(() => !!user.value);
-  const userName = computed(() => user.value?.fullName || "");
+  // Không khởi tạo cartStore ở đây để tránh dependency cycle
 
-  /**
-   * Xóa thông tin xác thực khỏi state và localStorage một cách thầm lặng.
-   */
-  function clearAuthData() {
-    user.value = null;
+  const isLoggedIn = computed(() => !!token.value);
+
+  const _clearState = () => {
     token.value = null;
+    userName.value = "";
+    userEmail.value = "";
     localStorage.removeItem("access_token");
-  }
+    useCartStore().clearCartCount(); // Xóa số lượng giỏ hàng khi logout
+  };
 
-  // --- ACTIONS ---
-
-  /**
-   * Lưu trữ thông tin xác thực sau khi đăng nhập hoặc kiểm tra token.
-   * @param newToken - JWT nhận được từ API.
-   */
-  function setAuthData(newToken: string) {
-    const decodedToken: DecodedToken = jwtDecode(newToken);
-    user.value = {
-      id: decodedToken.userId,
-      fullName: decodedToken.fullName,
-      email: decodedToken.sub,
-      role: decodedToken.role,
-    };
-    token.value = newToken;
-    localStorage.setItem("access_token", newToken);
-  }
-
-  /**
-   * Xử lý logic đăng nhập, gọi API và điều hướng.
-   */
-  async function login(credentials: LoginCredentials) {
-    const response = await loginApi(credentials);
-    setAuthData(response.token);
-
-    // Điều hướng sau khi đăng nhập thành công
-    if (user.value?.role === "ADMIN" || user.value?.role === "NHAN_VIEN") {
-      router.push({ name: "ThongKe" }); // Hoặc trang dashboard của admin
-    } else {
-      router.push({ name: "TrangChu" });
-    }
-  }
-
-  /**
-   * Xóa thông tin người dùng và token, sau đó điều hướng về trang đăng nhập.
-   */
-  async function logout() {
+  const _decodeAndSetState = (jwt: string) => {
     try {
-      await logoutApi();
+      const decoded = jwtDecode<JwtPayload>(jwt);
+      // Kiểm tra token hết hạn
+      if (decoded.exp * 1000 < Date.now()) {
+        _clearState();
+        return;
+      }
+      token.value = jwt;
+      userName.value = decoded.name;
+      userEmail.value = decoded.sub;
+      localStorage.setItem("access_token", jwt);
+    } catch (error) {
+      console.error("Failed to decode token:", error);
+      _clearState();
+    }
+  };
+
+  // Khởi tạo state từ token trong localStorage khi store được tạo
+  if (token.value) {
+    _decodeAndSetState(token.value);
+  }
+
+  const fetchUser = async () => {
+    if (!isLoggedIn.value) return; // Chỉ fetch khi đã đăng nhập
+    try {
+      // Gọi API để lấy thông tin mới nhất và cập nhật vào store
+      const userData = await taiKhoanService.layThongTinTaiKhoan();
+      userName.value = userData.tenKhachHang;
+      userEmail.value = userData.email;
+    } catch (error) {
+      console.error("Không thể lấy thông tin người dùng cho header:", error);
+      // Interceptor trong apiClient sẽ xử lý lỗi 401 và tự động logout.
+    }
+  };
+
+  const login = async (credentials: LoginCredentials) => {
+    const response = await taiKhoanService.login(credentials);
+    _decodeAndSetState(response.token);
+    // Lấy thông tin người dùng và giỏ hàng song song để tăng tốc
+    await Promise.all([fetchUser(), useCartStore().fetchCartCount()]);
+  };
+
+  const logout = async () => {
+    try {
+      await taiKhoanService.logout();
     } catch (error) {
       console.error(
-        "Lỗi khi gọi API đăng xuất, nhưng vẫn tiến hành đăng xuất ở client:",
+        "Logout API call failed, clearing client state anyway.",
         error
       );
     } finally {
-      clearAuthData();
-      router.push({ name: "DangNhap" });
+      _clearState();
+      await router.push({ name: "DangNhap" });
     }
-  }
+  };
 
-  // Logic khởi tạo: Tự động đăng nhập nếu có token hợp lệ trong localStorage.
-  // Chạy một lần khi store được khởi tạo.
-  if (token.value) {
-    try {
-      const decoded: DecodedToken = jwtDecode(token.value);
-      // Kiểm tra xem token đã hết hạn chưa
-      if (decoded.exp * 1000 > Date.now()) {
-        setAuthData(token.value);
-      } else {
-        clearAuthData(); // Token hết hạn, xóa nó đi
-      }
-    } catch (error) {
-      console.error("Token không hợp lệ, đang xóa...", error);
-      clearAuthData(); // Token không hợp lệ, xóa nó đi
-    }
-  }
+  const updateUserName = (newName: string) => {
+    userName.value = newName;
+  };
 
   return {
-    user,
     isLoggedIn,
     userName,
+    userEmail,
     login,
     logout,
+    updateUserName,
+    fetchUser,
   };
 });

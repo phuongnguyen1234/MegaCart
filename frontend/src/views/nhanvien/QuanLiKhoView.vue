@@ -113,7 +113,7 @@ import DataTable from "@/components/base/DataTable.vue";
 import PhanTrang from "@/components/base/PhanTrang.vue";
 import ThanhTimKiem from "@/components/base/ThanhTimKiem.vue";
 import CapNhatTonKhoModal from "@/components/quanlikho/CapNhatTonKhoModal.vue";
-import type { SanPhamTonKho, DuLieuCapNhat } from "@/types/QuanLiKho";
+import type { SanPhamTonKho, DuLieuCapNhat } from "@/types/khohang.types";
 
 // --- Dữ liệu giả lập ---
 const danhMucCha = ref([

@@ -25,111 +25,49 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import CustomerWithNav from "@/components/layouts/CustomerWithNav.vue";
 import BannerSlider from "@/components/trangchu/BannerSlider.vue";
 import { useToast } from "@/composables/useToast";
-import type { SanPham } from "@/types/SanPham.ts";
 import ListSanPham from "@/components/base/ListSanPham.vue";
 import ThemVaoGioHangModal from "@/components/xemsanpham/ThemVaoGioHangModal.vue";
+import {
+  getSanPhamTheoNhan,
+  getSanPhamBanChay,
+  NhanSanPham,
+} from "@/service/sanpham.service";
+import type { SanPhamResponse } from "@/types/sanpham.types";
+import { themVaoGioHang } from "@/service/giohang.service";
+import { useCartStore } from "@/store/cart.store";
 
 const { showToast } = useToast();
+const cartStore = useCartStore();
 
-// Mock data sản phẩm mới
-const dsSanPhamMoi: SanPham[] = [
-  {
-    maSanPham: 1,
-    tenSanPham: "Giày cao gót",
-    nhan: "Mới",
-    donGia: 200000,
-    anhMinhHoa: ["https://picsum.photos/300?random=1"],
-    donVi: "Đôi",
-    nhaSanXuat: "Township",
-    danhMucCha: "Quần áo",
-    danhMucCon: "Giày dép",
-    trangThai: "Đang bán",
-  },
-  {
-    maSanPham: 2,
-    tenSanPham: "Áo sơ mi nam",
-    nhan: "Mới",
-    donGia: 350000,
-    anhMinhHoa: ["https://picsum.photos/300?random=2"],
-    donVi: "Cái",
-    nhaSanXuat: "Urban Outfit",
-    danhMucCha: "Quần áo",
-    danhMucCon: "Áo sơ mi",
-    trangThai: "Đang bán",
-  },
-  {
-    maSanPham: 5,
-    tenSanPham: "Áo sơ mi nam",
-    nhan: "Mới",
-    donGia: 350000,
-    anhMinhHoa: ["https://picsum.photos/300?random=2"],
-    donVi: "Cái",
-    nhaSanXuat: "Urban Outfit",
-    danhMucCha: "Quần áo",
-    danhMucCon: "Áo sơ mi",
-    trangThai: "Đang bán",
-  },
-  {
-    maSanPham: 6,
-    tenSanPham: "Áo sơ mi nam",
-    nhan: "Mới",
-    donGia: 350000,
-    anhMinhHoa: ["https://picsum.photos/300?random=2"],
-    donVi: "Cái",
-    nhaSanXuat: "Urban Outfit",
-    danhMucCha: "Quần áo",
-    danhMucCon: "Áo sơ mi",
-    trangThai: "Đang bán",
-  },
-  {
-    maSanPham: 7,
-    tenSanPham: "Áo sơ mi nam",
-    nhan: "Mới",
-    donGia: 350000,
-    anhMinhHoa: ["https://picsum.photos/300?random=2"],
-    donVi: "Cái",
-    nhaSanXuat: "Urban Outfit",
-    danhMucCha: "Quần áo",
-    danhMucCon: "Áo sơ mi",
-    trangThai: "Đang bán",
-  },
-];
+const dsSanPhamMoi = ref<SanPhamResponse[]>([]);
+const dsBanChay = ref<SanPhamResponse[]>([]);
 
-// Mock data bán chạy
-const dsBanChay: SanPham[] = [
-  {
-    maSanPham: 3,
-    tenSanPham: "Balo thời trang",
-    nhan: "Bán chạy",
-    donGia: 400000,
-    anhMinhHoa: ["https://picsum.photos/300?random=3"],
-    donVi: "Cái",
-    nhaSanXuat: "GearBag",
-    danhMucCha: "Khác",
-    danhMucCon: "Balo và túi xách",
-    trangThai: "Đang bán",
-  },
-  {
-    maSanPham: 4,
-    tenSanPham: "Quần jeans nữ",
-    donGia: 290000,
-    anhMinhHoa: ["https://picsum.photos/300?random=4"],
-    donVi: "Cái",
-    nhaSanXuat: "DenimX",
-    danhMucCha: "Quần áo",
-    danhMucCon: "Quần jeans",
-    trangThai: "Đang bán",
-  },
-];
+onMounted(async () => {
+  try {
+    // Lấy 10 sản phẩm mới nhất
+    const [resMoi, resBanChay] = await Promise.all([
+      getSanPhamTheoNhan(NhanSanPham.MOI, { size: 10 }),
+      getSanPhamBanChay({ size: 10 }),
+    ]);
+    dsSanPhamMoi.value = resMoi.content;
+    dsBanChay.value = resBanChay.content;
+  } catch (error) {
+    console.error("Lỗi khi tải sản phẩm trang chủ:", error);
+    showToast({
+      thongBao: "Không thể tải sản phẩm. Vui lòng thử lại.",
+      loai: "loi",
+    });
+  }
+});
 
 const isThemVaoGioHangModalVisible = ref(false);
-const sanPhamDuocChon = ref<SanPham | null>(null);
+const sanPhamDuocChon = ref<SanPhamResponse | null>(null);
 
-const hienThiThemVaoGioHangModal = (product: SanPham) => {
+const hienThiThemVaoGioHangModal = (product: SanPhamResponse) => {
   sanPhamDuocChon.value = product;
   isThemVaoGioHangModalVisible.value = true;
 };
@@ -139,20 +77,26 @@ const dongThemVaoGioHangModal = () => {
   sanPhamDuocChon.value = null;
 };
 
-const handleThemVaoGioHang = (payload: {
-  sanPham: SanPham;
+const handleThemVaoGioHang = async (payload: {
+  sanPham: SanPhamResponse;
   soLuong: number;
 }) => {
-  console.log(
-    "🛒 Thêm sản phẩm vào giỏ:",
-    payload.sanPham,
-    "Số lượng:",
-    payload.soLuong
-  );
   dongThemVaoGioHangModal();
-  showToast({
-    thongBao: `Đã thêm "${payload.soLuong} ${payload.sanPham.tenSanPham}" vào giỏ hàng!`,
-    loai: "thanhCong",
-  });
+  try {
+    const response = await themVaoGioHang({
+      maSanPham: payload.sanPham.maSanPham,
+      soLuong: payload.soLuong,
+    });
+    // Cập nhật số lượng trên header
+    cartStore.setCartCount(response.tongSoLuongSanPham);
+    showToast({
+      thongBao: response.message,
+      loai: "thanhCong",
+    });
+  } catch (error: any) {
+    const message =
+      error.response?.data?.message || "Thêm vào giỏ hàng thất bại!";
+    showToast({ thongBao: message, loai: "loi" });
+  }
 };
 </script>

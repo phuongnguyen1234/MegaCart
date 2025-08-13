@@ -107,7 +107,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import BaseModal from "@/components/base/modals/BaseModal.vue";
-import type { DuLieuCapNhat, SanPhamTonKho } from "@/types/QuanLiKho";
+import type { DuLieuCapNhat, SanPhamTonKho } from "@/types/khohang.types";
 
 const props = defineProps<{
   visible: boolean;

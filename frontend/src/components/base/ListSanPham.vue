@@ -52,15 +52,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import CardSanPham from "@/components/base/card/CardSanPham.vue";
-import type { SanPham } from "@/types/SanPham";
+import type { SanPhamResponse } from "@/service/sanpham.service";
 
 const props = defineProps<{
   tieuDe: string;
-  dsSanPham: SanPham[];
+  dsSanPham: SanPhamResponse[];
   linkXemThem?: string;
 }>();
 
-defineEmits<{ (e: "themVaoGioHang", product: SanPham): void }>();
+defineEmits<{ (e: "themVaoGioHang", product: SanPhamResponse): void }>();
 
 const containerRef = ref<HTMLElement | null>(null);
 const kichThuocTrang = ref(4);

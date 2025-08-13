@@ -1,6 +1,6 @@
 <template>
   <header
-    class="fixed top-0 left-0 right-0 z-[1000] flex items-center justify-between px-[10px] pr-[30px] h-[70px] bg-[linear-gradient(135deg,_#BBDEFB,_#1976D2)]"
+    class="top-0 left-0 right-0 z-[1000] flex items-center justify-between px-[10px] pr-[30px] h-[80px] bg-[linear-gradient(135deg,_#BBDEFB,_#1976D2)] relative"
   >
     <!-- Logo -->
     <router-link to="/trang-chu" class="shrink-0">
@@ -13,7 +13,8 @@
 
     <!-- Search -->
     <div
-      class="flex items-center relative w-1/2 flex-1 justify-center max-w-[700px]"
+      ref="searchContainer"
+      class="absolute left-1/2 -translate-x-1/2 flex items-center w-1/2 max-w-[700px]"
     >
       <input
         v-model="searchQuery"
@@ -50,12 +51,13 @@
     <div class="flex items-center gap-[20px] relative">
       <!-- Hiển thị khi người dùng đã đăng nhập -->
       <div
+        ref="profileMenuContainer"
         v-if="authStore.isLoggedIn"
         @click="toggleProfileMenu"
         class="relative flex items-center text-white no-underline cursor-pointer"
       >
         <i class="fi fi-rr-user text-[24px]"></i>
-        <span class="select-none pl-[10px] whitespace-nowrap"
+        <span class="inline-block truncate max-w-[200px] select-none pl-[10px]"
           >Xin chào, {{ authStore.userName }}!</span
         >
         <i
@@ -75,7 +77,7 @@
           <ul class="flex flex-col">
             <li
               class="flex items-center gap-2 px-4 py-3 hover:bg-blue-100 cursor-pointer"
-              @click="goToEditAccount"
+              @click.stop="goToEditAccount"
             >
               <i class="fi fi-rr-edit text-blue-600 text-[18px]"></i>
               <span class="text-blue-600 font-semibold select-none"
@@ -84,7 +86,7 @@
             </li>
             <li
               class="flex items-center gap-2 px-4 py-3 hover:bg-blue-100 cursor-pointer"
-              @click="goToOrderHistory"
+              @click.stop="goToOrderHistory"
             >
               <i class="fi fi-rr-time-past text-blue-600 text-[18px]"></i>
               <span class="text-blue-600 font-semibold select-none"
@@ -93,7 +95,7 @@
             </li>
             <li
               class="flex items-center gap-2 px-4 py-3 hover:bg-red-100 cursor-pointer"
-              @click="showLogoutConfirm"
+              @click.stop="showLogoutConfirm"
             >
               <i class="fi fi-rr-exit text-red-600 text-[18px]"></i>
               <span class="text-red-600 font-semibold select-none"
@@ -120,9 +122,10 @@
       >
         <i class="fi fi-rr-shopping-cart text-[24px]"></i>
         <div
-          class="absolute -top-[5px] -right-[8px] bg-yellow-400 rounded-full px-[6px] text-[14px] text-black select-none"
+          v-if="cartStore.soLuongSanPham > 0"
+          class="absolute -top-[5px] -right-[8px] bg-yellow-300 rounded-full px-[6px] text-[14px] text-black select-none"
         >
-          0
+          {{ cartStore.soLuongSanPham }}
         </div>
       </router-link>
     </div>
@@ -142,14 +145,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import Loading from "@/components/base/Loading.vue";
 import ConfirmModal from "@/components/base/modals/ConfirmModal.vue";
 import { useAuthStore } from "@/store/auth.store";
+import { useCartStore } from "@/store/cart.store";
 import { goiYTimKiem } from "@/service/sanpham.service";
 
 const isProfileMenuOpen = ref(false);
+const searchContainer = ref<HTMLElement | null>(null);
+const profileMenuContainer = ref<HTMLElement | null>(null);
 const toggleProfileMenu = () => {
   isProfileMenuOpen.value = !isProfileMenuOpen.value;
 };
@@ -157,20 +163,23 @@ const toggleProfileMenu = () => {
 const goToEditAccount = () => {
   console.log("Đi đến chỉnh sửa tài khoản");
   router.push({ name: "TaiKhoan" });
+  isProfileMenuOpen.value = false;
 };
 
 const goToOrderHistory = () => {
   console.log("Đi đến lịch sử mua hàng");
   router.push({ name: "LichSuMuaHang" });
+  isProfileMenuOpen.value = false;
 };
 
 const router = useRouter();
 const authStore = useAuthStore();
+const cartStore = useCartStore();
 const isLogoutModalVisible = ref(false);
 const isLoading = ref(false);
 
 const showLogoutConfirm = () => {
-  isProfileMenuOpen.value = false; // Đóng menu dropdown trước
+  isProfileMenuOpen.value = false;
   isLogoutModalVisible.value = true;
 };
 
@@ -229,4 +238,29 @@ const selectSuggestion = (item: string) => {
   searchQuery.value = item; // Cập nhật ô tìm kiếm với gợi ý đã chọn
   performSearch(); // Thực hiện tìm kiếm
 };
+
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as Node;
+
+  // Ẩn danh sách gợi ý tìm kiếm nếu click ra ngoài
+  if (searchContainer.value && !searchContainer.value.contains(target)) {
+    suggestions.value = [];
+  }
+
+  // Đóng menu người dùng nếu click ra ngoài
+  if (
+    profileMenuContainer.value &&
+    !profileMenuContainer.value.contains(target)
+  ) {
+    isProfileMenuOpen.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("mousedown", handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("mousedown", handleClickOutside);
+});
 </script>
