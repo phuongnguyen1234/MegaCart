@@ -37,9 +37,9 @@ public class ConnectionTimingTest implements CommandLineRunner {
                 long endTotal = System.currentTimeMillis();
 
                 System.out.printf("Lần %d:%n", i);
-                System.out.printf("  Thời gian lấy connection: %d ms%n", (endConn - startConn));
-                System.out.printf("  Thời gian thực thi query : %d ms%n", (endQuery - startQuery));
-                System.out.printf("  Tổng thời gian           : %d ms%n%n", (endTotal - startTotal));
+                System.out.printf("  Thời gian lấy connection là: %d ms%n", (endConn - startConn));
+                System.out.printf("  Thời gian thực thi query là: %d ms%n", (endQuery - startQuery));
+                System.out.printf("  Tổng thời gian là: %d ms%n%n", (endTotal - startTotal));
             }
         }
     }

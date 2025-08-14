@@ -3,12 +3,15 @@ package com.megacart.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.Arrays;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,20 +27,15 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 // Kích hoạt và cấu hình CORS.
-                // Bằng cách này, Spring Security sẽ tự động tìm bean CorsConfigurationSource
-                // và xử lý các yêu cầu pre-flight (OPTIONS) trước khi áp dụng quy tắc xác thực.
-                .cors(Customizer.withDefaults())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/auth/dang-ky",
-                                "/api/auth/dang-nhap",
-                                "/api/auth/quen-mat-khau",
-                                "/api/auth/xac-thuc-otp",
-                                "/api/auth/dat-lai-mat-khau",
+                                "/api/auth/**", // Gộp các endpoint auth cho gọn
                                 // Cho phép tất cả mọi người xem sản phẩm
-                                "/api/san-pham",
-                                "/api/san-pham/**"
+                                "/api/san-pham/**",
+                                "/api/danh-muc/**",
+                                "/api/filter-options/**" // <-- CẬP NHẬT TÊN ENDPOINT
                         ).permitAll()
                         .anyRequest()
                         .authenticated()
@@ -47,5 +45,22 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        // **QUAN TRỌNG**: URL của frontend
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:5173"));
+        // Các phương thức cho phép
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        // Cho phép tất cả các header
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        // Cho phép gửi cookie và header Authorization
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        // Áp dụng cho tất cả các endpoint bắt đầu bằng /api/
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

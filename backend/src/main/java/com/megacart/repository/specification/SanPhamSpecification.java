@@ -22,7 +22,7 @@ public class SanPhamSpecification {
 
     public Specification<SanPham> filterBy(
             String tuKhoa,
-            Integer maDanhMuc,
+            List<Integer> maDanhMucs,
             Integer giaToiDa,
             String nhaSanXuat
     ) {
@@ -38,8 +38,8 @@ public class SanPhamSpecification {
             }
 
             // Lọc theo danh mục (nếu có)
-            if (maDanhMuc != null) {
-                predicates.add(criteriaBuilder.equal(root.get(DANH_MUC).get(MA_DANH_MUC), maDanhMuc));
+            if (maDanhMucs != null && !maDanhMucs.isEmpty()) {
+                predicates.add(root.get(DANH_MUC).get(MA_DANH_MUC).in(maDanhMucs));
             }
 
             // Lọc theo giá tối đa (nếu có)
@@ -49,7 +49,9 @@ public class SanPhamSpecification {
 
             // Lọc theo nhà sản xuất (nếu có)
             if (nhaSanXuat != null && !nhaSanXuat.isBlank()) {
-                predicates.add(criteriaBuilder.equal(root.get(NHA_SAN_XUAT), nhaSanXuat));
+                // Sử dụng 'like' thay vì 'equal' để tìm kiếm linh hoạt hơn.
+                // Ví dụ: tìm "Apple" sẽ ra kết quả "Apple Inc."
+                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get(NHA_SAN_XUAT)), "%" + nhaSanXuat.toLowerCase() + "%"));
             }
 
             // Kết hợp tất cả các điều kiện bằng AND

@@ -1,6 +1,5 @@
 package com.megacart.model;
 
-import com.megacart.enumeration.DonVi;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -45,9 +44,8 @@ public class ChiTietDonHang {
     @Column(name = "DonGia", nullable = false)
     private Integer donGia;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "DonVi", nullable = false, length = 30)
-    private DonVi donVi;
+    private String donVi;
 
     @Column(name = "SoLuong", nullable = false)
     private Integer soLuong;

@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import com.megacart.repository.projection.PriceRangeProjection;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
@@ -78,4 +79,56 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
     @Override
     @EntityGraph(attributePaths = {"kho", "anhMinhHoas"})
     Optional<SanPham> findById(Integer maSanPham);
+
+    /**
+     * Lấy danh sách các nhà sản xuất duy nhất cho một danh mục cụ thể.
+     * @param maDanhMuc ID của danh mục.
+     * @param trangThai Trạng thái sản phẩm (ví dụ: DANG_BAN).
+     * @return Danh sách các tên nhà sản xuất.
+     */
+    @Query("SELECT DISTINCT sp.nhaSanXuat FROM SanPham sp WHERE sp.danhMuc.maDanhMuc = :maDanhMuc AND sp.trangThai = :trangThai ORDER BY sp.nhaSanXuat ASC")
+    List<String> findDistinctNhaSanXuatByDanhMuc(@Param("maDanhMuc") Integer maDanhMuc, @Param("trangThai") TrangThaiSanPham trangThai);
+
+    /**
+     * Lấy danh sách tất cả các nhà sản xuất duy nhất trong hệ thống.
+     * @param trangThai Trạng thái sản phẩm (ví dụ: DANG_BAN).
+     * @return Danh sách các tên nhà sản xuất.
+     */
+    @Query("SELECT DISTINCT sp.nhaSanXuat FROM SanPham sp WHERE sp.trangThai = :trangThai ORDER BY sp.nhaSanXuat ASC")
+    List<String> findAllDistinctNhaSanXuat(@Param("trangThai") TrangThaiSanPham trangThai);
+
+    /**
+     * Lấy khoảng giá (thấp nhất và cao nhất) cho một danh mục cụ thể.
+     * @param maDanhMuc ID của danh mục.
+     * @param trangThai Trạng thái sản phẩm (ví dụ: DANG_BAN).
+     * @return Một projection chứa minPrice và maxPrice.
+     */
+    @Query("SELECT MIN(sp.donGia) as minPrice, MAX(sp.donGia) as maxPrice FROM SanPham sp WHERE sp.danhMuc.maDanhMuc = :maDanhMuc AND sp.trangThai = :trangThai")
+    Optional<PriceRangeProjection> findPriceRangeByDanhMuc(@Param("maDanhMuc") Integer maDanhMuc, @Param("trangThai") TrangThaiSanPham trangThai);
+
+    /**
+     * Lấy khoảng giá (thấp nhất và cao nhất) cho tất cả sản phẩm.
+     * @param trangThai Trạng thái sản phẩm (ví dụ: DANG_BAN).
+     * @return Một projection chứa minPrice và maxPrice.
+     */
+    @Query("SELECT MIN(sp.donGia) as minPrice, MAX(sp.donGia) as maxPrice FROM SanPham sp WHERE sp.trangThai = :trangThai")
+    Optional<PriceRangeProjection> findOverallPriceRange(@Param("trangThai") TrangThaiSanPham trangThai);
+
+    /**
+     * Lấy danh sách các nhà sản xuất duy nhất cho các sản phẩm khớp với từ khóa.
+     * @param tuKhoa Từ khóa tìm kiếm.
+     * @param trangThai Trạng thái sản phẩm.
+     * @return Danh sách các tên nhà sản xuất.
+     */
+    @Query("SELECT DISTINCT sp.nhaSanXuat FROM SanPham sp WHERE sp.tenSanPham LIKE %:tuKhoa% AND sp.trangThai = :trangThai ORDER BY sp.nhaSanXuat ASC")
+    List<String> findDistinctNhaSanXuatByTuKhoa(@Param("tuKhoa") String tuKhoa, @Param("trangThai") TrangThaiSanPham trangThai);
+
+    /**
+     * Lấy khoảng giá cho các sản phẩm khớp với từ khóa.
+     * @param tuKhoa Từ khóa tìm kiếm.
+     * @param trangThai Trạng thái sản phẩm.
+     * @return Một projection chứa minPrice và maxPrice.
+     */
+    @Query("SELECT MIN(sp.donGia) as minPrice, MAX(sp.donGia) as maxPrice FROM SanPham sp WHERE sp.tenSanPham LIKE %:tuKhoa% AND sp.trangThai = :trangThai")
+    Optional<PriceRangeProjection> findPriceRangeByTuKhoa(@Param("tuKhoa") String tuKhoa, @Param("trangThai") TrangThaiSanPham trangThai);
 }
