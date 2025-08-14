@@ -1,9 +1,11 @@
 <template>
-  <div class="w-full border rounded text-sm overflow-hidden bg-white">
+  <div
+    class="w-full border border-gray-200 rounded-lg text-sm overflow-hidden bg-white shadow-sm"
+  >
     <!-- Danh mục -->
-    <div class="border-b">
+    <div class="border-b border-gray-200">
       <button
-        class="cursor-pointer w-full text-left px-4 py-2 bg-blue-200 font-semibold flex justify-between items-center"
+        class="cursor-pointer w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 font-semibold text-gray-700 flex justify-between items-center transition-colors"
         @click="toggle('danhMucCon')"
       >
         Danh mục
@@ -16,27 +18,40 @@
           class="text-xl flex items-center"
         ></i>
       </button>
-      <div v-if="isOpen.danhMucCon" class="px-4 py-2 space-y-2">
-        <label
-          v-for="item in danhMucOption"
-          :key="item"
-          class="flex items-center gap-2"
-        >
-          <input
-            type="radio"
-            name="category"
-            :value="item"
-            v-model="selected.danhMucCon"
-          />
-          {{ item }}
-        </label>
-      </div>
+      <transition name="slide-fade">
+        <div v-if="isOpen.danhMucCon" class="px-4 py-3 space-y-2 bg-white">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="category"
+              :value="null"
+              v-model="modelDanhMuc"
+              class="text-blue-600 focus:ring-blue-500"
+            />
+            Tất cả
+          </label>
+          <label
+            v-for="danhMuc in danhMucOption"
+            :key="danhMuc.id"
+            class="flex items-center gap-2 cursor-pointer"
+          >
+            <input
+              type="radio"
+              name="category"
+              :value="danhMuc.id"
+              v-model="modelDanhMuc"
+              class="text-blue-600 focus:ring-blue-500"
+            />
+            {{ danhMuc.ten }}
+          </label>
+        </div>
+      </transition>
     </div>
 
     <!-- Đơn giá -->
-    <div class="border-b">
+    <div class="border-b border-gray-200">
       <button
-        class="cursor-pointer w-full text-left px-4 py-2 bg-blue-200 font-semibold flex justify-between items-center"
+        class="cursor-pointer w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 font-semibold text-gray-700 flex justify-between items-center transition-colors"
         @click="toggle('donGia')"
       >
         Đơn giá
@@ -47,35 +62,51 @@
           class="text-xl flex items-center"
         ></i>
       </button>
-      <div v-if="isOpen.donGia" class="px-4 py-2 space-y-3">
-        <p>
-          Đến <strong>{{ maxDonGia.toLocaleString() }} VND</strong>
-        </p>
-        <input
-          type="range"
-          v-model="maxDonGia"
-          min="0"
-          :max="100000"
-          step="1000"
-          class="w-full accent-blue-500"
-        />
-        <div class="flex items-center gap-4">
-          <label class="flex items-center gap-1">
-            <input type="radio" value="asc" v-model="sapXep" />
-            Tăng dần
-          </label>
-          <label class="flex items-center gap-1">
-            <input type="radio" value="desc" v-model="sapXep" />
-            Giảm dần
-          </label>
+      <transition name="slide-fade">
+        <div v-if="isOpen.donGia" class="px-4 py-3 space-y-3 bg-white">
+          <p class="text-gray-700" v-if="khoangGia && khoangGia.max > 0">
+            Đến
+            <strong class="font-semibold text-blue-600"
+              >{{ modelDonGia.toLocaleString() }} VND</strong
+            >
+          </p>
+          <input
+            v-if="khoangGia && khoangGia.max > 0"
+            type="range"
+            v-model="modelDonGia"
+            :min="khoangGia.min"
+            :max="khoangGia.max"
+            :step="(khoangGia.max - khoangGia.min) / 200"
+            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+          />
+          <div class="flex items-center gap-4 pt-2">
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="radio"
+                value="asc"
+                v-model="modelSapXep"
+                class="text-blue-600 focus:ring-blue-500"
+              />
+              Tăng dần
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="radio"
+                value="desc"
+                v-model="modelSapXep"
+                class="text-blue-600 focus:ring-blue-500"
+              />
+              Giảm dần
+            </label>
+          </div>
         </div>
-      </div>
+      </transition>
     </div>
 
     <!-- Nhà sản xuất -->
     <div>
       <button
-        class="cursor-pointer w-full text-left px-4 py-2 bg-blue-200 font-semibold flex justify-between items-center"
+        class="cursor-pointer w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 font-semibold text-gray-700 flex justify-between items-center transition-colors"
         @click="toggle('nhaSanXuat')"
       >
         Nhà sản xuất
@@ -88,52 +119,68 @@
           class="text-xl flex items-center"
         ></i>
       </button>
-      <div v-if="isOpen.nhaSanXuat" class="px-4 py-2 space-y-2">
-        <label
-          v-for="item in nhaSanXuatOption"
-          :key="item"
-          class="flex items-center gap-2"
-        >
-          <input
-            type="radio"
-            name="manufacturer"
-            :value="item"
-            v-model="selected.nhaSanXuat"
-          />
-          {{ item }}
-        </label>
-      </div>
+      <transition name="slide-fade">
+        <div v-if="isOpen.nhaSanXuat" class="px-4 py-3 space-y-2 bg-white">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="manufacturer"
+              :value="null"
+              v-model="modelNhaSanXuat"
+              class="text-blue-600 focus:ring-blue-500"
+            />
+            Tất cả
+          </label>
+          <label
+            v-for="tenNhaSanXuat in nhaSanXuatOption"
+            :key="tenNhaSanXuat"
+            class="flex items-center gap-2 cursor-pointer"
+          >
+            <input
+              type="radio"
+              name="manufacturer"
+              :value="tenNhaSanXuat"
+              v-model="modelNhaSanXuat"
+              class="text-blue-600 focus:ring-blue-500"
+            />
+            {{ tenNhaSanXuat }}
+          </label>
+        </div>
+      </transition>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref } from "vue";
 
-const props = defineProps<{
-  danhMucCon?: string[];
-  nhaSanXuat?: string[];
+interface Option {
+  id: number;
+  ten: string;
+}
+
+interface KhoangGia {
+  min: number;
+  max: number;
+}
+
+defineProps<{
+  danhMucOption: Option[];
+  nhaSanXuatOption: string[];
+  khoangGia?: KhoangGia;
 }>();
 
-// Dữ liệu mock nếu chưa có
-const danhMucOption = computed(() => props.danhMucCon ?? ["Tất cả", "Quần áo"]);
-const nhaSanXuatOption = computed(
-  () => props.nhaSanXuat ?? ["Tất cả", "Township", "HayDay"]
-);
+// Sử dụng defineModel để tạo v-model cho component
+const modelDanhMuc = defineModel<number | null>("danhMuc"); // number cho ID, null cho "Tất cả"
+const modelNhaSanXuat = defineModel<string | null>("nhaSanXuat");
+const modelDonGia = defineModel<number>("donGia", { default: 0 });
+const modelSapXep = defineModel<"asc" | "desc">("sapXep");
 
 const isOpen = ref({
   danhMucCon: true,
-  donGia: false,
-  nhaSanXuat: false,
+  donGia: true,
+  nhaSanXuat: true,
 });
-
-const selected = ref({
-  danhMucCon: "Tất cả",
-  nhaSanXuat: "Tất cả",
-});
-
-const maxDonGia = ref(100000);
-const sapXep = ref<"asc" | "desc">("asc");
 
 function toggle(section: keyof typeof isOpen.value) {
   isOpen.value[section] = !isOpen.value[section];
@@ -141,7 +188,17 @@ function toggle(section: keyof typeof isOpen.value) {
 </script>
 
 <style scoped>
-input[type="range"] {
-  accent-color: #3b82f6; /* Tailwind blue-500 */
+.slide-fade-enter-active {
+  transition: all 0.2s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
 }
 </style>

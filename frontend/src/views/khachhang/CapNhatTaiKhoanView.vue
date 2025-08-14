@@ -49,7 +49,7 @@
 
       <div class="mb-4">
         <label class="flex items-center font-medium mb-1" for="hoTen">
-          <i class="fi fi-rr-id-badge w-5 text-center mr-2 text-gray-500"></i>
+          <i class="fi fi-rr-user w-5 text-center mr-2 text-gray-500"></i>
           Họ tên:
         </label>
         <input
@@ -77,7 +77,9 @@
 
       <div class="mb-4">
         <label class="flex items-center font-medium mb-1" for="diaChi">
-          <i class="fi fi-rr-map-marker w-5 text-center mr-2 text-gray-500"></i>
+          <i
+            class="fi fi-rs-house-chimney w-5 text-center mr-2 text-gray-500"
+          ></i>
           Địa chỉ:
         </label>
         <textarea
