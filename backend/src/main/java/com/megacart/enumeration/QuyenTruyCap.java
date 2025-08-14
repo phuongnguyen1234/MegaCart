@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum QuyenTruyCap {
-    ADMIN("Quản trị viên"),
+    ADMIN("Admin"),
     KHACH_HANG("Khách hàng"),
     NHAN_VIEN("Nhân viên");
 

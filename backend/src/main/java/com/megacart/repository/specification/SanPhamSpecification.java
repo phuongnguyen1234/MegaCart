@@ -1,6 +1,7 @@
 package com.megacart.repository.specification;
 
 import com.megacart.enumeration.TrangThaiSanPham;
+import com.megacart.enumeration.NhanSanPham;
 import com.megacart.model.SanPham;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
@@ -19,12 +20,15 @@ public class SanPhamSpecification {
     private static final String MA_DANH_MUC = "maDanhMuc";
     private static final String DON_GIA = "donGia";
     private static final String NHA_SAN_XUAT = "nhaSanXuat";
+    private static final String NHAN = "nhan";
 
     public Specification<SanPham> filterBy(
             String tuKhoa,
             List<Integer> maDanhMucs,
+            Integer giaToiThieu,
             Integer giaToiDa,
-            String nhaSanXuat
+            String nhaSanXuat,
+            NhanSanPham nhan
     ) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -34,12 +38,18 @@ public class SanPhamSpecification {
 
             // Lọc theo từ khóa (nếu có)
             if (tuKhoa != null && !tuKhoa.isBlank()) {
-                predicates.add(criteriaBuilder.like(root.get(TEN_SAN_PHAM), "%" + tuKhoa + "%"));
+                // Chuyển cả giá trị trong CSDL và từ khóa về chữ thường để tìm kiếm không phân biệt hoa/thường
+                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get(TEN_SAN_PHAM)), "%" + tuKhoa.toLowerCase() + "%"));
             }
 
             // Lọc theo danh mục (nếu có)
             if (maDanhMucs != null && !maDanhMucs.isEmpty()) {
                 predicates.add(root.get(DANH_MUC).get(MA_DANH_MUC).in(maDanhMucs));
+            }
+
+            // Lọc theo giá tối thiểu (nếu có)
+            if (giaToiThieu != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(DON_GIA), giaToiThieu));
             }
 
             // Lọc theo giá tối đa (nếu có)
@@ -52,6 +62,11 @@ public class SanPhamSpecification {
                 // Sử dụng 'like' thay vì 'equal' để tìm kiếm linh hoạt hơn.
                 // Ví dụ: tìm "Apple" sẽ ra kết quả "Apple Inc."
                 predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get(NHA_SAN_XUAT)), "%" + nhaSanXuat.toLowerCase() + "%"));
+            }
+
+            // Lọc theo nhãn sản phẩm (nếu có)
+            if (nhan != null) {
+                predicates.add(criteriaBuilder.equal(root.get(NHAN), nhan));
             }
 
             // Kết hợp tất cả các điều kiện bằng AND
