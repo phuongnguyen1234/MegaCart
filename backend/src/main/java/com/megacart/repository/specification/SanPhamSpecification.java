@@ -21,6 +21,7 @@ public class SanPhamSpecification {
     private static final String DON_GIA = "donGia";
     private static final String NHA_SAN_XUAT = "nhaSanXuat";
     private static final String NHAN = "nhan";
+    private static final String BAN_CHAY = "banChay";
 
     public Specification<SanPham> filterBy(
             String tuKhoa,
@@ -28,7 +29,8 @@ public class SanPhamSpecification {
             Integer giaToiThieu,
             Integer giaToiDa,
             String nhaSanXuat,
-            NhanSanPham nhan
+            NhanSanPham nhan,
+            boolean banChay
     ) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -67,6 +69,11 @@ public class SanPhamSpecification {
             // Lọc theo nhãn sản phẩm (nếu có)
             if (nhan != null) {
                 predicates.add(criteriaBuilder.equal(root.get(NHAN), nhan));
+            }
+
+            // Lọc theo sản phẩm bán chạy (nếu có)
+            if (banChay) {
+                predicates.add(criteriaBuilder.isTrue(root.get(BAN_CHAY)));
             }
 
             // Kết hợp tất cả các điều kiện bằng AND

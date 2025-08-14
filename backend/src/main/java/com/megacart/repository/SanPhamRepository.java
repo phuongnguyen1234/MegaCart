@@ -16,7 +16,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.List;
 
-public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaSpecificationExecutor<SanPham>, SanPhamRepositoryCustom {
+public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaSpecificationExecutor<SanPham> {
 
     /**
      * Tìm kiếm tên sản phẩm để gợi ý (autocomplete) dựa trên tiền tố (prefix search).
@@ -105,4 +105,20 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
      */
     @Query("SELECT MIN(sp.donGia) as minPrice, MAX(sp.donGia) as maxPrice FROM SanPham sp WHERE sp.nhan = :nhan AND sp.trangThai = :trangThai")
     Optional<PriceRangeProjection> findPriceRangeByNhan(@Param("nhan") NhanSanPham nhan, @Param("trangThai") TrangThaiSanPham trangThai);
+
+    /**
+     * Lấy danh sách các nhà sản xuất riêng biệt cho các sản phẩm bán chạy.
+     * @param trangThai Trạng thái của sản phẩm (ví dụ: BAN).
+     * @return Danh sách các nhà sản xuất.
+     */
+    @Query("SELECT DISTINCT sp.nhaSanXuat FROM SanPham sp WHERE sp.banChay = true AND sp.trangThai = :trangThai ORDER BY sp.nhaSanXuat ASC")
+    List<String> findDistinctNhaSanXuatByBanChayIsTrue(@Param("trangThai") TrangThaiSanPham trangThai);
+
+    /**
+     * Lấy khoảng giá (min/max) cho các sản phẩm bán chạy.
+     * @param trangThai Trạng thái của sản phẩm (ví dụ: BAN).
+     * @return Một Optional chứa đối tượng PriceRangeProjection.
+     */
+    @Query("SELECT MIN(sp.donGia) as minPrice, MAX(sp.donGia) as maxPrice FROM SanPham sp WHERE sp.banChay = true AND sp.trangThai = :trangThai")
+    Optional<PriceRangeProjection> findPriceRangeByBanChayIsTrue(@Param("trangThai") TrangThaiSanPham trangThai);
 }

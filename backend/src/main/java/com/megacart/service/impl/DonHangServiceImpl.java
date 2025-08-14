@@ -44,7 +44,7 @@ public class DonHangServiceImpl implements DonHangService {
 
     @Override
     @Transactional(readOnly = true) // readOnly = true để tối ưu cho các query chỉ đọc
-    public PagedResponse<LichSuDonHangResponse> getLichSuMuaHang(TaiKhoan taiKhoan, TrangThaiDonHang trangThai, String tuKhoa, LocalDate tuNgay, LocalDate denNgay, Pageable pageable) {
+    public PagedResponse<LichSuDonHangResponse> getDSDonHangByMaKhachHangAndTrangThai(TaiKhoan taiKhoan, TrangThaiDonHang trangThai, String tuKhoa, LocalDate tuNgay, LocalDate denNgay, Pageable pageable) {
         Integer maKhachHang = taiKhoan.getMaTaiKhoan();
 
         // Chuyển đổi LocalDate sang LocalDateTime để truy vấn trong CSDL
@@ -54,7 +54,7 @@ public class DonHangServiceImpl implements DonHangService {
         LocalDateTime endOfDay = (denNgay != null) ? denNgay.atTime(LocalTime.MAX) : null;
 
         // Gọi phương thức repository duy nhất, truyền tất cả các tham số (một số có thể là null)
-        Page<DonHang> donHangPage = donHangRepository.searchByCriteria(maKhachHang, trangThai, tuKhoa, startOfDay, endOfDay, pageable);
+        Page<DonHang> donHangPage = donHangRepository.findByMaKhachHangAndTrangThaiDonHang(maKhachHang, trangThai, tuKhoa, startOfDay, endOfDay, pageable);
         // 2. Chuyển đổi từ List<DonHang> sang List<LichSuDonHangResponse>
         List<LichSuDonHangResponse> lichSuDonHangs = donHangPage.getContent().stream()
                 .map(this::mapToLichSuDonHangResponse)
@@ -93,6 +93,7 @@ public class DonHangServiceImpl implements DonHangService {
 
         // Lấy thông tin từ sản phẩm đầu tiên trong danh sách để hiển thị
         ChiTietDonHang sanPhamDauTien = chiTietDonHangs.get(0);
+        SanPham sanPhamEntity = sanPhamDauTien.getSanPham();
 
         // Tính toán tổng tiền và tổng số lượng
         long tongTien = chiTietDonHangs.stream().mapToLong(ct -> (long) ct.getDonGia() * ct.getSoLuong()).sum();
@@ -112,6 +113,7 @@ public class DonHangServiceImpl implements DonHangService {
                 .tenSanPhamDauTien(sanPhamDauTien.getTenSanPham())
                 .anhMinhHoaDauTien(sanPhamDauTien.getAnhMinhHoa())
                 .soLuongDauTien(sanPhamDauTien.getSoLuong())
+                .banChayDauTien(sanPhamEntity != null && sanPhamEntity.isBanChay())
                 .soLuongLoaiSanPhamKhac(soLuongLoaiSanPhamKhac)
                 .build();
     }
@@ -164,6 +166,7 @@ public class DonHangServiceImpl implements DonHangService {
                             .donGia(chiTiet.getDonGia())
                             .soLuong(chiTiet.getSoLuong())
                             .trangThaiItem(hetHang ? "Hết hàng" : null)
+                            .banChay(chiTiet.getSanPham().isBanChay())
                             .build();
                 }).collect(Collectors.toList());
                 break;
@@ -189,7 +192,8 @@ public class DonHangServiceImpl implements DonHangService {
         return donHang.getChiTietDonHangs().stream()
                 .map(chiTiet -> ChiTietDonHangResponse.ItemResponse.builder().maSanPham(chiTiet.getSanPham().getMaSanPham())
                         .tenSanPham(chiTiet.getTenSanPham()).anhMinhHoa(chiTiet.getAnhMinhHoa())
-                        .donGia(chiTiet.getDonGia()).soLuong(chiTiet.getSoLuong()).build())
+                        .donGia(chiTiet.getDonGia()).soLuong(chiTiet.getSoLuong())
+                        .banChay(chiTiet.getSanPham().isBanChay()).build())
                 .collect(Collectors.toList());
     }
 

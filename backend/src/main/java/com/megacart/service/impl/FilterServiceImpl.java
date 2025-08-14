@@ -32,7 +32,7 @@ public class FilterServiceImpl implements FilterService {
 
     @Override
     @Transactional(readOnly = true)
-    public FilterDataResponse getFilterData(String danhMucSlug, String tuKhoa, NhanSanPham nhan) {
+    public FilterDataResponse getFilterData(String danhMucSlug, String tuKhoa, NhanSanPham nhan, boolean banChay) {
         List<String> nhaSanXuats;
         PriceRangeResponse khoangGia;
         List<DanhMucMenuItemResponse> danhMucs;
@@ -108,7 +108,7 @@ public class FilterServiceImpl implements FilterService {
                     .collect(Collectors.toList());
 
         } else if (nhan != null) {
-            // Trường hợp người dùng xem theo nhãn (Bán chạy, Mới,...)
+            // Trường hợp người dùng xem theo nhãn (ví dụ: Mới)
             // Lấy nhà sản xuất dựa trên các sản phẩm có nhãn đó
             nhaSanXuats = sanPhamRepository.findDistinctNhaSanXuatByNhan(nhan, TrangThaiSanPham.BAN);
 
@@ -124,6 +124,22 @@ public class FilterServiceImpl implements FilterService {
                     .map(this::mapToMenuItem)
                     .collect(Collectors.toList());
 
+        } else if (banChay) {
+            // Trường hợp người dùng ở trang "Bán chạy"
+            // Lấy nhà sản xuất dựa trên các sản phẩm được đánh dấu là bán chạy
+            nhaSanXuats = sanPhamRepository.findDistinctNhaSanXuatByBanChayIsTrue(TrangThaiSanPham.BAN);
+
+            // Lấy khoảng giá dựa trên các sản phẩm bán chạy
+            khoangGia = sanPhamRepository.findPriceRangeByBanChayIsTrue(TrangThaiSanPham.BAN)
+                    .map(projection -> new PriceRangeResponse(projection.getMinPrice(), projection.getMaxPrice()))
+                    .orElse(new PriceRangeResponse(0, 0));
+
+            // Khi xem theo nhãn, sidebar vẫn hiển thị các danh mục gốc để người dùng có thể
+            // lọc các sản phẩm "Bán chạy" trong danh mục "Đồ điện tử" chẳng hạn.
+            danhMucs = danhMucRepository.findByDanhMucChaIsNullAndTrangThai(TrangThaiDanhMuc.HOAT_DONG)
+                    .stream()
+                    .map(this::mapToMenuItem)
+                    .collect(Collectors.toList());
         } else {
             // Lấy tất cả nhà sản xuất
             nhaSanXuats = sanPhamRepository.findAllDistinctNhaSanXuat(TrangThaiSanPham.BAN);

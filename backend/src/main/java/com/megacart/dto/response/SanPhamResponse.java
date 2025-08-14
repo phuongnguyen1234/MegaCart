@@ -14,4 +14,5 @@ public class SanPhamResponse {
     private String nhan;
     private String trangThaiTonKho;
     private String anhMinhHoaChinh;
+    private boolean banChay;
 }

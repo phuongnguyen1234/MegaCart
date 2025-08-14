@@ -17,5 +17,6 @@ public class LichSuDonHangResponse {
     private String tenSanPhamDauTien;
     private String anhMinhHoaDauTien;
     private int soLuongDauTien;
+    private boolean banChayDauTien;
     private Integer soLuongLoaiSanPhamKhac;
 }

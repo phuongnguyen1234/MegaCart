@@ -59,5 +59,5 @@ public interface SanPhamService {
      * @param maSanPham ID của sản phẩm.
      * @return Thông tin chi tiết sản phẩm.
      */
-    ChiTietSanPhamResponse getChiTietSanPham(Integer maSanPham);
+    ChiTietSanPhamResponse getSanPhamByMaSanPham(Integer maSanPham);
 }

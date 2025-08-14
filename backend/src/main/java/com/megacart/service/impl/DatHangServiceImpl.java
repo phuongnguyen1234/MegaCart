@@ -39,7 +39,7 @@ public class DatHangServiceImpl implements DatHangService {
 
     @Override
     @Transactional
-    public DatHangResponse datHang(DatHangRequest request, TaiKhoan taiKhoan) {
+    public DatHangResponse taoDonHang(DatHangRequest request, TaiKhoan taiKhoan) {
         KhachHang khachHang = khachHangRepository.findById(taiKhoan.getMaTaiKhoan())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin khách hàng."));
 
@@ -66,7 +66,9 @@ public class DatHangServiceImpl implements DatHangService {
         }
 
         // 3. Xác định trạng thái đơn hàng dựa trên tình trạng tồn kho
-        TrangThaiDonHang trangThaiDonHang = isSufficientStock ? TrangThaiDonHang.CHO_XU_LY : TrangThaiDonHang.CHO_XAC_NHAN;
+        // Nếu đủ hàng, chuyển thẳng sang trạng thái ĐANG_GIAO.
+        // Nếu không, chuyển sang CHO_XAC_NHAN để nhân viên xử lý.
+        TrangThaiDonHang trangThaiDonHang = isSufficientStock ? TrangThaiDonHang.DANG_GIAO : TrangThaiDonHang.CHO_XAC_NHAN;
 
         // 4. Tạo đối tượng DonHang
         LocalDateTime thoiGianDatHang = LocalDateTime.now();
@@ -115,7 +117,7 @@ public class DatHangServiceImpl implements DatHangService {
 
         // 8. Tạo và trả về response
         String thongBao = isSufficientStock
-                ? "Đặt hàng thành công! Đơn hàng của bạn đang chờ xử lý."
+                ? "Đặt hàng thành công! Đơn hàng của bạn đang được giao."
                 : "Một hoặc nhiều sản phẩm không đủ số lượng. Đơn hàng của bạn đang chờ nhân viên xác nhận.";
 
         return DatHangResponse.builder()

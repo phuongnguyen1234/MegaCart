@@ -10,6 +10,8 @@ public final class ImageUtils {
         // Private constructor để ngăn việc tạo instance của utility class
     }
 
+    // Mã hóa URL cho ảnh sản phẩm
+
     /**
      * Lấy URL của ảnh đại diện từ một danh sách ảnh.
      * Ưu tiên ảnh được đánh dấu là 'laAnhChinh'.

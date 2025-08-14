@@ -70,7 +70,7 @@ public class SanPhamServiceImpl implements SanPhamService {
         }
 
         // Truyền danh sách ID vào Specification để lọc theo mệnh đề IN
-        Specification<SanPham> spec = sanPhamSpecification.filterBy(tuKhoa, categoryIdsToSearch, giaToiThieu, giaToiDa, nhaSanXuat, null);
+        Specification<SanPham> spec = sanPhamSpecification.filterBy(tuKhoa, categoryIdsToSearch, giaToiThieu, giaToiDa, nhaSanXuat, null, false);
         Page<SanPham> sanPhamPage = sanPhamRepository.findAll(spec, pageable);
 
         List<BreadcrumbItem> breadcrumbs = null;
@@ -99,7 +99,7 @@ public class SanPhamServiceImpl implements SanPhamService {
         }
 
         // Sử dụng Specification để lọc động, truyền nhãn vào tham số cuối cùng
-        Specification<SanPham> spec = sanPhamSpecification.filterBy(null, categoryIdsToSearch, giaToiThieu, giaToiDa, nhaSanXuat, nhan);
+        Specification<SanPham> spec = sanPhamSpecification.filterBy(null, categoryIdsToSearch, giaToiThieu, giaToiDa, nhaSanXuat, nhan, false);
         Page<SanPham> sanPhamPage = sanPhamRepository.findAll(spec, pageable);
 
         // Lấy tên hiển thị từ enum để code sạch hơn và dễ mở rộng
@@ -123,14 +123,15 @@ public class SanPhamServiceImpl implements SanPhamService {
             // Lấy ID của danh mục cha và tất cả các danh mục con cháu của nó
             categoryIdsToSearch = danhMucService.getAllSubCategoryIds(maDanhMuc);
         }
-        Specification<SanPham> spec = sanPhamSpecification.filterBy(null, categoryIdsToSearch, giaToiThieu, giaToiDa, nhaSanXuat, null);
-        Page<SanPham> sanPhamPage = sanPhamRepository.findBestSellingProducts(spec, pageable);
+        // Sử dụng Specification để lọc các sản phẩm được đánh dấu là bán chạy
+        Specification<SanPham> spec = sanPhamSpecification.filterBy(null, categoryIdsToSearch, giaToiThieu, giaToiDa, nhaSanXuat, null, true);
+        Page<SanPham> sanPhamPage = sanPhamRepository.findAll(spec, pageable);
         return convertPageToPagedResponse(sanPhamPage, breadcrumbs);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ChiTietSanPhamResponse getChiTietSanPham(Integer maSanPham) {
+    public ChiTietSanPhamResponse getSanPhamByMaSanPham(Integer maSanPham) {
         SanPham sanPham = sanPhamRepository.findById(maSanPham)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + maSanPham));
 
@@ -173,7 +174,8 @@ public class SanPhamServiceImpl implements SanPhamService {
                 .nhaSanXuat(sanPham.getNhaSanXuat())
                 .nhan(sanPham.getNhan() != null ? sanPham.getNhan().getTenHienThi() : null)
                 .trangThaiTonKho(trangThaiTonKho.getTenHienThi())
-                .anhMinhHoaChinh(anhChinhUrl).build();
+                .anhMinhHoaChinh(anhChinhUrl)
+                .banChay(sanPham.isBanChay()).build();
     }
 
     private PagedResponse<SanPhamResponse> convertPageToPagedResponse(Page<SanPham> sanPhamPage, List<BreadcrumbItem> breadcrumbs) {
@@ -209,7 +211,8 @@ public class SanPhamServiceImpl implements SanPhamService {
                 .moTa(sanPham.getMoTa())
                 .ghiChu(sanPham.getGhiChu())
                 .trangThaiTonKho(trangThaiTonKho.getTenHienThi())
-                .anhMinhHoas(anhMinhHoas).build();
+                .anhMinhHoas(anhMinhHoas)
+                .banChay(sanPham.isBanChay()).build();
                }
 
     /**

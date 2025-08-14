@@ -71,13 +71,14 @@ public class SanPhamController {
             @RequestParam(required = false) Integer giaToiThieu,
             @RequestParam(required = false) Integer giaToiDa,
             @RequestParam(required = false) String nhaSanXuat,
-            @PageableDefault(size = 40) Pageable pageable) {
+            // Thêm sắp xếp mặc định theo tên sản phẩm
+            @PageableDefault(size = 40, sort = "tenSanPham") Pageable pageable) {
         // Gọi service với đầy đủ tham số
         return ResponseEntity.ok(sanPhamService.getSanPhamBanChay(maDanhMuc, giaToiThieu, giaToiDa, nhaSanXuat, pageable));
     }
 
     @GetMapping("/{maSanPham}")
     public ResponseEntity<ChiTietSanPhamResponse> getChiTietSanPham(@PathVariable Integer maSanPham) {
-        return ResponseEntity.ok(sanPhamService.getChiTietSanPham(maSanPham));
+        return ResponseEntity.ok(sanPhamService.getSanPhamByMaSanPham(maSanPham));
     }
 }

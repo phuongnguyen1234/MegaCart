@@ -38,7 +38,7 @@ public class DonHangController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate denNgay,
             @PageableDefault(size = 10, sort = "thoiGianDatHang", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        PagedResponse<LichSuDonHangResponse> response = donHangService.getLichSuMuaHang(taiKhoan, trangThai, tuKhoa, tuNgay, denNgay, pageable);
+        PagedResponse<LichSuDonHangResponse> response = donHangService.getDSDonHangByMaKhachHangAndTrangThai(taiKhoan, trangThai, tuKhoa, tuNgay, denNgay, pageable);
         return ResponseEntity.ok(response);
     }
 

@@ -6,8 +6,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum NhanSanPham {
-    MOI("Mới"),
-    BAN_CHAY("Bán chạy");
+    MOI("Mới");
 
     private final String tenHienThi;
 }
