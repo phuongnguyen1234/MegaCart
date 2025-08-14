@@ -79,7 +79,7 @@ public class DatHangServiceImpl implements DatHangService {
                 .hinhThucThanhToan(request.getHinhThucThanhToan())
                 .thoiGianDatHang(thoiGianDatHang)
                 .trangThai(trangThaiDonHang)
-                .trangThaiXuLi(TrangThaiXuLi.KHONG)
+                .trangThaiXuLi(TrangThaiXuLi.CHO_XU_LY)
                 .trangThaiThanhToan(TrangThaiThanhToan.CHUA_THANH_TOAN) // Mặc định là chưa thanh toán
                 .duKienGiaoHang(ThoiGianGiaoHangUtils.tinhThoiGianGiaoHangDuKien(thoiGianDatHang))
                 .build();
@@ -120,7 +120,7 @@ public class DatHangServiceImpl implements DatHangService {
 
         return DatHangResponse.builder()
                 .maDonHang(savedDonHang.getMaDonHang())
-                .trangThai(savedDonHang.getTrangThai())
+                .trangThai(savedDonHang.getTrangThai().getTenHienThi())
                 .thongBao(thongBao)
                 .build();
     }

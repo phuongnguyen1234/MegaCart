@@ -25,7 +25,7 @@ public class TimKiemNhanVienSpecification {
 
             // Lọc theo trạng thái tài khoản
             if (hienThiTaiKhoanBiKhoa) {
-                predicates.add(criteriaBuilder.equal(taiKhoanJoin.get("trangThaiTaiKhoan"), TrangThaiTaiKhoan.VO_HIEU_HOA));
+                predicates.add(criteriaBuilder.equal(taiKhoanJoin.get("trangThaiTaiKhoan"), TrangThaiTaiKhoan.KHOA));
             } else {
                 predicates.add(criteriaBuilder.equal(taiKhoanJoin.get("trangThaiTaiKhoan"), TrangThaiTaiKhoan.HOAT_DONG));
             }

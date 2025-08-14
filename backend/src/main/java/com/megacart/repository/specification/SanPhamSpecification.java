@@ -29,8 +29,8 @@ public class SanPhamSpecification {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // Luôn lọc theo trạng thái DANG_BAN
-            predicates.add(criteriaBuilder.equal(root.get(TRANG_THAI), TrangThaiSanPham.DANG_BAN));
+            // Luôn lọc theo trạng thái BAN
+            predicates.add(criteriaBuilder.equal(root.get(TRANG_THAI), TrangThaiSanPham.BAN));
 
             // Lọc theo từ khóa (nếu có)
             if (tuKhoa != null && !tuKhoa.isBlank()) {

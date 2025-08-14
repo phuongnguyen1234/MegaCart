@@ -1,7 +1,5 @@
 package com.megacart.dto.response;
 
-import com.megacart.enumeration.TrangThaiTaiKhoan;
-import com.megacart.enumeration.ViTri;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,6 +10,6 @@ public class HienThiDanhSachNhanVienResponse {
     private String tenNhanVien;
     private String email;
     private String soDienThoai;
-    private TrangThaiTaiKhoan trangThaiTaiKhoan;
-    private ViTri viTri;
+    private String trangThaiTaiKhoan;
+    private String viTri;
 }

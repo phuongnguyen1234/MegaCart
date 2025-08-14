@@ -1,5 +1,6 @@
 package com.megacart.service.impl;
 
+import com.megacart.dto.request.CapNhatTrangThaiTaiKhoanRequest;
 import com.megacart.dto.request.CapNhatNhanVienRequest;
 import com.megacart.dto.request.ThemNhanVienRequest;
 import com.megacart.dto.response.HienThiDanhSachNhanVienResponse;
@@ -109,42 +110,55 @@ public class QuanLyNhanVienServiceImpl implements QuanLyNhanVienService {
         NhanVien nhanVien = nhanVienRepository.findByIdWithTaiKhoan(maNhanVien)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhân viên với mã: " + maNhanVien));
 
-        TaiKhoan taiKhoan = nhanVien.getTaiKhoan();
-
-        // Cập nhật họ tên
-        if (StringUtils.hasText(request.getHoTen()) && !Objects.equals(request.getHoTen(), nhanVien.getHoTen())) {
-            nhanVien.setHoTen(request.getHoTen());
-        }
-
-        // Cập nhật vị trí
-        if (request.getViTri() != null && !Objects.equals(request.getViTri(), nhanVien.getViTri())) {
-            nhanVien.setViTri(request.getViTri());
-        }
-
-        // Cập nhật email (kiểm tra trùng lặp)
-        if (StringUtils.hasText(request.getEmail()) && !Objects.equals(request.getEmail().toLowerCase(), taiKhoan.getEmail().toLowerCase())) {
-            String newEmail = request.getEmail().toLowerCase();
-            taiKhoanRepository.findByEmail(newEmail).ifPresent(existingAccount -> {
-                if (!existingAccount.getMaTaiKhoan().equals(taiKhoan.getMaTaiKhoan())) {
-                    throw new UserAlreadyExistsException("Email " + newEmail + " đã được sử dụng.");
-                }
-            });
-            taiKhoan.setEmail(newEmail);
-        }
-
-        // Cập nhật số điện thoại (kiểm tra trùng lặp)
-        if (StringUtils.hasText(request.getSoDienThoai()) && !Objects.equals(request.getSoDienThoai(), taiKhoan.getSoDienThoai())) {
-            String newPhone = request.getSoDienThoai();
-            taiKhoanRepository.findBySoDienThoai(newPhone).ifPresent(existingAccount -> {
-                if (!existingAccount.getMaTaiKhoan().equals(taiKhoan.getMaTaiKhoan())) {
-                    throw new UserAlreadyExistsException("Số điện thoại " + newPhone + " đã được sử dụng.");
-                }
-            });
-            taiKhoan.setSoDienThoai(newPhone);
-        }
+        updateHoTen(nhanVien, request.getHoTen());
+        updateViTri(nhanVien, request.getViTri());
+        updateEmail(nhanVien.getTaiKhoan(), request.getEmail());
+        updateSoDienThoai(nhanVien.getTaiKhoan(), request.getSoDienThoai());
+        updateTrangThai(nhanVien.getTaiKhoan(), request.getTrangThai());
 
         // Không cần gọi save() vì entity đang ở trạng thái managed trong transaction
         return mapToNhanVienResponse(nhanVien);
+    }
+
+    private void updateHoTen(NhanVien nhanVien, String newHoTen) {
+        if (StringUtils.hasText(newHoTen) && !Objects.equals(newHoTen, nhanVien.getHoTen())) {
+            nhanVien.setHoTen(newHoTen);
+        }
+    }
+
+    private void updateViTri(NhanVien nhanVien, ViTri newViTri) {
+        if (newViTri != null && !Objects.equals(newViTri, nhanVien.getViTri())) {
+            nhanVien.setViTri(newViTri);
+        }
+    }
+
+    private void updateEmail(TaiKhoan taiKhoan, String newEmail) {
+        if (StringUtils.hasText(newEmail) && !Objects.equals(newEmail.toLowerCase(), taiKhoan.getEmail().toLowerCase())) {
+            String normalizedNewEmail = newEmail.toLowerCase();
+            taiKhoanRepository.findByEmail(normalizedNewEmail).ifPresent(existingAccount -> {
+                if (!existingAccount.getMaTaiKhoan().equals(taiKhoan.getMaTaiKhoan())) {
+                    throw new UserAlreadyExistsException("Email " + normalizedNewEmail + " đã được sử dụng.");
+                }
+            });
+            taiKhoan.setEmail(normalizedNewEmail);
+        }
+    }
+
+    private void updateSoDienThoai(TaiKhoan taiKhoan, String newSoDienThoai) {
+        if (StringUtils.hasText(newSoDienThoai) && !Objects.equals(newSoDienThoai, taiKhoan.getSoDienThoai())) {
+            taiKhoanRepository.findBySoDienThoai(newSoDienThoai).ifPresent(existingAccount -> {
+                if (!existingAccount.getMaTaiKhoan().equals(taiKhoan.getMaTaiKhoan())) {
+                    throw new UserAlreadyExistsException("Số điện thoại " + newSoDienThoai + " đã được sử dụng.");
+                }
+            });
+            taiKhoan.setSoDienThoai(newSoDienThoai);
+        }
+    }
+
+    private void updateTrangThai(TaiKhoan taiKhoan, TrangThaiTaiKhoan newTrangThai) {
+        if (newTrangThai != null && !Objects.equals(newTrangThai, taiKhoan.getTrangThaiTaiKhoan())) {
+            taiKhoan.setTrangThaiTaiKhoan(newTrangThai);
+        }
     }
 
     private HienThiDanhSachNhanVienResponse mapToNhanVienResponse(NhanVien nhanVien) {
@@ -154,8 +168,8 @@ public class QuanLyNhanVienServiceImpl implements QuanLyNhanVienService {
                 .tenNhanVien(nhanVien.getHoTen())
                 .email(nhanVien.getTaiKhoan().getEmail())
                 .soDienThoai(nhanVien.getTaiKhoan().getSoDienThoai())
-                .trangThaiTaiKhoan(nhanVien.getTaiKhoan().getTrangThaiTaiKhoan())
-                .viTri(nhanVien.getViTri())
+                .trangThaiTaiKhoan(nhanVien.getTaiKhoan().getTrangThaiTaiKhoan().getTenHienThi())
+                .viTri(nhanVien.getViTri().getTenHienThi())
                 .build();
     }
 

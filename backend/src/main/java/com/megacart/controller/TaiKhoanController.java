@@ -33,7 +33,7 @@ public class TaiKhoanController {
 
     @PostMapping("/dang-nhap")
     public ResponseEntity<AuthResponse> dangNhap(@Valid @RequestBody DangNhapRequest request) {
-        return ResponseEntity.ok(taiKhoanService.dangNhap(request));
+        return ResponseEntity.ok(taiKhoanService.xacThucTaiKhoan(request));
     }
 
     @PostMapping("/dang-xuat")

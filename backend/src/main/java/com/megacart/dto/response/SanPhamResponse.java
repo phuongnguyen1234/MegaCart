@@ -1,7 +1,5 @@
 package com.megacart.dto.response;
 
-import com.megacart.enumeration.NhanSanPham;
-import com.megacart.enumeration.TrangThaiTonKho;
 import lombok.Builder;
 import lombok.Data;
 
@@ -10,10 +8,10 @@ import lombok.Data;
 public class SanPhamResponse {
     private Integer maSanPham;
     private String tenSanPham;
-    private Integer donGia;
+    private long donGia;
     private String donVi;
     private String nhaSanXuat;
-    private NhanSanPham nhan;
-    private TrangThaiTonKho trangThaiTonKho; // Trạng thái còn hàng/hết hàng
-    private String anhMinhHoaChinh; // URL đến ảnh đại diện của sản phẩm
+    private String nhan;
+    private String trangThaiTonKho;
+    private String anhMinhHoaChinh;
 }

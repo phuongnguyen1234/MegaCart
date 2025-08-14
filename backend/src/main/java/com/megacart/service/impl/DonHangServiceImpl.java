@@ -84,7 +84,7 @@ public class DonHangServiceImpl implements DonHangService {
             // Trả về thông tin cơ bản của đơn hàng.
             return LichSuDonHangResponse.builder()
                     .maDonHang(donHang.getMaDonHang())
-                    .trangThai(donHang.getTrangThai())
+                    .trangThai(donHang.getTrangThai().getTenHienThi())
                     .thoiGianDatHang(donHang.getThoiGianDatHang())
                     .tongTien(0)
                     .tenSanPhamDauTien("Đơn hàng không có sản phẩm")
@@ -106,7 +106,7 @@ public class DonHangServiceImpl implements DonHangService {
 
         return LichSuDonHangResponse.builder()
                 .maDonHang(donHang.getMaDonHang())
-                .trangThai(donHang.getTrangThai())
+                .trangThai(donHang.getTrangThai().getTenHienThi())
                 .thoiGianDatHang(donHang.getThoiGianDatHang())
                 .tongTien(tongTien)
                 .tenSanPhamDauTien(sanPhamDauTien.getTenSanPham())
@@ -142,10 +142,10 @@ public class DonHangServiceImpl implements DonHangService {
                 .sdtNhanHang(donHang.getSdtNhanHang())
                 .diaChiDatHang(donHang.getDiaChiNhanHang())
                 .thoiGianDatHang(donHang.getThoiGianDatHang())
-                .trangThai(donHang.getTrangThai())
-                .hinhThucGiaoHang(donHang.getHinhThucNhanHang())
-                .hinhThucThanhToan(donHang.getHinhThucThanhToan())
-                .trangThaiThanhToan(donHang.getTrangThaiThanhToan())
+                .trangThai(donHang.getTrangThai().getTenHienThi())
+                .hinhThucGiaoHang(donHang.getHinhThucNhanHang().getTenHienThi())
+                .hinhThucThanhToan(donHang.getHinhThucThanhToan().getTenHienThi())
+                .trangThaiThanhToan(donHang.getTrangThaiThanhToan().getTenHienThi())
                 .tongTien(tongTien);
 
         List<ChiTietDonHangResponse.ItemResponse> items;

@@ -24,8 +24,8 @@ public class TimKiemKhachHangSpecification {
 
             // Lọc theo trạng thái tài khoản một cách linh hoạt
             if (hienThiTaiKhoanBiKhoa) {
-                // Nếu checkbox được chọn, chỉ hiển thị các tài khoản có trạng thái là VO_HIEU_HOA
-                predicates.add(criteriaBuilder.equal(taiKhoanJoin.get("trangThaiTaiKhoan"), TrangThaiTaiKhoan.VO_HIEU_HOA));
+                // Nếu checkbox được chọn, chỉ hiển thị các tài khoản có trạng thái là KHOA
+                predicates.add(criteriaBuilder.equal(taiKhoanJoin.get("trangThaiTaiKhoan"), TrangThaiTaiKhoan.KHOA));
             } else {
                 // Mặc định, chỉ lấy tài khoản HOAT_DONG
                 predicates.add(criteriaBuilder.equal(taiKhoanJoin.get("trangThaiTaiKhoan"), TrangThaiTaiKhoan.HOAT_DONG));

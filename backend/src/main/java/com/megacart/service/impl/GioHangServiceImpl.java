@@ -4,6 +4,7 @@ import com.megacart.dto.request.CapNhatSoLuongRequest;
 import com.megacart.dto.request.ThemVaoGioHangRequest;
 import com.megacart.dto.response.ThemVaoGioHangResponse;
 import com.megacart.dto.response.GioHangResponse;
+import com.megacart.dto.response.EnumOptionResponse;
 import com.megacart.dto.response.XoaKhoiGioHangResponse;
 import com.megacart.dto.response.ThongTinKhachHangResponse;
 import com.megacart.dto.response.ThongTinThanhToanResponse;
@@ -107,8 +108,13 @@ public class GioHangServiceImpl implements GioHangService {
         ThongTinKhachHangResponse thongTinGiaoHangMacDinh = khachHangService.getThongTinKhachHang(taiKhoan.getMaTaiKhoan());
 
         // 3. Lấy các tùy chọn thanh toán và giao hàng từ Enum
-        List<HinhThucNhanHang> hinhThucNhanHangOptions = Arrays.asList(HinhThucNhanHang.values());
-        List<HinhThucThanhToan> hinhThucThanhToanOptions = Arrays.asList(HinhThucThanhToan.values());
+        List<EnumOptionResponse> hinhThucNhanHangOptions = Arrays.stream(HinhThucNhanHang.values())
+                .map(e -> EnumOptionResponse.builder().value(e.name()).label(e.getTenHienThi()).build())
+                .collect(Collectors.toList());
+
+        List<EnumOptionResponse> hinhThucThanhToanOptions = Arrays.stream(HinhThucThanhToan.values())
+                .map(e -> EnumOptionResponse.builder().value(e.name()).label(e.getTenHienThi()).build())
+                .collect(Collectors.toList());
 
         // 4. Xây dựng và trả về response cuối cùng
         return ThongTinThanhToanResponse.builder()
