@@ -76,6 +76,13 @@ const router = createRouter({
       name: "DatLaiMatKhau",
       component: DatLaiMatKhauView,
     },
+    {
+      // Đường dẫn chi tiết sản phẩm, ví dụ: /san-pham/123
+      path: "/san-pham/:maSanPham",
+      name: "ChiTietSanPham",
+      component: ChiTietSanPhamView,
+      meta: { customerOnly: true },
+    },
     // === ADMIN ROUTES ===
     {
       path: "/admin",
@@ -114,12 +121,6 @@ const router = createRouter({
     // --- DYNAMIC ROUTES (PRODUCT/CATEGORY) ---
     // Phải được đặt ở cuối để không ghi đè các route tĩnh ở trên.
     // Sắp xếp từ cụ thể nhất đến chung chung nhất.
-    {
-      path: "/:danhMucCha/:danhMucCon/:maSanPham",
-      name: "ChiTietSanPham",
-      component: ChiTietSanPhamView,
-      meta: { customerOnly: true },
-    },
     {
       path: "/:danhMucCha/:danhMucCon",
       name: "DanhMucCon",

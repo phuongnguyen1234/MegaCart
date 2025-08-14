@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative bg-white border-none rounded-xl shadow-sm hover:shadow-md transition overflow-hidden flex flex-col cursor-pointer"
+    class="relative bg-white border rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col cursor-pointer group"
     @click="navigateToDetail"
   >
     <!-- Nhãn sản phẩm (Mới, Bán chạy, v.v.) -->
@@ -12,16 +12,25 @@
     </span>
 
     <!-- Ảnh sản phẩm -->
-    <div class="relative group overflow-hidden">
+    <div class="relative overflow-hidden">
       <img
         :src="sanPham.anhMinhHoaChinh"
         :alt="sanPham.tenSanPham"
         class="w-full h-60 object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
       />
+      <!-- Overlay khi hết hàng -->
+      <div
+        v-if="isOutOfStock"
+        class="absolute inset-0 bg-black/40 flex items-center justify-center"
+      >
+        <span class="text-white font-bold text-lg">Hết hàng</span>
+      </div>
+
       <!-- Nút Thêm -->
       <button
+        v-if="!isOutOfStock"
         @click.stop="onAdd"
-        class="absolute bottom-2 right-2 bg-blue-600 text-white px-3 py-1.5 text-xs font-semibold rounded-full flex items-center shadow hover:bg-blue-700"
+        class="absolute bottom-2 right-2 bg-blue-600 text-white px-3 py-1.5 text-xs font-semibold rounded-full flex items-center shadow-md hover:bg-blue-700 transition-opacity opacity-0 group-hover:opacity-100"
       >
         <span class="select-none mr-1 text-sm font-bold">+</span> Thêm
       </button>
@@ -29,12 +38,9 @@
 
     <!-- Thông tin -->
     <div class="p-3 flex-grow flex flex-col justify-between">
-      <a
-        :href="`/${sanPham.danhMucCha}/${sanPham.danhMucCon}/${sanPham.maSanPham}`"
-        class="font-semibold text-gray-800 text-sm truncate hover:underline"
-      >
+      <div class="font-semibold text-gray-800 text-sm truncate">
         {{ sanPham.tenSanPham }}
-      </a>
+      </div>
       <p class="text-blue-700 font-bold text-base mt-1">
         {{ sanPham.donGia.toLocaleString() }} VND
       </p>
@@ -47,15 +53,27 @@
 </template>
 
 <script setup lang="ts">
-import type { SanPhamResponse } from "@/types/sanpham.types";
+import { computed } from "vue";
+import { useRouter } from "vue-router";
+import { TrangThaiTonKho, type SanPhamResponse } from "@/types/sanpham.types";
 
 const props = defineProps<{
   sanPham: SanPhamResponse;
 }>();
 
+const router = useRouter();
+
 const emit = defineEmits<{
   (e: "mo-modal-them", product: SanPhamResponse): void;
 }>();
 
+const isOutOfStock = computed(
+  () => props.sanPham.trangThaiTonKho === TrangThaiTonKho.HET_HANG
+);
+
 const onAdd = () => emit("mo-modal-them", props.sanPham);
+
+const navigateToDetail = () => {
+  router.push(`/san-pham/${props.sanPham.maSanPham}`);
+};
 </script>

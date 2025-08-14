@@ -1,89 +1,170 @@
 <template>
   <CustomerWithNav>
-    <div class="max-w-6xl mx-auto p-4">
-      <!-- Breadcrumb -->
-      <Breadcrumbs :items="breadcrumbs" class="mb-4" />
+    <div class="max-w-7xl mx-auto p-4 md:p-6">
+      <!-- Loading State -->
+      <div v-if="isLoading" class="text-center py-20">
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"
+        ></div>
+        <p class="mt-4 text-gray-600">Đang tải dữ liệu sản phẩm...</p>
+      </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Hình ảnh + nhãn -->
-        <div class="relative w-full aspect-square border overflow-hidden">
-          <img
-            :src="sanPham.hinhAnh"
-            alt="Ảnh sản phẩm"
-            class="w-full h-full object-cover"
-          />
-          <span
-            v-if="sanPham.nhan"
-            class="absolute top-2 right-2 bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded"
-          >
-            {{ sanPham.nhan }}
-          </span>
-        </div>
+      <!-- Error State -->
+      <div v-else-if="error" class="text-center py-20">
+        <p class="text-xl text-red-500 font-semibold">{{ error }}</p>
+        <p v-if="isRedirecting" class="mt-2 text-gray-600">
+          Sẽ tự động chuyển về trang chủ sau 3 giây...
+        </p>
+        <router-link
+          v-else
+          to="/"
+          class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Quay về Trang chủ
+        </router-link>
+      </div>
 
-        <!-- Thông tin chi tiết -->
-        <div class="md:col-span-1 md:col-start-2 flex flex-col gap-3">
-          <div class="text-2xl font-semibold">{{ sanPham.ten }}</div>
-          <div class="text-xl font-bold text-red-600">
-            {{ dinhDangTien(sanPham.donGia) }}
-          </div>
+      <!-- Content -->
+      <div v-else-if="sanPham" class="space-y-6">
+        <!-- Breadcrumb -->
+        <Breadcrumbs :items="sanPham.breadcrumbs" />
 
-          <div class="flex items-center gap-2">
-            <i class="fi fi-rr-balance-scale"></i>
-            <span>{{ sanPham.donVi }}</span>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <i class="fi fi-rr-factory"></i>
-            <span>{{ sanPham.nhaSanXuat }}</span>
-          </div>
-
-          <div class="flex items-start gap-2">
-            <i class="fi fi-rr-info"></i>
-            <span>Thành phần: {{ sanPham.thanhPhan }}</span>
-          </div>
-
-          <div class="flex items-start gap-2">
-            <i class="fi fi-rr-exclamation"></i>
-            <span>Luôn giao thực phẩm tươi sống vào ngày giao hàng</span>
-          </div>
-        </div>
-
-        <!-- Thêm vào giỏ -->
-        <div class="border rounded p-4 h-fit space-y-4">
-          <h2 class="text-lg font-semibold">Thêm vào giỏ hàng</h2>
-
-          <div class="flex items-center justify-between">
-            <label class="font-medium">Số lượng:</label>
-            <div class="flex items-center gap-3">
-              <button
-                @click="giamSoLuong"
-                class="w-8 h-8 rounded-full bg-gray-800 text-white text-lg hover:bg-gray-900 cursor-pointer"
+        <div class="grid grid-cols-1 lg:grid-cols-10 gap-8">
+          <!-- Image Gallery (Left - 3/10) -->
+          <div class="lg:col-span-3">
+            <div
+              class="relative w-full aspect-square border rounded-lg overflow-hidden shadow-sm mb-3"
+            >
+              <img
+                :src="selectedImage"
+                :alt="sanPham.tenSanPham"
+                class="w-full h-full object-cover transition-opacity duration-300"
+                :key="selectedImage"
+              />
+              <span
+                v-if="sanPham.nhan"
+                class="absolute top-3 right-3 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md"
               >
-                −
-              </button>
-              <span class="min-w-[24px] text-center">{{ soLuong }}</span>
-              <button
-                @click="tangSoLuong"
-                class="w-8 h-8 rounded-full bg-gray-800 text-white text-lg hover:bg-gray-900 cursor-pointer"
-              >
-                +
-              </button>
+                {{ sanPham.nhan.replace("_", " ") }}
+              </span>
+            </div>
+            <div class="flex space-x-2 overflow-x-auto">
+              <img
+                v-for="anh in sanPham.anhMinhHoas"
+                :key="anh.duongDan"
+                :src="anh.duongDan"
+                :alt="`Thumbnail ${sanPham.tenSanPham}`"
+                @click="selectedImage = anh.duongDan"
+                class="w-20 h-20 object-cover rounded-md cursor-pointer border-2 transition-all"
+                :class="
+                  selectedImage === anh.duongDan
+                    ? 'border-blue-500 scale-105'
+                    : 'border-transparent hover:border-gray-300'
+                "
+              />
             </div>
           </div>
 
-          <div>
-            <p class="font-medium">Tạm tính:</p>
-            <p class="text-red-600 font-semibold">
-              {{ dinhDangTien(tamTinh) }}
+          <!-- Product Info (Middle - 4/10) -->
+          <div class="lg:col-span-4 flex flex-col">
+            <h1 class="text-3xl font-bold text-gray-800">
+              {{ sanPham.tenSanPham }}
+            </h1>
+            <p class="text-2xl font-bold text-red-600 mt-2">
+              {{ dinhDangTien(sanPham.donGia) }}
             </p>
+
+            <div class="mt-4 pt-4 border-t space-y-3 text-gray-600">
+              <div class="flex items-center gap-3">
+                <i
+                  class="fi fi-rr-balance-scale text-blue-500 w-5 text-center"
+                ></i>
+                <span
+                  >Đơn vị:
+                  <span class="font-semibold text-gray-800">{{
+                    sanPham.donVi
+                  }}</span></span
+                >
+              </div>
+              <div class="flex items-center gap-3">
+                <i class="fi fi-rr-factory text-blue-500 w-5 text-center"></i>
+                <span
+                  >Nhà sản xuất:
+                  <span class="font-semibold text-gray-800">{{
+                    sanPham.nhaSanXuat
+                  }}</span></span
+                >
+              </div>
+              <div class="flex items-start gap-3">
+                <i class="fi fi-rr-info text-blue-500 w-5 text-center mt-1"></i>
+                <p>
+                  Mô tả: <span class="text-gray-800">{{ sanPham.moTa }}</span>
+                </p>
+              </div>
+              <div v-if="sanPham.ghiChu" class="flex items-start gap-3">
+                <i
+                  class="fi fi-rr-exclamation text-orange-500 w-5 text-center mt-1"
+                ></i>
+                <p>
+                  Ghi chú:
+                  <span class="text-gray-800">{{ sanPham.ghiChu }}</span>
+                </p>
+              </div>
+            </div>
           </div>
 
-          <button
-            class="w-full bg-white border border-gray-800 text-gray-800 py-2 rounded hover:bg-gray-100 font-medium flex items-center justify-center gap-2"
-            @click="themVaoGio"
+          <!-- Thêm vào giỏ -->
+          <div
+            class="lg:col-span-3 border rounded-lg bg-gray-50 p-5 h-fit shadow-sm space-y-5"
           >
-            <i class="fi fi-rr-shopping-cart-add"></i> Thêm vào giỏ
-          </button>
+            <h2 class="text-lg font-semibold border-b pb-3">
+              🛒 Thêm vào giỏ hàng
+            </h2>
+
+            <!-- Số lượng -->
+            <div class="flex items-center justify-between">
+              <label class="font-medium text-gray-700">Số lượng:</label>
+              <div class="flex items-center gap-3">
+                <button
+                  @click="giamSoLuong"
+                  :disabled="isOutOfStock"
+                  class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-200 text-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  −
+                </button>
+                <span
+                  class="min-w-[32px] text-center font-semibold text-gray-800"
+                  >{{ soLuong }}</span
+                >
+                <button
+                  @click="tangSoLuong"
+                  :disabled="isOutOfStock"
+                  class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-200 text-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <!-- Tạm tính -->
+            <div class="border-t pt-3">
+              <p class="font-medium text-gray-700">Tạm tính:</p>
+              <p class="text-2xl font-bold text-red-600">
+                {{ dinhDangTien(tamTinh) }}
+              </p>
+            </div>
+
+            <!-- Nút thêm vào giỏ -->
+            <button
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+              @click="themVaoGio"
+              :disabled="isOutOfStock"
+            >
+              <i class="fi fi-rr-shopping-cart-add"></i>
+              <span v-if="!isOutOfStock">Thêm vào giỏ</span>
+              <span v-else>Hết hàng</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -93,47 +174,128 @@
 <script setup lang="ts">
 import CustomerWithNav from "@/components/layouts/CustomerWithNav.vue";
 import Breadcrumbs from "@/components/base/Breadcrumbs.vue";
-import { useBreadcrumbs } from "@/composables/useBreadcrumbs";
 import { useToast } from "@/composables/useToast";
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { getChiTietSanPham } from "@/service/sanpham.service";
+import { themVaoGioHang } from "@/service/giohang.service";
+import { useCartStore } from "@/store/cart.store";
+import type { ChiTietSanPhamResponse } from "@/types/sanpham.types";
+import { TrangThaiTonKho } from "@/types/sanpham.types";
+import { AxiosError } from "axios";
 
-// Breadcrumb
-const tailBreadcrumbs = ref([
-  { text: "Thực phẩm", to: "/thuc-pham" },
-  { text: "Bánh mì", to: "/thuc-pham/banh-mi" },
-  { text: "Bánh mì" }, // Không có `to` vì đây là trang hiện tại
-]);
-const breadcrumbs = useBreadcrumbs(tailBreadcrumbs);
-
-// Dữ liệu sản phẩm mẫu
-const sanPham = {
-  maSanPham: 1,
-  ten: "Bánh mì",
-  donGia: 7000,
-  donVi: "Cái",
-  nhaSanXuat: "Township",
-  thanhPhan: "Bột mì, men, muối",
-  hinhAnh: "https://via.placeholder.com/400",
-  nhan: "Mới", // 👈 thêm nhãn góc phải
-};
-
+const route = useRoute();
+const router = useRouter();
 const { showToast } = useToast();
+const cartStore = useCartStore();
 
-const soLuong = ref(1);
+const sanPham = ref<ChiTietSanPhamResponse | null>(null);
+const isLoading = ref(true);
+const error = ref<string | null>(null);
+const isRedirecting = ref(false);
 
-const tamTinh = computed(() => sanPham.donGia * soLuong.value);
+const isAddToCartModalVisible = ref(false);
+const selectedImage = ref("");
 
-const tangSoLuong = () => soLuong.value++;
-const giamSoLuong = () => {
-  if (soLuong.value > 1) soLuong.value--;
-};
+const isOutOfStock = computed(
+  () => sanPham.value?.trangThaiTonKho === TrangThaiTonKho.HET_HANG
+);
 
 const dinhDangTien = (val: number) => val.toLocaleString("vi-VN") + " VND";
 
-const themVaoGio = () => {
-  showToast({
-    thongBao: `Đã thêm ${soLuong.value} ${sanPham.ten} vào giỏ hàng.`,
-    loai: "thanhCong",
-  });
+const closeAddToCartModal = () => {
+  isAddToCartModalVisible.value = false;
 };
+
+const handleAddToCart = async (payload: {
+  sanPham: SanPhamResponse; // Modal emits SanPhamResponse
+  soLuong: number;
+}) => {
+  closeAddToCartModal();
+  try {
+    const response = await themVaoGioHang({
+      maSanPham: payload.sanPham.maSanPham,
+      soLuong: payload.soLuong,
+    });
+    cartStore.setCartCount(response.tongSoLuongSanPham);
+    showToast({
+      thongBao: response.message,
+      loai: "thanhCong",
+    });
+  } catch (error: any) {
+    const message =
+      error.response?.data?.message || "Thêm vào giỏ hàng thất bại!";
+    showToast({ thongBao: message, loai: "loi" });
+  }
+};
+
+const fetchSanPham = async () => {
+  const maSanPham = Number(route.params.maSanPham);
+  if (isNaN(maSanPham)) {
+    error.value = "Mã sản phẩm không hợp lệ.";
+    isLoading.value = false;
+    return;
+  }
+
+  try {
+    const data = await getChiTietSanPham(maSanPham);
+    sanPham.value = data;
+    // Set ảnh chính làm ảnh được chọn ban đầu
+    selectedImage.value =
+      data.anhMinhHoas.find((a) => a.laAnhChinh)?.duongDan ||
+      data.anhMinhHoas[0]?.duongDan ||
+      "";
+  } catch (err) {
+    if (err instanceof AxiosError && err.response?.status === 404) {
+      error.value = "Sản phẩm không tồn tại hoặc đã bị xóa.";
+      isRedirecting.value = true;
+      setTimeout(() => {
+        router.push("/");
+      }, 3000);
+    } else {
+      console.error("Lỗi khi tải chi tiết sản phẩm:", err);
+      error.value = "Không thể tải dữ liệu sản phẩm. Vui lòng thử lại.";
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const soLuong = ref(1);
+
+const tamTinh = computed(() =>
+  sanPham.value ? sanPham.value.donGia * soLuong.value : 0
+);
+
+const tangSoLuong = () => {
+  if (!isOutOfStock.value) soLuong.value++;
+};
+const giamSoLuong = () => {
+  if (soLuong.value > 1 && !isOutOfStock.value) soLuong.value--;
+};
+
+const themVaoGio = async () => {
+  if (isOutOfStock.value) {
+    showToast({ thongBao: "Sản phẩm đã hết hàng!", loai: "loi" });
+    return;
+  }
+  if (!sanPham.value) return;
+  try {
+    const response = await themVaoGioHang({
+      maSanPham: sanPham.value.maSanPham,
+      soLuong: soLuong.value,
+    });
+    cartStore.setCartCount(response.tongSoLuongSanPham);
+    showToast({
+      thongBao: response.message,
+      loai: "thanhCong",
+    });
+  } catch (error: any) {
+    const message =
+      error.response?.data?.message || "Thêm vào giỏ hàng thất bại!";
+    showToast({ thongBao: message, loai: "loi" });
+  }
+};
+
+onMounted(fetchSanPham);
 </script>

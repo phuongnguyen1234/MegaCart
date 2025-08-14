@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import CardSanPham from "@/components/base/card/CardSanPham.vue";
-import type { SanPhamResponse } from "@/service/sanpham.service";
+import type { SanPhamResponse } from "@/types/sanpham.types";
 
 const props = defineProps<{
   tieuDe: string;

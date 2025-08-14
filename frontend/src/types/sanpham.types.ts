@@ -7,28 +7,54 @@ export enum NhanSanPham {
   KHUYEN_MAI = "KHUYEN_MAI",
 }
 
+export enum TrangThaiTonKho {
+  CON_HANG = "CON_HANG",
+  HET_HANG = "HET_HANG",
+}
+
+export interface AnhMinhHoa {
+  duongDan: string;
+  laAnhChinh: boolean;
+}
+
 /**
- * Dữ liệu tóm tắt của một sản phẩm, dùng trong danh sách.
+ * Dữ liệu cho breadcrumbs, tương ứng với BreadcrumbItem.java
  */
-export interface SanPhamResponse {
+export interface BreadcrumbItem {
+  text: string;
+  to?: string;
+}
+
+/**
+ * Dữ liệu cơ bản của một sản phẩm, chứa các trường chung.
+ */
+interface SanPhamBase {
   maSanPham: number;
   tenSanPham: string;
-  anhMinhHoaChinh: string;
   donGia: number;
-  giaKhuyenMai?: number;
+  donVi: string;
+  nhaSanXuat: string;
+  trangThaiTonKho: TrangThaiTonKho;
   nhan?: NhanSanPham;
 }
 
 /**
- * Dữ liệu chi tiết của một sản phẩm.
+ * Dữ liệu tóm tắt của một sản phẩm, dùng trong danh sách.
+ * Tương ứng với `SanPhamResponse.java` trên backend.
  */
-export interface ChiTietSanPhamResponse extends SanPhamResponse {
+export interface SanPhamResponse extends SanPhamBase {
+  anhMinhHoaChinh: string;
+}
+
+/**
+ * Dữ liệu chi tiết của một sản phẩm.
+ * Tương ứng với `ChiTietSanPhamResponse.java` trên backend.
+ */
+export interface ChiTietSanPhamResponse extends SanPhamBase {
   moTa: string;
-  nhaSanXuat: string;
-  soLuongTon: number;
-  danhGiaTrungBinh: number;
-  soLuongDaBan: number;
-  tenDanhMuc: string;
+  ghiChu: string;
+  anhMinhHoas: AnhMinhHoa[];
+  breadcrumbs: BreadcrumbItem[];
 }
 
 /**

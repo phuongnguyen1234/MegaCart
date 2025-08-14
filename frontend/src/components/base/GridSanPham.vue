@@ -1,6 +1,6 @@
 <!-- src/components/base/GridSanPham.vue -->
 <template>
-  <div>
+  <div v-if="dsSanPham.length > 0">
     <div class="grid gap-4 grid-cols-2 md:grid-cols-4">
       <CardSanPham
         v-for="sanPham in dsSanPham"
@@ -70,20 +70,54 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import CardSanPham from "@/components/base/card/CardSanPham.vue";
-import type { SanPham } from "@/types/SanPham";
+import type { SanPhamResponse } from "@/types/sanpham.types";
 
-defineProps<{
-  dsSanPham: SanPham[];
-  trangHienTai: number;
-  tongSoTrang: number;
-  trangBatDau: number;
-  trangKetThuc: number;
-  soTrangHienThi: number[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    dsSanPham: SanPhamResponse[];
+    trangHienTai: number;
+    tongSoTrang: number;
+    maxVisiblePages?: number;
+  }>(),
+  {
+    maxVisiblePages: 5,
+  }
+);
 
 defineEmits<{
-  (e: "themVaoGioHang", sanPham: SanPham): void;
+  (e: "themVaoGioHang", sanPham: SanPhamResponse): void;
   (e: "chuyenTrang", trang: number): void;
 }>();
+
+// --- Logic phân trang ---
+// Logic này được chuyển vào đây từ component cha để GridSanPham trở nên độc lập hơn.
+
+const trangBatDau = computed(() => {
+  // Tính toán trang bắt đầu cho dải phân trang
+  const mid = Math.floor(props.maxVisiblePages / 2);
+  if (props.tongSoTrang <= props.maxVisiblePages) return 1;
+  if (props.trangHienTai + 1 <= mid + 1) return 1;
+  if (props.trangHienTai + 1 >= props.tongSoTrang - mid)
+    return props.tongSoTrang - props.maxVisiblePages + 1;
+  return props.trangHienTai - mid + 1;
+});
+
+const trangKetThuc = computed(() => {
+  // Tính toán trang kết thúc cho dải phân trang
+  return Math.min(
+    trangBatDau.value + props.maxVisiblePages - 1,
+    props.tongSoTrang
+  );
+});
+
+const soTrangHienThi = computed(() => {
+  // Tạo mảng các số trang sẽ được hiển thị
+  const pages = [];
+  for (let i = trangBatDau.value; i <= trangKetThuc.value; i++) {
+    pages.push(i);
+  }
+  return pages;
+});
 </script>

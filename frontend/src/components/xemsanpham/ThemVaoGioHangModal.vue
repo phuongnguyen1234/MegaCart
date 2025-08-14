@@ -17,8 +17,8 @@
       <!-- Nội dung -->
       <div class="flex gap-4 items-center">
         <img
-          v-if="sanPham?.anhMinhHoa && sanPham.anhMinhHoa.length > 0"
-          :src="sanPham.anhMinhHoa[0]"
+          v-if="sanPham?.anhMinhHoaChinh"
+          :src="sanPham.anhMinhHoaChinh"
           :alt="sanPham.tenSanPham"
           class="w-20 h-20 object-cover rounded-md flex-shrink-0"
         />
@@ -68,12 +68,12 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import Overlay from "@/components/base/Overlay.vue";
-import type { SanPham } from "@/types/SanPham";
+import type { SanPhamResponse } from "@/types/sanpham.types";
 
 const props = withDefaults(
   defineProps<{
     visible: boolean;
-    sanPham: SanPham | null;
+    sanPham: SanPhamResponse | null;
   }>(),
   { sanPham: null }
 );
