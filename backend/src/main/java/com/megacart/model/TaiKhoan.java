@@ -77,7 +77,7 @@ public class TaiKhoan implements UserDetails {
     public boolean isAccountNonExpired() { return true; }
 
     @Override
-    public boolean isAccountNonLocked() { return trangThaiTaiKhoan != TrangThaiTaiKhoan.VO_HIEU_HOA; }
+    public boolean isAccountNonLocked() { return trangThaiTaiKhoan != TrangThaiTaiKhoan.KHOA; }
 
     @Override
     public boolean isCredentialsNonExpired() { return true; }

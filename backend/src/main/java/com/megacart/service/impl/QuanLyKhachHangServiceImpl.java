@@ -67,6 +67,12 @@ public class QuanLyKhachHangServiceImpl implements QuanLyKhachHangService {
 
     private HienThiDanhSachKhachHangResponse mapToAdminKhachHangResponse(KhachHang khachHang) {
         // Giả định rằng khachHang.getTaiKhoan() không bao giờ null ở đây vì query đã JOIN
-        return HienThiDanhSachKhachHangResponse.builder().maKhachHang(khachHang.getMaKhachHang()).tenKhachHang(khachHang.getTenKhachHang()).email(khachHang.getTaiKhoan().getEmail()).diaChi(khachHang.getDiaChi()).soDienThoai(khachHang.getTaiKhoan().getSoDienThoai()).trangThaiTaiKhoan(khachHang.getTaiKhoan().getTrangThaiTaiKhoan()).build();
+        return HienThiDanhSachKhachHangResponse.builder().maKhachHang(khachHang.getMaKhachHang())
+                .tenKhachHang(khachHang.getTenKhachHang())
+                .email(khachHang.getTaiKhoan().getEmail())
+                .diaChi(khachHang.getDiaChi())
+                .soDienThoai(khachHang.getTaiKhoan().getSoDienThoai())
+                .trangThaiTaiKhoan(khachHang.getTaiKhoan().getTrangThaiTaiKhoan().getTenHienThi())
+                .build();
     }
 }

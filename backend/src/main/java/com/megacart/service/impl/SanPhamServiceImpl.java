@@ -50,7 +50,7 @@ public class SanPhamServiceImpl implements SanPhamService {
         // Chuẩn bị pattern tìm kiếm ngay tại tầng service
         String searchPattern = tuKhoa + "%";
         System.out.println("Pattern tìm kiếm: " + searchPattern);
-        return sanPhamRepository.findTenSanPhamByPrefixAndStatus(searchPattern, TrangThaiSanPham.DANG_BAN, limit);
+        return sanPhamRepository.findTenSanPhamByPrefixAndStatus(searchPattern, TrangThaiSanPham.BAN, limit);
     }
 
     @Override
@@ -85,7 +85,7 @@ public class SanPhamServiceImpl implements SanPhamService {
     @Override
     @Transactional(readOnly = true)
     public PagedResponse<SanPhamResponse> getSanPhamTheoDanhMuc(Integer maDanhMuc, Pageable pageable) {
-        Page<SanPham> sanPhamPage = sanPhamRepository.findByDanhMuc_MaDanhMucAndTrangThai(maDanhMuc, TrangThaiSanPham.DANG_BAN, pageable);
+        Page<SanPham> sanPhamPage = sanPhamRepository.findByDanhMuc_MaDanhMucAndTrangThai(maDanhMuc, TrangThaiSanPham.BAN, pageable);
         List<BreadcrumbItem> breadcrumbs = danhMucRepository.findById(maDanhMuc).map(this::buildBreadcrumbs).orElse(null);
         return convertPageToPagedResponse(sanPhamPage, breadcrumbs);
     }
@@ -93,7 +93,7 @@ public class SanPhamServiceImpl implements SanPhamService {
     @Override
     @Transactional(readOnly = true)
     public PagedResponse<SanPhamResponse> getSanPhamTheoNhan(NhanSanPham nhan, Pageable pageable) {
-        Page<SanPham> sanPhamPage = sanPhamRepository.findByNhanAndTrangThai(nhan, TrangThaiSanPham.DANG_BAN, pageable);
+        Page<SanPham> sanPhamPage = sanPhamRepository.findByNhanAndTrangThai(nhan, TrangThaiSanPham.BAN, pageable);
         // Lấy tên hiển thị từ enum để code sạch hơn và dễ mở rộng
         List<BreadcrumbItem> breadcrumbs = buildStaticBreadcrumbs(nhan.getTenHienThi());
         return convertPageToPagedResponse(sanPhamPage, breadcrumbs);
@@ -104,7 +104,7 @@ public class SanPhamServiceImpl implements SanPhamService {
     public PagedResponse<SanPhamResponse> getSanPhamBanChay(Pageable pageable) {
         List<BreadcrumbItem> breadcrumbs = buildStaticBreadcrumbs("Bán chạy nhất");
         // Bước 1: Lấy trang ID của các sản phẩm bán chạy
-        Page<Integer> maSanPhamPage = sanPhamRepository.findMaSanPhamBanChay(TrangThaiSanPham.DANG_BAN, pageable);
+        Page<Integer> maSanPhamPage = sanPhamRepository.findMaSanPhamBanChay(TrangThaiSanPham.BAN, pageable);
         List<Integer> maSanPhams = maSanPhamPage.getContent();
 
         if (maSanPhams.isEmpty()) {
@@ -135,7 +135,7 @@ public class SanPhamServiceImpl implements SanPhamService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + maSanPham));
 
         // Chỉ cho phép xem sản phẩm đang được bán
-        if (sanPham.getTrangThai() != TrangThaiSanPham.DANG_BAN) {
+        if (sanPham.getTrangThai() != TrangThaiSanPham.BAN) {
             throw new ResourceNotFoundException("Sản phẩm này không tồn tại hoặc đã ngừng kinh doanh.");
         }
 
@@ -167,9 +167,13 @@ public class SanPhamServiceImpl implements SanPhamService {
 
         return SanPhamResponse.builder()
                 .maSanPham(sanPham.getMaSanPham())
-                .tenSanPham(sanPham.getTenSanPham()).donGia(sanPham.getDonGia())
-                .donVi(sanPham.getDonVi()).nhaSanXuat(sanPham.getNhaSanXuat()).nhan(sanPham.getNhan())
-                .trangThaiTonKho(trangThaiTonKho).anhMinhHoaChinh(anhChinhUrl).build();
+                .tenSanPham(sanPham.getTenSanPham())
+                .donGia(sanPham.getDonGia())
+                .donVi(sanPham.getDonVi())
+                .nhaSanXuat(sanPham.getNhaSanXuat())
+                .nhan(sanPham.getNhan() != null ? sanPham.getNhan().getTenHienThi() : null)
+                .trangThaiTonKho(trangThaiTonKho.getTenHienThi())
+                .anhMinhHoaChinh(anhChinhUrl).build();
     }
 
     private PagedResponse<SanPhamResponse> convertPageToPagedResponse(Page<SanPham> sanPhamPage, List<BreadcrumbItem> breadcrumbs) {
@@ -198,9 +202,13 @@ public class SanPhamServiceImpl implements SanPhamService {
 
         return ChiTietSanPhamResponse.builder()
                 .maSanPham(sanPham.getMaSanPham())
-                .tenSanPham(sanPham.getTenSanPham()).donGia(sanPham.getDonGia())
-                .donVi(sanPham.getDonVi()).nhaSanXuat(sanPham.getNhaSanXuat())
-                .moTa(sanPham.getMoTa()).ghiChu(sanPham.getGhiChu()).trangThaiTonKho(trangThaiTonKho)
+                .tenSanPham(sanPham.getTenSanPham())
+                .donGia(sanPham.getDonGia())
+                .donVi(sanPham.getDonVi())
+                .nhaSanXuat(sanPham.getNhaSanXuat())
+                .moTa(sanPham.getMoTa())
+                .ghiChu(sanPham.getGhiChu())
+                .trangThaiTonKho(trangThaiTonKho.getTenHienThi())
                 .anhMinhHoas(anhMinhHoas).build();
                }
 

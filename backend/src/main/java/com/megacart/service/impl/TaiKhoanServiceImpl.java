@@ -88,7 +88,7 @@ public class TaiKhoanServiceImpl implements TaiKhoanService {
     }
 
     @Override
-    public AuthResponse dangNhap(DangNhapRequest request) {
+    public AuthResponse xacThucTaiKhoan(DangNhapRequest request) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getMatKhau()));
         var taiKhoan = taiKhoanRepository.findByEmail(request.getEmail()).orElseThrow(
                 () -> new ResourceNotFoundException("Tài khoản không tồn tại sau khi xác thực. Lỗi hệ thống."));

@@ -39,12 +39,12 @@ public class FilterServiceImpl implements FilterService {
 
             // Lấy nhà sản xuất theo danh mục
             nhaSanXuats = danhMucOpt
-                    .map(danhMuc -> sanPhamRepository.findDistinctNhaSanXuatByDanhMuc(danhMuc.getMaDanhMuc(), TrangThaiSanPham.DANG_BAN))
+                    .map(danhMuc -> sanPhamRepository.findDistinctNhaSanXuatByDanhMuc(danhMuc.getMaDanhMuc(), TrangThaiSanPham.BAN))
                     .orElse(List.of());
 
             // Lấy khoảng giá theo danh mục
             khoangGia = danhMucOpt
-                    .flatMap(danhMuc -> sanPhamRepository.findPriceRangeByDanhMuc(danhMuc.getMaDanhMuc(), TrangThaiSanPham.DANG_BAN))
+                    .flatMap(danhMuc -> sanPhamRepository.findPriceRangeByDanhMuc(danhMuc.getMaDanhMuc(), TrangThaiSanPham.BAN))
                     .map(projection -> new PriceRangeResponse(projection.getMinPrice(), projection.getMaxPrice()))
                     .orElse(new PriceRangeResponse(0, 0)); // Mặc định nếu không có sản phẩm nào trong danh mục
 
@@ -87,10 +87,10 @@ public class FilterServiceImpl implements FilterService {
         } else if (StringUtils.hasText(tuKhoa)) {
             // Trường hợp người dùng tìm kiếm bằng từ khóa
             // Lấy nhà sản xuất dựa trên kết quả tìm kiếm
-            nhaSanXuats = sanPhamRepository.findDistinctNhaSanXuatByTuKhoa(tuKhoa, TrangThaiSanPham.DANG_BAN);
+            nhaSanXuats = sanPhamRepository.findDistinctNhaSanXuatByTuKhoa(tuKhoa, TrangThaiSanPham.BAN);
 
             // Lấy khoảng giá dựa trên kết quả tìm kiếm
-            khoangGia = sanPhamRepository.findPriceRangeByTuKhoa(tuKhoa, TrangThaiSanPham.DANG_BAN)
+            khoangGia = sanPhamRepository.findPriceRangeByTuKhoa(tuKhoa, TrangThaiSanPham.BAN)
                     .map(projection -> new PriceRangeResponse(projection.getMinPrice(), projection.getMaxPrice()))
                     .orElse(new PriceRangeResponse(0, 0));
 
@@ -102,10 +102,10 @@ public class FilterServiceImpl implements FilterService {
 
         } else {
             // Lấy tất cả nhà sản xuất
-            nhaSanXuats = sanPhamRepository.findAllDistinctNhaSanXuat(TrangThaiSanPham.DANG_BAN);
+            nhaSanXuats = sanPhamRepository.findAllDistinctNhaSanXuat(TrangThaiSanPham.BAN);
 
             // Lấy khoảng giá tổng thể
-            khoangGia = sanPhamRepository.findOverallPriceRange(TrangThaiSanPham.DANG_BAN)
+            khoangGia = sanPhamRepository.findOverallPriceRange(TrangThaiSanPham.BAN)
                     .map(projection -> new PriceRangeResponse(projection.getMinPrice(), projection.getMaxPrice()))
                     .orElse(new PriceRangeResponse(0, 0)); // Mặc định nếu không có sản phẩm nào trong hệ thống
 

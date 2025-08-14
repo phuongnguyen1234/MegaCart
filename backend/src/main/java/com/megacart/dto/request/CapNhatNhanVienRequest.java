@@ -1,5 +1,6 @@
 package com.megacart.dto.request;
 
+import com.megacart.enumeration.TrangThaiTaiKhoan;
 import com.megacart.enumeration.ViTri;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
@@ -18,4 +19,6 @@ public class CapNhatNhanVienRequest {
     private String soDienThoai;
 
     private ViTri viTri;
+
+    private TrangThaiTaiKhoan trangThai;
 }
