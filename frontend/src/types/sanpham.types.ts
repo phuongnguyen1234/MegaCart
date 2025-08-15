@@ -2,14 +2,12 @@
  * Các nhãn sản phẩm, tương ứng với NhanSanPham.java trên backend.
  */
 export enum NhanSanPham {
-  MOI = "MOI",
-  BAN_CHAY = "BAN_CHAY",
-  KHUYEN_MAI = "KHUYEN_MAI",
+  MOI = "Mới",
 }
 
 export enum TrangThaiTonKho {
-  CON_HANG = "CON_HANG",
-  HET_HANG = "HET_HANG",
+  CON_HANG = "Còn hàng",
+  HET_HANG = "Hết hàng",
 }
 
 export interface AnhMinhHoa {
@@ -36,6 +34,7 @@ interface SanPhamBase {
   nhaSanXuat: string;
   trangThaiTonKho: TrangThaiTonKho;
   nhan?: NhanSanPham;
+  banChay: boolean;
 }
 
 /**

@@ -4,12 +4,20 @@
     @click="navigateToDetail"
   >
     <!-- Nhãn sản phẩm (Mới, Bán chạy, v.v.) -->
-    <span
-      v-if="sanPham.nhan"
-      class="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded z-10"
-    >
-      {{ sanPham.nhan.replace("_", " ") }}
-    </span>
+    <div class="absolute top-2 left-2 z-10 flex flex-col items-start gap-y-1.5">
+      <span
+        v-if="sanPham.nhan"
+        class="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded"
+      >
+        {{ sanPham.nhan }}
+      </span>
+      <span
+        v-if="sanPham.banChay"
+        class="bg-orange-400 text-white text-xs font-semibold px-2 py-0.5 rounded"
+      >
+        Bán chạy
+      </span>
+    </div>
 
     <!-- Ảnh sản phẩm -->
     <div class="relative overflow-hidden">

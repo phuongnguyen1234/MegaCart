@@ -69,11 +69,11 @@ export const getSanPhamTheoDanhMuc = (
  * Lấy danh sách sản phẩm theo nhãn (Mới, Bán chạy,...).
  */
 export const getSanPhamTheoNhan = (
-  nhan: NhanSanPham,
+  nhanSanPham: NhanSanPham,
   pageable: PageableParams
 ): Promise<PagedResponse<SanPhamResponse>> => {
   return apiClient.get("/san-pham/theo-nhan", {
-    params: { nhan, ...pageable },
+    params: { nhanSanPham, ...pageable },
   });
 };
 
