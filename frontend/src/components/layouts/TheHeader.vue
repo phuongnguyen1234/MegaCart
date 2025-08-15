@@ -150,7 +150,7 @@ import { useRouter } from "vue-router";
 import Loading from "@/components/base/Loading.vue";
 import ConfirmModal from "@/components/base/modals/ConfirmModal.vue";
 import { useAuthStore } from "@/store/auth.store";
-import { useCartStore } from "@/store/cart.store";
+import { useCartStore } from "@/store/giohang.store";
 import { goiYTimKiem } from "@/service/sanpham.service";
 
 const isProfileMenuOpen = ref(false);

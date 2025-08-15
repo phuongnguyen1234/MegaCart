@@ -8,7 +8,7 @@
 <script setup lang="ts">
 import TheToaster from "@/components/base/TheToaster.vue";
 import { useAuthStore } from "@/store/auth.store";
-import { useCartStore } from "@/store/cart.store";
+import { useCartStore } from "@/store/giohang.store";
 import { onMounted } from "vue";
 
 const authStore = useAuthStore();

@@ -9,7 +9,7 @@
         v-if="sanPham.nhan"
         class="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded"
       >
-        {{ sanPham.nhan }}
+        {{ sanPham.nhan.label }}
       </span>
       <span
         v-if="sanPham.banChay"

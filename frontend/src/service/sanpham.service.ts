@@ -4,14 +4,14 @@ import type {
   PagedResponse,
   SortDirection,
 } from "@/types/api.types";
+import { NhanSanPhamKey } from "@/types/sanpham.types";
 import type {
   SanPhamResponse,
   ChiTietSanPhamResponse,
   TimKiemFilterParams,
 } from "@/types/sanpham.types";
-import { NhanSanPham } from "@/types/sanpham.types";
 
-export { NhanSanPham };
+export { NhanSanPhamKey };
 
 // --- Helper Functions (Optional but Recommended) ---
 
@@ -55,35 +55,39 @@ export const timKiemVaLocSanPham = (
 
 /**
  * Lấy danh sách sản phẩm theo danh mục.
+ * @deprecated Endpoint /api/san-pham/theo-danh-muc/{maDanhMuc} đã bị vô hiệu hóa ở backend.
  */
-export const getSanPhamTheoDanhMuc = (
-  maDanhMuc: number,
-  pageable: PageableParams
-): Promise<PagedResponse<SanPhamResponse>> => {
-  return apiClient.get(`/san-pham/theo-danh-muc/${maDanhMuc}`, {
-    params: pageable,
-  });
-};
+// export const getSanPhamTheoDanhMuc = (
+//   maDanhMuc: number,
+//   pageable: PageableParams
+// ): Promise<PagedResponse<SanPhamResponse>> => {
+//   return apiClient.get(`/san-pham/theo-danh-muc/${maDanhMuc}`, {
+//     params: pageable,
+//   });
+// };
 
 /**
  * Lấy danh sách sản phẩm theo nhãn (Mới, Bán chạy,...).
  */
 export const getSanPhamTheoNhan = (
-  nhanSanPham: NhanSanPham,
+  nhan: NhanSanPhamKey,
+  filters: Partial<TimKiemFilterParams>,
   pageable: PageableParams
 ): Promise<PagedResponse<SanPhamResponse>> => {
-  return apiClient.get("/san-pham/theo-nhan", {
-    params: { nhanSanPham, ...pageable },
-  });
+  // Backend yêu cầu param là `nhan`
+  const params = { nhan, ...filters, ...pageable };
+  return apiClient.get("/san-pham/theo-nhan", { params });
 };
 
 /**
  * Lấy danh sách sản phẩm bán chạy nhất.
  */
 export const getSanPhamBanChay = (
+  filters: Partial<TimKiemFilterParams>,
   pageable: PageableParams
 ): Promise<PagedResponse<SanPhamResponse>> => {
-  return apiClient.get("/san-pham/ban-chay", { params: pageable });
+  const params = { ...filters, ...pageable };
+  return apiClient.get("/san-pham/ban-chay", { params });
 };
 
 /**

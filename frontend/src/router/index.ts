@@ -5,7 +5,7 @@ import { decodeJwtPayload } from "@/utils/jwt";
 import DangNhapView from "@/views/DangNhapView.vue";
 import TrangChuView from "@/views/khachhang/TrangChuView.vue";
 import KetQuaTimKiemView from "@/views/khachhang/KetQuaTimKiemView.vue";
-import XemDanhMucView from "@/views/khachhang/XemDanhMucView.vue";
+import XemDanhSachSanPhamView from "@/views/khachhang/XemDanhSachSanPhamView.vue";
 import ChiTietSanPhamView from "@/views/khachhang/ChiTietSanPhamView.vue";
 import GioHangView from "@/views/khachhang/GioHangView.vue";
 import CapNhatTaiKhoanView from "@/views/khachhang/CapNhatTaiKhoanView.vue";
@@ -83,6 +83,20 @@ const router = createRouter({
       component: ChiTietSanPhamView,
       meta: { customerOnly: true },
     },
+    {
+      // Đường dẫn cho các sản phẩm có nhãn "Mới"
+      path: "/san-pham-moi",
+      name: "SanPhamMoi",
+      component: XemDanhSachSanPhamView,
+      meta: { customerOnly: true },
+    },
+    {
+      // Đường dẫn cho các sản phẩm bán chạy nhất
+      path: "/ban-chay",
+      name: "BanChay",
+      component: XemDanhSachSanPhamView,
+      meta: { customerOnly: true },
+    },
     // === ADMIN ROUTES ===
     {
       path: "/admin",
@@ -124,7 +138,7 @@ const router = createRouter({
     {
       path: "/:danhMucCha/:danhMucCon",
       name: "DanhMucCon",
-      component: XemDanhMucView,
+      component: XemDanhSachSanPhamView,
       meta: { customerOnly: true },
     },
     {
@@ -132,7 +146,7 @@ const router = createRouter({
       // Nó phải là route động cuối cùng để không bắt các route như /gio-hang, /admin.
       path: "/:danhMucCha",
       name: "DanhMucCha",
-      component: XemDanhMucView,
+      component: XemDanhSachSanPhamView,
       meta: { customerOnly: true },
     },
   ],

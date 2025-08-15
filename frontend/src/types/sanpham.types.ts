@@ -1,8 +1,28 @@
 /**
- * Các nhãn sản phẩm, tương ứng với NhanSanPham.java trên backend.
+ * Các key của nhãn sản phẩm, dùng để gửi lên API.
+ * Giá trị của enum này phải TRÙNG KHỚP với tên của enum constant trong `NhanSanPham.java` ở backend.
+ * Ví dụ: `MOI` trong TypeScript tương ứng với `NhanSanPham.MOI` trong Java.
  */
-export enum NhanSanPham {
-  MOI = "Mới",
+export enum NhanSanPhamKey {
+  MOI = "MOI",
+  // Thêm các key khác nếu có, ví dụ: BAN_CHAY = "BAN_CHAY"
+}
+
+/**
+ * Ánh xạ từ key của nhãn sản phẩm sang tên hiển thị (label).
+ * Hữu ích cho việc hiển thị trên UI mà không cần chờ dữ liệu từ API.
+ */
+export const NhanSanPhamLabel: Record<NhanSanPhamKey, string> = {
+  [NhanSanPhamKey.MOI]: "Mới",
+};
+
+/**
+ * Cấu trúc đối tượng nhãn sản phẩm nhận về từ API.
+ * Backend serialize enum thành một object chứa key (value) và tên hiển thị (label).
+ */
+export interface NhanSanPhamObject {
+  value: NhanSanPhamKey; // Key của enum, ví dụ: "MOI"
+  label: string; // Nhãn hiển thị, ví dụ: "Mới"
 }
 
 export enum TrangThaiTonKho {
@@ -33,7 +53,7 @@ interface SanPhamBase {
   donVi: string;
   nhaSanXuat: string;
   trangThaiTonKho: TrangThaiTonKho;
-  nhan?: NhanSanPham;
+  nhan?: NhanSanPhamObject;
   banChay: boolean;
 }
 
@@ -62,6 +82,7 @@ export interface ChiTietSanPhamResponse extends SanPhamBase {
 export interface TimKiemFilterParams {
   tuKhoa?: string;
   maDanhMuc?: number;
+  giaToiThieu?: number;
   giaToiDa?: number;
   nhaSanXuat?: string;
 }

@@ -2,17 +2,15 @@
   <div class="flex items-center border rounded p-3 gap-3 relative">
     <input
       type="checkbox"
-      :checked="sanPham.daChon"
-      @change="$emit('chon', $event.target.checked)"
+      :checked="isChecked"
+      @change="$emit('chon', ($event.target as HTMLInputElement).checked)"
       class="cursor-pointer"
     />
     <router-link
       :to="{
         name: 'ChiTietSanPham',
         params: {
-          maSanPham: sanPham.id,
-          danhMucCha: sanPham.danhMucCha,
-          danhMucCon: sanPham.danhMucCon,
+          maSanPham: sanPham.maSanPham,
         },
       }"
       class="shrink-0"
@@ -26,13 +24,11 @@
           :to="{
             name: 'ChiTietSanPham',
             params: {
-              maSanPham: sanPham.id,
-              danhMucCha: sanPham.danhMucCha,
-              danhMucCon: sanPham.danhMucCon,
+              maSanPham: sanPham.maSanPham,
             },
           }"
           class="hover:underline"
-          >{{ sanPham.ten }}</router-link
+          >{{ sanPham.tenSanPham }}</router-link
         >
       </h3>
       <p class="text-sm">
@@ -70,21 +66,31 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import type { PropType } from "vue";
+import type { GioHangItem } from "@/types/giohang.types";
+
 const props = defineProps({
-  sanPham: Object,
+  sanPham: {
+    type: Object as PropType<GioHangItem>,
+    required: true,
+  },
+  isChecked: {
+    type: Boolean,
+    required: true,
+  },
 });
 const emit = defineEmits(["chon", "thayDoiSoLuong", "xoa"]);
 
-const thayDoiSoLuong = (delta) => {
+const thayDoiSoLuong = (delta: number) => {
   const newSL = props.sanPham.soLuong + delta;
   if (newSL >= 1) {
     emit("thayDoiSoLuong", newSL);
   }
 };
 
-const formatPrice = (vnd) => {
+const formatPrice = (vnd: number) => {
   if (typeof vnd !== "number") return 0;
-  return vnd.toLocaleString();
+  return vnd.toLocaleString("vi-VN");
 };
 </script>

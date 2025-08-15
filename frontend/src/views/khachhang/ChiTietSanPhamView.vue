@@ -179,7 +179,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { getChiTietSanPham } from "@/service/sanpham.service";
 import { themVaoGioHang } from "@/service/giohang.service";
-import { useCartStore } from "@/store/cart.store";
+import { useCartStore } from "@/store/giohang.store";
 import type { ChiTietSanPhamResponse } from "@/types/sanpham.types";
 import { TrangThaiTonKho } from "@/types/sanpham.types";
 import { AxiosError } from "axios";

@@ -1,13 +1,13 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { getThongTinGioHang } from "@/service/giohang.service";
+import { getThongTinThanhToan } from "@/service/giohang.service";
 
 export const useCartStore = defineStore("cart", () => {
   const soLuongSanPham = ref(0);
 
   const fetchCartCount = async () => {
     try {
-      const cartData = await getThongTinGioHang();
+      const cartData = await getThongTinThanhToan();
       soLuongSanPham.value = cartData.tongSoLuongSanPham;
     } catch (error) {
       console.error("Không thể lấy số lượng giỏ hàng:", error);

@@ -4,7 +4,7 @@ import { jwtDecode } from "jwt-decode";
 import * as taiKhoanService from "@/service/taikhoan.service";
 import type { LoginCredentials } from "@/service/taikhoan.service";
 import router from "@/router";
-import { useCartStore } from "./cart.store";
+import { useCartStore } from "./giohang.store";
 
 interface JwtPayload {
   sub: string; // User's email

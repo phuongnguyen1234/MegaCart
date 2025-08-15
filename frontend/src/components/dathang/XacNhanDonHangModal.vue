@@ -22,7 +22,7 @@
         <div class="flex-1 overflow-y-auto mb-4 px-2 py-1 space-y-2">
           <CardSanPhamDonHang
             v-for="sp in danhSachSanPham"
-            :key="sp.id"
+            :key="sp.maSanPham"
             :sanPham="sp"
           />
         </div>
@@ -36,7 +36,10 @@
         <div class="text-sm space-y-2 mb-4">
           <div class="flex items-start gap-2">
             <i class="fi fi-rr-user mt-1"></i>
-            <span><strong>Tên người nhận:</strong> {{ thongTin.ten }}</span>
+            <span
+              ><strong>Tên người nhận:</strong>
+              {{ thongTin.tenNguoiNhan }}</span
+            >
           </div>
           <div class="flex items-start gap-2">
             <i class="fi fi-rr-phone-call mt-1"></i>
@@ -79,18 +82,13 @@
 <script setup lang="ts">
 import Overlay from "../base/Overlay.vue";
 import CardSanPhamDonHang from "@/components/base/card/CardSanPhamDonHang.vue";
+import type { GioHangItem } from "@/types/giohang.types";
 
 defineProps<{
   visible: boolean;
-  danhSachSanPham: {
-    id: number;
-    ten: string;
-    donGia: number;
-    soLuong: number;
-    hinhAnh: string;
-  }[];
+  danhSachSanPham: GioHangItem[];
   thongTin: {
-    ten: string;
+    tenNguoiNhan: string;
     soDienThoai: string;
     diaChi: string;
     giaoHang: string;

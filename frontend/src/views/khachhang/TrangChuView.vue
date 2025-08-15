@@ -34,11 +34,11 @@ import ThemVaoGioHangModal from "@/components/xemsanpham/ThemVaoGioHangModal.vue
 import {
   getSanPhamTheoNhan,
   getSanPhamBanChay,
-  NhanSanPham,
+  NhanSanPhamKey,
 } from "@/service/sanpham.service";
 import type { SanPhamResponse } from "@/types/sanpham.types";
 import { themVaoGioHang } from "@/service/giohang.service";
-import { useCartStore } from "@/store/cart.store";
+import { useCartStore } from "@/store/giohang.store";
 
 const { showToast } = useToast();
 const cartStore = useCartStore();
@@ -50,8 +50,8 @@ onMounted(async () => {
   try {
     // Lấy 10 sản phẩm mới nhất
     const [resMoi, resBanChay] = await Promise.all([
-      getSanPhamTheoNhan(NhanSanPham.MOI, { size: 10 }),
-      getSanPhamBanChay({ size: 10 }),
+      getSanPhamTheoNhan(NhanSanPhamKey.MOI, {}, { size: 10 }),
+      getSanPhamBanChay({}, { size: 10 }),
     ]);
     dsSanPhamMoi.value = resMoi.content;
     dsBanChay.value = resBanChay.content;

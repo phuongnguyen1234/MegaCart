@@ -5,7 +5,7 @@
       v-if="isConfirmModalVisible"
       :visible="isConfirmModalVisible"
       :danhSachSanPham="sanPhamDaChon"
-      :thongTin="thongTinGiaoHang"
+      :thongTin="thongTinXacNhan"
       :tongTien="tongTien"
       @close="isConfirmModalVisible = false"
       @xacNhan="handleXacNhanDatHang"
@@ -13,8 +13,15 @@
 
     <div class="max-w-6xl mx-auto p-6 mt-6">
       <!-- Giao diện khi giỏ hàng có sản phẩm -->
+      <div v-if="isLoading" class="text-center py-20">
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"
+        ></div>
+        <p class="mt-4 text-gray-600">Đang tải giỏ hàng...</p>
+      </div>
+
       <div
-        v-if="sanPhamTrongGio.length > 0"
+        v-else-if="!isLoading && cartItems.length > 0"
         class="grid grid-cols-1 md:grid-cols-2 gap-6"
       >
         <!-- Giỏ hàng -->
@@ -24,23 +31,30 @@
           <div class="flex items-center justify-between mb-2 text-sm">
             <span
               >Đã chọn
-              <strong>{{ selectedCount }}/{{ sanPhamTrongGio.length }}</strong>
+              <strong>{{ selectedItems.size }}/{{ cartItems.length }}</strong>
               sản phẩm</span
             >
             <label class="flex items-center gap-1">
-              <input type="checkbox" v-model="chonTatCa" />
+              <input
+                type="checkbox"
+                v-model="chonTatCa"
+                class="cursor-pointer"
+              />
               Chọn tất cả
             </label>
           </div>
 
           <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
             <CardSanPhamGioHang
-              v-for="(sp, index) in sanPhamTrongGio"
-              :key="index"
+              v-for="sp in cartItems"
+              :key="sp.maSanPham"
               :sanPham="sp"
-              @chon="capNhatChon(index, $event)"
-              @thayDoiSoLuong="capNhatSoLuong(index, $event)"
-              @xoa="xoaSanPham(index)"
+              :isChecked="selectedItems.has(sp.maSanPham)"
+              @chon="(isChecked:boolean) => toggleChon(sp.maSanPham, isChecked)"
+              @thay-doi-so-luong="
+                (soLuong:number) => handleCapNhatSoLuong(sp.maSanPham, soLuong)
+              "
+              @xoa="() => handleXoaSanPham(sp.maSanPham)"
             />
           </div>
 
@@ -48,7 +62,7 @@
             <a
               href="#"
               @click.prevent="datLaiGioHang"
-              class="text-blue-600 text-sm hover:underline cursor-pointer"
+              class="text-red-600 text-sm hover:underline cursor-pointer"
               >Đặt lại giỏ hàng</a
             >
           </div>
@@ -64,9 +78,9 @@
             <label class="block font-medium mb-1">Tên người nhận</label>
             <input
               type="text"
-              v-model="nguoiNhan"
+              v-model="thongTinGiaoHangForm.tenNguoiNhan"
               class="w-full border rounded px-3 py-2 disabled:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed"
-              :disabled="suDungThongTinTaiKhoan"
+              :disabled="suDungThongTinMacDinh"
             />
           </div>
 
@@ -74,9 +88,9 @@
             <label class="block font-medium mb-1">Địa chỉ nhận hàng</label>
             <input
               type="text"
-              v-model="diaChiNhan"
+              v-model="thongTinGiaoHangForm.diaChi"
               class="w-full border rounded px-3 py-2 disabled:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed"
-              :disabled="suDungThongTinTaiKhoan"
+              :disabled="suDungThongTinMacDinh"
             />
           </div>
 
@@ -86,9 +100,9 @@
             >
             <input
               type="text"
-              v-model="soDienThoai"
+              v-model="thongTinGiaoHangForm.soDienThoai"
               class="w-full border rounded px-3 py-2 disabled:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed"
-              :disabled="suDungThongTinTaiKhoan"
+              :disabled="suDungThongTinMacDinh"
             />
           </div>
 
@@ -96,9 +110,9 @@
             <input
               type="checkbox"
               id="sudungtk"
-              v-model="suDungThongTinTaiKhoan"
+              v-model="suDungThongTinMacDinh"
               class="mr-2 cursor-pointer"
-              @change="layThongTinTaiKhoan"
+              @change="toggleSuDungThongTinMacDinh"
             />
             <label for="sudungtk" class="cursor-pointer"
               >Sử dụng thông tin tài khoản</label
@@ -109,7 +123,7 @@
             <label class="block font-medium mb-1">Hình thức nhận hàng</label>
             <select
               v-model="hinhThucNhanHang"
-              class="w-full border rounded px-3 py-2 cursor-pointer"
+              class="w-full border rounded px-3 py-2 cursor-pointer bg-white"
             >
               <option value="giao-tan-nha">Giao hàng tận nhà</option>
             </select>
@@ -119,7 +133,7 @@
             <label class="block font-medium mb-1">Hình thức thanh toán</label>
             <select
               v-model="hinhThucThanhToan"
-              class="w-full border rounded px-3 py-2 cursor-pointer"
+              class="w-full border rounded px-3 py-2 cursor-pointer bg-white"
             >
               <option value="cod">Thanh toán khi nhận hàng</option>
             </select>
@@ -129,13 +143,14 @@
             class="mt-4 flex justify-between items-center font-semibold text-lg"
           >
             <span>Tổng tiền:</span>
-            <span>{{ tongTien.toLocaleString() }} VND</span>
+            <span>{{ tongTien.toLocaleString("vi-VN") }} VND</span>
           </div>
 
           <div class="mt-6 text-center">
             <button
-              class="bg-gray-800 text-white px-6 py-2 rounded hover:bg-gray-700 cursor-pointer"
-              @click="datHang"
+              class="bg-gray-800 text-white px-6 py-2 rounded hover:bg-gray-700 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
+              :disabled="selectedItems.size === 0"
+              @click="handleDatHang"
             >
               Đặt hàng
             </button>
@@ -163,161 +178,244 @@
   </CustomerNoNav>
 </template>
 
-<script setup>
-import { ref, computed } from "vue";
+<script setup lang="ts">
+import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useToast } from "@/composables/useToast";
 import CustomerNoNav from "@/components/layouts/CustomerNoNav.vue";
 import CardSanPhamGioHang from "@/components/dathang/CardSanPhamGioHang.vue";
 import XacNhanDonHangModal from "@/components/dathang/XacNhanDonHangModal.vue";
+import {
+  getThongTinThanhToan,
+  capNhatSoLuong,
+  xoaKhoiGioHang,
+  xoaToanBoGioHang,
+} from "@/service/giohang.service";
+import { taoDonHang } from "@/service/dathang.service";
+import type {
+  GioHangItem,
+  ThongTinGiaoHangMacDinh,
+} from "@/types/giohang.types";
+import type { DatHangRequest } from "@/types/dathang.types";
+import { useCartStore } from "@/store/giohang.store";
 
 const router = useRouter();
 const { showToast } = useToast();
+const cartStore = useCartStore();
 
+// --- State ---
+const isLoading = ref(true);
+const cartItems = ref<GioHangItem[]>([]);
+const thongTinGiaoHangMacDinh = ref<ThongTinGiaoHangMacDinh | null>(null);
 const isConfirmModalVisible = ref(false);
+const selectedItems = ref(new Set<number>());
 
-const sanPhamTrongGio = ref([
-  {
-    id: 1,
-    ten: "Bánh mì",
-    donGia: 7000,
-    donVi: "Cái",
-    soLuong: 2,
-    daChon: true,
-    hinhAnh: "https://picsum.photos/100?random=1",
-    danhMucCha: "thuc-pham",
-    danhMucCon: "banh-mi",
-  },
-  {
-    id: 2,
-    ten: "Đường trắng",
-    donGia: 23000,
-    donVi: "Túi 1kg",
-    soLuong: 1,
-    daChon: false,
-    hinhAnh: "https://picsum.photos/100?random=2",
-    danhMucCha: "thuc-pham",
-    danhMucCon: "gia-vi",
-  },
-  {
-    id: 3,
-    ten: "Trứng gà",
-    donGia: 25000,
-    donVi: "Hộp 12 quả",
-    soLuong: 1,
-    daChon: true,
-    hinhAnh: "https://picsum.photos/100?random=3",
-    danhMucCha: "thuc-pham",
-    danhMucCon: "trung",
-  },
-]);
-
-const chonTatCa = computed({
-  // Getter: Trả về true nếu tất cả sản phẩm được chọn và giỏ hàng không rỗng
-  get: () =>
-    sanPhamTrongGio.value.length > 0 &&
-    sanPhamTrongGio.value.every((sp) => sp.daChon),
-
-  // Setter: Cập nhật trạng thái 'daChon' cho tất cả sản phẩm
-  set: (value) => {
-    sanPhamTrongGio.value.forEach((sp) => {
-      sp.daChon = value;
-    });
-  },
+const thongTinGiaoHangForm = ref({
+  tenNguoiNhan: "",
+  diaChi: "",
+  soDienThoai: "",
 });
 
-const capNhatChon = (index, value) => {
-  sanPhamTrongGio.value[index].daChon = value;
-};
-
-const capNhatSoLuong = (index, newSL) => {
-  sanPhamTrongGio.value[index].soLuong = newSL;
-};
-
-const xoaSanPham = (index) => {
-  sanPhamTrongGio.value.splice(index, 1);
-};
-
-const datLaiGioHang = () => {
-  sanPhamTrongGio.value = [];
-  chonTatCa.value = false;
-};
-
-const selectedCount = computed(
-  () => sanPhamTrongGio.value.filter((sp) => sp.daChon).length
-);
-
-const sanPhamDaChon = computed(() =>
-  sanPhamTrongGio.value.filter((sp) => sp.daChon)
-);
-
-const tongTien = computed(() =>
-  sanPhamTrongGio.value.reduce((total, sp) => {
-    if (sp.daChon) total += sp.donGia * sp.soLuong;
-    return total;
-  }, 0)
-);
-
-const nguoiNhan = ref("Nguyễn Văn A");
-const diaChiNhan = ref("12 phố A, phường B, quận C, thành phố D");
-const soDienThoai = ref("09876543210");
-const suDungThongTinTaiKhoan = ref(true);
+const suDungThongTinMacDinh = ref(true);
 const hinhThucNhanHang = ref("giao-tan-nha");
 const hinhThucThanhToan = ref("cod");
 
-const layThongTinTaiKhoan = () => {
-  if (suDungThongTinTaiKhoan.value) {
-    // Placeholder: Gọi API lấy thông tin tài khoản
-    console.log("Đang lấy thông tin tài khoản từ backend...");
+// --- Computed Properties ---
+
+const chonTatCa = computed({
+  get: () =>
+    cartItems.value.length > 0 &&
+    selectedItems.value.size === cartItems.value.length,
+  set: (value) => {
+    if (value) {
+      cartItems.value.forEach((item) =>
+        selectedItems.value.add(item.maSanPham)
+      );
+    } else {
+      selectedItems.value.clear();
+    }
+  },
+});
+
+const sanPhamDaChon = computed(() =>
+  cartItems.value.filter((item) => selectedItems.value.has(item.maSanPham))
+);
+
+const tongTien = computed(() =>
+  sanPhamDaChon.value.reduce((total, item) => {
+    return total + item.thanhTien;
+  }, 0)
+);
+
+const thongTinXacNhan = computed(() => {
+  // Định dạng lại dữ liệu để phù hợp với prop `thongTin` của modal
+  // Dựa trên cấu trúc dữ liệu ở các modal khác (ví dụ: ChiTietDonHangModal)
+  return {
+    tenNguoiNhan: thongTinGiaoHangForm.value.tenNguoiNhan,
+    soDienThoai: thongTinGiaoHangForm.value.soDienThoai,
+    diaChi: thongTinGiaoHangForm.value.diaChi,
+    giaoHang:
+      hinhThucNhanHang.value === "GIAO_HANG_TAN_NHA" ? "Giao hàng tận nhà" : "",
+    thanhToan:
+      hinhThucThanhToan.value === "THANH_TOAN_KHI_NHAN_HANG"
+        ? "Thanh toán khi nhận hàng"
+        : "",
+  };
+});
+
+// --- Methods ---
+
+const fetchCartData = async () => {
+  try {
+    isLoading.value = true;
+    const response = await getThongTinThanhToan();
+    cartItems.value = response.items;
+    thongTinGiaoHangMacDinh.value = response.thongTinGiaoHangMacDinh;
+
+    // Tự động chọn tất cả sản phẩm khi tải trang
+    response.items.forEach((item) => selectedItems.value.add(item.maSanPham));
+
+    // Điền thông tin giao hàng mặc định vào form
+    if (response.thongTinGiaoHangMacDinh) {
+      thongTinGiaoHangForm.value.tenNguoiNhan =
+        response.thongTinGiaoHangMacDinh.tenKhachHang;
+      thongTinGiaoHangForm.value.diaChi =
+        response.thongTinGiaoHangMacDinh.diaChi;
+      thongTinGiaoHangForm.value.soDienThoai =
+        response.thongTinGiaoHangMacDinh.soDienThoai;
+    }
+  } catch (error) {
+    console.error("Lỗi khi tải giỏ hàng:", error);
+    showToast({ thongBao: "Không thể tải giỏ hàng.", loai: "loi" });
+  } finally {
+    isLoading.value = false;
   }
 };
 
-const thongTinGiaoHang = computed(() => ({
-  ten: nguoiNhan.value,
-  soDienThoai: soDienThoai.value,
-  diaChi: diaChiNhan.value,
-  giaoHang:
-    hinhThucNhanHang.value === "giao-tan-nha" ? "Giao hàng tận nhà" : "",
-  thanhToan:
-    hinhThucThanhToan.value === "cod" ? "Thanh toán khi nhận hàng" : "",
-}));
+const toggleChon = (maSanPham: number, isChecked: boolean) => {
+  if (isChecked) {
+    selectedItems.value.add(maSanPham);
+  } else {
+    selectedItems.value.delete(maSanPham);
+  }
+};
 
-const datHang = () => {
-  // 1. Kiểm tra xem có sản phẩm nào được chọn không
-  if (sanPhamDaChon.value.length === 0) {
+const handleCapNhatSoLuong = async (maSanPham: number, soLuong: number) => {
+  try {
+    const response = await capNhatSoLuong(maSanPham, { soLuong });
+    cartItems.value = response.items;
+    cartStore.setCartCount(response.tongSoLuongSanPham);
+    showToast({ thongBao: "Cập nhật số lượng thành công.", loai: "thanhCong" });
+  } catch (error) {
+    showToast({ thongBao: "Cập nhật số lượng thất bại.", loai: "loi" });
+    // Tải lại dữ liệu để đảm bảo đồng bộ
+    await fetchCartData();
+  }
+};
+
+const handleXoaSanPham = async (maSanPham: number) => {
+  try {
+    const response = await xoaKhoiGioHang(maSanPham);
+    // Cập nhật lại state từ frontend để có trải nghiệm mượt hơn
+    cartItems.value = cartItems.value.filter(
+      (item) => item.maSanPham !== maSanPham
+    );
+    selectedItems.value.delete(maSanPham);
+    cartStore.setCartCount(response.tongSoLuongSanPham);
+    showToast({ thongBao: response.message, loai: "thanhCong" });
+  } catch (error) {
+    showToast({ thongBao: "Xóa sản phẩm thất bại.", loai: "loi" });
+  }
+};
+
+const datLaiGioHang = async () => {
+  try {
+    await xoaToanBoGioHang();
+    cartItems.value = [];
+    selectedItems.value.clear();
+    cartStore.clearCartCount();
+    showToast({ thongBao: "Đã xóa toàn bộ giỏ hàng.", loai: "thanhCong" });
+  } catch (error) {
+    showToast({ thongBao: "Xóa giỏ hàng thất bại.", loai: "loi" });
+  }
+};
+
+const toggleSuDungThongTinMacDinh = () => {
+  // Nếu người dùng chọn sử dụng thông tin mặc định, hãy điền lại thông tin đó vào form.
+  if (suDungThongTinMacDinh.value && thongTinGiaoHangMacDinh.value) {
+    thongTinGiaoHangForm.value.tenNguoiNhan =
+      thongTinGiaoHangMacDinh.value.tenKhachHang;
+    thongTinGiaoHangForm.value.diaChi = thongTinGiaoHangMacDinh.value.diaChi;
+    thongTinGiaoHangForm.value.soDienThoai =
+      thongTinGiaoHangMacDinh.value.soDienThoai;
+  }
+  // Khi bỏ chọn, không làm gì cả để giữ lại dữ liệu cho người dùng chỉnh sửa.
+};
+
+const handleDatHang = () => {
+  if (selectedItems.value.size === 0) {
     showToast({
       thongBao: "Vui lòng chọn ít nhất một sản phẩm để đặt hàng.",
-      loai: "canhBao",
+      loai: "loi",
     });
     return;
   }
 
-  // 2. Kiểm tra thông tin giao hàng đã được điền đầy đủ chưa
-  if (!nguoiNhan.value || !diaChiNhan.value || !soDienThoai.value) {
+  if (
+    !thongTinGiaoHangForm.value.tenNguoiNhan ||
+    !thongTinGiaoHangForm.value.diaChi ||
+    !thongTinGiaoHangForm.value.soDienThoai
+  ) {
     showToast({
       thongBao: "Vui lòng điền đầy đủ thông tin giao hàng.",
-      loai: "canhBao",
+      loai: "loi",
     });
     return;
   }
 
-  // 3. Nếu mọi thứ hợp lệ, hiển thị modal xác nhận
   isConfirmModalVisible.value = true;
 };
 
-const handleXacNhanDatHang = () => {
-  isConfirmModalVisible.value = false;
-  // Tại đây, bạn có thể gọi API để gửi đơn hàng lên server
-  console.log("Đơn hàng đã được xác nhận và gửi đi!", {
-    sanPham: sanPhamDaChon.value,
-    thongTin: thongTinGiaoHang.value,
-  });
-  showToast({ thongBao: "Đặt hàng thành công!", loai: "thanhCong" });
-  datLaiGioHang(); // Xóa giỏ hàng sau khi đặt thành công
-  router.push("/lich-su-mua-hang"); // Chuyển về lịch sử mua hàng
+const handleXacNhanDatHang = async () => {
+  try {
+    const payload: DatHangRequest = {
+      items: sanPhamDaChon.value.map((item) => ({
+        maSanPham: item.maSanPham,
+        soLuong: item.soLuong,
+      })),
+      tenNguoiNhan: thongTinGiaoHangForm.value.tenNguoiNhan,
+      diaChiNhanHang: thongTinGiaoHangForm.value.diaChi,
+      sdtNhanHang: thongTinGiaoHangForm.value.soDienThoai,
+
+      hinhThucThanhToan: "THANH_TOAN_KHI_NHAN_HANG", // TODO: Cần làm động nếu có nhiều lựa chọn
+      hinhThucNhanHang: "GIAO_HANG_TAN_NHA", // TODO: Cần làm động
+    };
+
+    console.log(payload);
+
+    const response = await taoDonHang(payload);
+    showToast({ thongBao: response.message, loai: "thanhCong" });
+
+    // Cập nhật lại số lượng giỏ hàng trên header
+    await cartStore.fetchCartCount();
+
+    // Đóng modal và chuyển hướng
+    isConfirmModalVisible.value = false;
+    router.push({ name: "LichSuMuaHang" }); // Giả sử bạn có route tên là 'LichSuMuaHang'
+  } catch (error: any) {
+    const message =
+      error.response?.data?.message || "Đặt hàng thất bại. Vui lòng thử lại.";
+    showToast({ thongBao: message, loai: "loi" });
+    isConfirmModalVisible.value = false;
+  }
 };
 
 const goToHome = () => {
-  router.push("/trang-chu");
+  router.push({ name: "TrangChu" });
 };
+
+// --- Lifecycle Hooks ---
+onMounted(() => {
+  fetchCartData();
+});
 </script>

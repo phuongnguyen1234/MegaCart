@@ -8,7 +8,7 @@
     />
 
     <div class="flex-1 text-sm">
-      <div class="font-semibold text-blue-600">{{ sanPham.ten }}</div>
+      <div class="font-semibold text-blue-600">{{ sanPham.tenSanPham }}</div>
       <div>
         {{ sanPham.donGia.toLocaleString() }} VND/{{ sanPham.donVi ?? "" }}
       </div>
@@ -19,19 +19,15 @@
     </div>
 
     <div class="font-semibold text-sm whitespace-nowrap">
-      {{ (sanPham.donGia * sanPham.soLuong).toLocaleString() }} VND
+      {{ sanPham.thanhTien.toLocaleString() }} VND
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { GioHangItem } from "@/types/giohang.types";
+
 defineProps<{
-  sanPham: {
-    ten: string;
-    donGia: number;
-    soLuong: number;
-    hinhAnh: string;
-    donVi?: string;
-  };
+  sanPham: GioHangItem;
 }>();
 </script>
