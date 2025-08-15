@@ -168,8 +168,8 @@ public class QuanLyNhanVienServiceImpl implements QuanLyNhanVienService {
                 .tenNhanVien(nhanVien.getHoTen())
                 .email(nhanVien.getTaiKhoan().getEmail())
                 .soDienThoai(nhanVien.getTaiKhoan().getSoDienThoai())
-                .trangThaiTaiKhoan(nhanVien.getTaiKhoan().getTrangThaiTaiKhoan().getTenHienThi())
-                .viTri(nhanVien.getViTri().getTenHienThi())
+                .trangThaiTaiKhoan(nhanVien.getTaiKhoan().getTrangThaiTaiKhoan())
+                .viTri(nhanVien.getViTri())
                 .build();
     }
 

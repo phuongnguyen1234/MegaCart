@@ -9,6 +9,7 @@ import com.megacart.dto.response.LichSuDonHangResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.enumeration.TrangThaiDonHang;
 import com.megacart.enumeration.TrangThaiThanhToan;
+import com.megacart.enumeration.TrangThaiTonKho;
 import com.megacart.enumeration.TrangThaiXuLi;
 import com.megacart.exception.ResourceNotFoundException;
 import com.megacart.model.*;
@@ -84,7 +85,7 @@ public class DonHangServiceImpl implements DonHangService {
             // Trả về thông tin cơ bản của đơn hàng.
             return LichSuDonHangResponse.builder()
                     .maDonHang(donHang.getMaDonHang())
-                    .trangThai(donHang.getTrangThai().getTenHienThi())
+                    .trangThai(donHang.getTrangThai())
                     .thoiGianDatHang(donHang.getThoiGianDatHang())
                     .tongTien(0)
                     .tenSanPhamDauTien("Đơn hàng không có sản phẩm")
@@ -107,7 +108,7 @@ public class DonHangServiceImpl implements DonHangService {
 
         return LichSuDonHangResponse.builder()
                 .maDonHang(donHang.getMaDonHang())
-                .trangThai(donHang.getTrangThai().getTenHienThi())
+                .trangThai(donHang.getTrangThai())
                 .thoiGianDatHang(donHang.getThoiGianDatHang())
                 .tongTien(tongTien)
                 .tenSanPhamDauTien(sanPhamDauTien.getTenSanPham())
@@ -144,10 +145,10 @@ public class DonHangServiceImpl implements DonHangService {
                 .sdtNhanHang(donHang.getSdtNhanHang())
                 .diaChiDatHang(donHang.getDiaChiNhanHang())
                 .thoiGianDatHang(donHang.getThoiGianDatHang())
-                .trangThai(donHang.getTrangThai().getTenHienThi())
-                .hinhThucGiaoHang(donHang.getHinhThucNhanHang().getTenHienThi())
-                .hinhThucThanhToan(donHang.getHinhThucThanhToan().getTenHienThi())
-                .trangThaiThanhToan(donHang.getTrangThaiThanhToan().getTenHienThi())
+                .trangThai(donHang.getTrangThai())
+                .hinhThucGiaoHang(donHang.getHinhThucNhanHang())
+                .hinhThucThanhToan(donHang.getHinhThucThanhToan())
+                .trangThaiThanhToan(donHang.getTrangThaiThanhToan())
                 .tongTien(tongTien);
 
         List<ChiTietDonHangResponse.ItemResponse> items;
@@ -158,14 +159,14 @@ public class DonHangServiceImpl implements DonHangService {
                 responseBuilder.ghiChu(donHang.getGhiChu());
                 // Kiểm tra lại tồn kho hiện tại của từng sản phẩm
                 items = donHang.getChiTietDonHangs().stream().map(chiTiet -> {
-                    boolean hetHang = chiTiet.getSanPham().getKho() == null || chiTiet.getSanPham().getKho().getSoLuong() < chiTiet.getSoLuong();
+                    boolean isOutOfStock = chiTiet.getSanPham().getKho() == null || chiTiet.getSanPham().getKho().getSoLuong() < chiTiet.getSoLuong();
                     return ChiTietDonHangResponse.ItemResponse.builder()
                             .maSanPham(chiTiet.getSanPham().getMaSanPham())
                             .tenSanPham(chiTiet.getTenSanPham())
                             .anhMinhHoa(chiTiet.getAnhMinhHoa())
                             .donGia(chiTiet.getDonGia())
                             .soLuong(chiTiet.getSoLuong())
-                            .trangThaiItem(hetHang ? "Hết hàng" : null)
+                            .trangThaiItem(isOutOfStock ? TrangThaiTonKho.HET_HANG : null)
                             .banChay(chiTiet.getSanPham().isBanChay())
                             .build();
                 }).collect(Collectors.toList());

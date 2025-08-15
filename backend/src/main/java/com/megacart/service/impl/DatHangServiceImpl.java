@@ -122,7 +122,7 @@ public class DatHangServiceImpl implements DatHangService {
 
         return DatHangResponse.builder()
                 .maDonHang(savedDonHang.getMaDonHang())
-                .trangThai(savedDonHang.getTrangThai().getTenHienThi())
+                .trangThai(savedDonHang.getTrangThai())
                 .thongBao(thongBao)
                 .build();
     }

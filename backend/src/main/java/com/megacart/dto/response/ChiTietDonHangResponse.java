@@ -1,6 +1,11 @@
 package com.megacart.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.megacart.enumeration.HinhThucNhanHang;
+import com.megacart.enumeration.HinhThucThanhToan;
+import com.megacart.enumeration.TrangThaiDonHang;
+import com.megacart.enumeration.TrangThaiThanhToan;
+import com.megacart.enumeration.TrangThaiTonKho;
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,10 +22,10 @@ public class ChiTietDonHangResponse {
     private String sdtNhanHang;
     private String diaChiDatHang;
     private LocalDateTime thoiGianDatHang;
-    private String trangThai;
-    private String hinhThucGiaoHang;
-    private String hinhThucThanhToan;
-    private String trangThaiThanhToan;
+    private TrangThaiDonHang trangThai;
+    private HinhThucNhanHang hinhThucGiaoHang;
+    private HinhThucThanhToan hinhThucThanhToan;
+    private TrangThaiThanhToan trangThaiThanhToan;
     private long tongTien;
 
     // Fields for specific statuses
@@ -39,7 +44,7 @@ public class ChiTietDonHangResponse {
         private String anhMinhHoa;
         private long donGia;
         private int soLuong;
-        private String trangThaiItem; // e.g., "Hết hàng"
+        private TrangThaiTonKho trangThaiItem; // e.g., "Hết hàng"
         private boolean banChay;
     }
 }
