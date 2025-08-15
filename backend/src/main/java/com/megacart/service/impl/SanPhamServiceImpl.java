@@ -10,14 +10,13 @@ import com.megacart.dto.response.ChiTietSanPhamResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.dto.response.SanPhamResponse;
 import com.megacart.model.DanhMuc;
-import com.megacart.model.AnhMinhHoa;
 import com.megacart.model.SanPham;
 import com.megacart.repository.SanPhamRepository;
 import com.megacart.repository.DanhMucRepository;
 import com.megacart.service.DanhMucService;
-import com.megacart.repository.specification.SanPhamSpecification;
 import com.megacart.service.SanPhamService;
 import com.megacart.utils.ImageUtils;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,12 +24,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,7 +37,6 @@ import java.util.stream.Collectors;
 public class SanPhamServiceImpl implements SanPhamService {
 
     private final SanPhamRepository sanPhamRepository;
-    private final SanPhamSpecification sanPhamSpecification;
     private final DanhMucRepository danhMucRepository;
     private final DanhMucService danhMucService;
     private static final int GOI_Y_LIMIT = 10; // Giới hạn 10 gợi ý
@@ -61,71 +59,71 @@ public class SanPhamServiceImpl implements SanPhamService {
             Integer giaToiThieu,
             Integer giaToiDa,
             String nhaSanXuat,
+            NhanSanPham nhan,
+            Boolean banChay,
             Pageable pageable
     ) {
-        List<Integer> categoryIdsToSearch = null;
-        if (maDanhMuc != null) {
-            // Lấy ID của danh mục cha và tất cả các danh mục con cháu của nó
-            categoryIdsToSearch = danhMucService.getAllSubCategoryIds(maDanhMuc);
-        }
+        // 1. Build the dynamic query using Specification
+        Specification<SanPham> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
 
-        // Truyền danh sách ID vào Specification để lọc theo mệnh đề IN
-        Specification<SanPham> spec = sanPhamSpecification.filterBy(tuKhoa, categoryIdsToSearch, giaToiThieu, giaToiDa, nhaSanXuat, null, false);
+            // Luôn lọc các sản phẩm đang được bán
+            predicates.add(cb.equal(root.get("trangThai"), TrangThaiSanPham.BAN));
+
+            // Lọc theo từ khóa
+            if (StringUtils.hasText(tuKhoa)) {
+                predicates.add(cb.like(cb.lower(root.get("tenSanPham")), "%" + tuKhoa.toLowerCase() + "%"));
+            }
+
+            // Lọc theo danh mục (bao gồm cả các danh mục con)
+            if (maDanhMuc != null) {
+                List<Integer> categoryIdsToSearch = danhMucService.getAllSubCategoryIds(maDanhMuc);
+                if (categoryIdsToSearch != null && !categoryIdsToSearch.isEmpty()) {
+                    predicates.add(root.get("danhMuc").get("maDanhMuc").in(categoryIdsToSearch));
+                }
+            }
+
+            // Lọc theo khoảng giá
+            if (giaToiThieu != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("donGia"), giaToiThieu));
+            }
+            if (giaToiDa != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("donGia"), giaToiDa));
+            }
+
+            // Lọc theo nhà sản xuất
+            if (StringUtils.hasText(nhaSanXuat)) {
+                predicates.add(cb.equal(root.get("nhaSanXuat"), nhaSanXuat));
+            }
+
+            // Lọc theo nhãn (ví dụ: Mới)
+            if (nhan != null) {
+                predicates.add(cb.equal(root.get("nhan"), nhan));
+            }
+
+            // Lọc theo sản phẩm bán chạy
+            if (banChay != null && banChay) {
+                predicates.add(cb.isTrue(root.get("banChay")));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        // 2. Thực thi truy vấn
         Page<SanPham> sanPhamPage = sanPhamRepository.findAll(spec, pageable);
 
+        // 3. Xây dựng breadcrumbs dựa trên ngữ cảnh
         List<BreadcrumbItem> breadcrumbs = null;
         if (maDanhMuc != null) {
             breadcrumbs = danhMucRepository.findById(maDanhMuc)
                     .map(this::buildBreadcrumbs)
                     .orElse(null);
+        } else if (nhan != null) {
+            breadcrumbs = buildStaticBreadcrumbs(nhan.getTenHienThi());
+        } else if (banChay != null && banChay) {
+            breadcrumbs = buildStaticBreadcrumbs("Bán chạy nhất");
         }
-
-        return convertPageToPagedResponse(sanPhamPage, breadcrumbs);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public PagedResponse<SanPhamResponse> getSanPhamTheoNhan(
-            NhanSanPham nhan,
-            Integer maDanhMuc,
-            Integer giaToiThieu,
-            Integer giaToiDa,
-            String nhaSanXuat,
-            Pageable pageable) {
-
-        List<Integer> categoryIdsToSearch = null;
-        if (maDanhMuc != null) {
-            categoryIdsToSearch = danhMucService.getAllSubCategoryIds(maDanhMuc);
-        }
-
-        // Sử dụng Specification để lọc động, truyền nhãn vào tham số cuối cùng
-        Specification<SanPham> spec = sanPhamSpecification.filterBy(null, categoryIdsToSearch, giaToiThieu, giaToiDa, nhaSanXuat, nhan, false);
-        Page<SanPham> sanPhamPage = sanPhamRepository.findAll(spec, pageable);
-
-        // Lấy tên hiển thị từ enum để code sạch hơn và dễ mở rộng
-        List<BreadcrumbItem> breadcrumbs = buildStaticBreadcrumbs(nhan.getTenHienThi());
-        return convertPageToPagedResponse(sanPhamPage, breadcrumbs);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public PagedResponse<SanPhamResponse> getSanPhamBanChay(
-            Integer maDanhMuc,
-            Integer giaToiThieu,
-            Integer giaToiDa,
-            String nhaSanXuat,
-            Pageable pageable) {
-
-        List<BreadcrumbItem> breadcrumbs = buildStaticBreadcrumbs("Bán chạy nhất");
-
-        List<Integer> categoryIdsToSearch = null;
-        if (maDanhMuc != null) {
-            // Lấy ID của danh mục cha và tất cả các danh mục con cháu của nó
-            categoryIdsToSearch = danhMucService.getAllSubCategoryIds(maDanhMuc);
-        }
-        // Sử dụng Specification để lọc các sản phẩm được đánh dấu là bán chạy
-        Specification<SanPham> spec = sanPhamSpecification.filterBy(null, categoryIdsToSearch, giaToiThieu, giaToiDa, nhaSanXuat, null, true);
-        Page<SanPham> sanPhamPage = sanPhamRepository.findAll(spec, pageable);
+        // 4. Chuyển đổi sang DTO và trả về
         return convertPageToPagedResponse(sanPhamPage, breadcrumbs);
     }
 
@@ -198,8 +196,10 @@ public class SanPhamServiceImpl implements SanPhamService {
                 ? TrangThaiTonKho.CON_HANG
                 : TrangThaiTonKho.HET_HANG;
 
+        // Sắp xếp ảnh theo số thứ tự trước khi trả về
         List<AnhMinhHoaResponse> anhMinhHoas = sanPham.getAnhMinhHoas().stream()
-                .map(amh -> AnhMinhHoaResponse.builder().duongDan(amh.getDuongDan()).laAnhChinh(amh.isLaAnhChinh()).build())
+                .sorted(Comparator.comparing(com.megacart.model.AnhMinhHoa::getSoThuTu, Comparator.nullsLast(Comparator.naturalOrder())))
+                .map(amh -> AnhMinhHoaResponse.builder().duongDan(amh.getDuongDan()).laAnhChinh(amh.isLaAnhChinh()).soThuTu(amh.getSoThuTu()).build())
                 .collect(Collectors.toList());
 
         return ChiTietSanPhamResponse.builder()

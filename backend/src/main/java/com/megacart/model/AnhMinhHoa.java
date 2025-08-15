@@ -29,6 +29,6 @@ public class AnhMinhHoa {
     @Column(name = "LaAnhChinh", nullable = false)
     private boolean laAnhChinh;
 
-    @Column(name = "SoThuTu", nullable = false)
+    @Column(name = "SoThuTu")
     private Integer soThuTu;
 }

@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
@@ -135,6 +136,13 @@ public class GlobalExceptionHandler {
         String message = "Thao tác không thể thực hiện do vi phạm ràng buộc dữ liệu. Có thể bạn đang cố xóa một đối tượng đang được sử dụng ở nơi khác.";
         log.error("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
         return buildErrorResponse(HttpStatus.CONFLICT, message, request);
+    }
+
+    // Xử lý lỗi khi file tải lên vượt quá kích thước cho phép
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex, WebRequest request) {
+        String message = "Kích thước file vượt quá giới hạn cho phép (tối đa 3MB mỗi file).";
+        return buildErrorResponse(HttpStatus.PAYLOAD_TOO_LARGE, message, request);
     }
 
     // Một "catch-all" handler để bắt tất cả các lỗi không mong muốn khác

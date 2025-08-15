@@ -8,4 +8,5 @@ import lombok.Data;
 public class AnhMinhHoaResponse {
     private String duongDan;
     private boolean laAnhChinh;
+    private Integer soThuTu;
 }

@@ -20,7 +20,7 @@ public class ChiTietDonHangResponse {
     private Integer maDonHang;
     private String tenNguoiNhan;
     private String sdtNhanHang;
-    private String diaChiDatHang;
+    private String diaChiNhanHang;
     private LocalDateTime thoiGianDatHang;
     private TrangThaiDonHang trangThai;
     private HinhThucNhanHang hinhThucGiaoHang;
@@ -45,6 +45,5 @@ public class ChiTietDonHangResponse {
         private long donGia;
         private int soLuong;
         private TrangThaiTonKho trangThaiItem; // e.g., "Hết hàng"
-        private boolean banChay;
     }
 }

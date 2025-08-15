@@ -142,8 +142,8 @@ public class DonHangServiceImpl implements DonHangService {
         ChiTietDonHangResponse.ChiTietDonHangResponseBuilder responseBuilder = ChiTietDonHangResponse.builder()
                 .maDonHang(donHang.getMaDonHang())
                 .tenNguoiNhan(donHang.getTenKhachHang())
-                .sdtNhanHang(donHang.getSdtNhanHang())
-                .diaChiDatHang(donHang.getDiaChiNhanHang())
+                .sdtNhanHang(donHang.getSdtNhanHang()) // Đổi tên từ diaChiDatHang để đồng nhất
+                .diaChiNhanHang(donHang.getDiaChiNhanHang())
                 .thoiGianDatHang(donHang.getThoiGianDatHang())
                 .trangThai(donHang.getTrangThai())
                 .hinhThucGiaoHang(donHang.getHinhThucNhanHang())
@@ -167,7 +167,6 @@ public class DonHangServiceImpl implements DonHangService {
                             .donGia(chiTiet.getDonGia())
                             .soLuong(chiTiet.getSoLuong())
                             .trangThaiItem(isOutOfStock ? TrangThaiTonKho.HET_HANG : null)
-                            .banChay(chiTiet.getSanPham().isBanChay())
                             .build();
                 }).collect(Collectors.toList());
                 break;
@@ -192,9 +191,8 @@ public class DonHangServiceImpl implements DonHangService {
     private List<ChiTietDonHangResponse.ItemResponse> mapToStandardItemResponseList(DonHang donHang) {
         return donHang.getChiTietDonHangs().stream()
                 .map(chiTiet -> ChiTietDonHangResponse.ItemResponse.builder().maSanPham(chiTiet.getSanPham().getMaSanPham())
-                        .tenSanPham(chiTiet.getTenSanPham()).anhMinhHoa(chiTiet.getAnhMinhHoa())
-                        .donGia(chiTiet.getDonGia()).soLuong(chiTiet.getSoLuong())
-                        .banChay(chiTiet.getSanPham().isBanChay()).build())
+                        .tenSanPham(chiTiet.getTenSanPham()).anhMinhHoa(chiTiet.getAnhMinhHoa()).donGia(chiTiet.getDonGia())
+                        .soLuong(chiTiet.getSoLuong()).build())
                 .collect(Collectors.toList());
     }
 

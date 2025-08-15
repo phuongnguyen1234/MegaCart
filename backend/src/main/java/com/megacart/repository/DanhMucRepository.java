@@ -3,13 +3,14 @@ package com.megacart.repository;
 import com.megacart.enumeration.TrangThaiDanhMuc;
 import com.megacart.model.DanhMuc;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface DanhMucRepository extends JpaRepository<DanhMuc, Integer> {
+public interface DanhMucRepository extends JpaRepository<DanhMuc, Integer>, JpaSpecificationExecutor<DanhMuc> {
      /**
      * Tìm tất cả các danh mục theo trạng thái.
      * @param trangThai Trạng thái cần tìm (ví dụ: HOAT_DONG).

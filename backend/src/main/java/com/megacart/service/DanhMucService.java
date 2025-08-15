@@ -1,6 +1,15 @@
 package com.megacart.service;
 
+import com.megacart.dto.request.CapNhatDanhMucRequest;
+import com.megacart.dto.response.ChiTietDanhMucQuanLyResponse;
+import com.megacart.dto.request.ThemDanhMucRequest;
+import com.megacart.dto.response.DanhMucQuanLyResponse;
+import com.megacart.dto.response.DanhMucOptionResponse;
+import com.megacart.enumeration.TrangThaiDanhMuc;
 import com.megacart.dto.response.DanhMucMenuItemResponse;
+import com.megacart.dto.response.PagedResponse;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 public interface DanhMucService {
@@ -17,4 +26,18 @@ public interface DanhMucService {
      * @return Một danh sách chứa ID của danh mục cha và tất cả các danh mục con.
      */
     List<Integer> getAllSubCategoryIds(Integer parentId);
+
+    /**
+     * Lấy danh sách tất cả các danh mục đang hoạt động dưới dạng phẳng để hiển thị trong combobox lọc.
+     * @return Một danh sách các tùy chọn danh mục.
+     */
+    List<DanhMucOptionResponse> getDanhMucOptionsForFilter();
+
+    PagedResponse<DanhMucQuanLyResponse> getDanhSachDanhMuc(String tuKhoa, TrangThaiDanhMuc trangThai, Pageable pageable);
+
+    DanhMucQuanLyResponse themDanhMuc(ThemDanhMucRequest request);
+
+    ChiTietDanhMucQuanLyResponse getChiTietDanhMuc(Integer maDanhMuc);
+
+    DanhMucQuanLyResponse capNhatDanhMuc(Integer maDanhMuc, CapNhatDanhMucRequest request);
 }
