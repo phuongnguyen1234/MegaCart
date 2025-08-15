@@ -25,34 +25,45 @@ public class DanhMucServiceImpl implements DanhMucService {
     @Override
     @Transactional(readOnly = true)
     public List<DanhMucMenuItemResponse> getMenuDanhMucs() {
-        // 1. Lấy tất cả danh mục đang hoạt động từ CSDL trong một lần gọi để tối ưu hiệu năng
+        final int SUB_CATEGORY_LIMIT = 12;
+
+        // 1. Lấy tất cả danh mục đang hoạt động
         List<DanhMuc> allActiveCategories = danhMucRepository.findAllByTrangThai(TrangThaiDanhMuc.HOAT_DONG);
 
-        // 2. Chuyển đổi tất cả các entity sang DTO và tạo một map để truy cập nhanh với key là ID
-        Map<Integer, DanhMucMenuItemResponse> categoryMap = allActiveCategories.stream()
-                .map(dm -> DanhMucMenuItemResponse.builder().maDanhMuc(dm.getMaDanhMuc()).tenDanhMuc(dm.getTenDanhMuc()).slug(dm.getSlug()).build())
-                .collect(Collectors.toMap(DanhMucMenuItemResponse::getMaDanhMuc, item -> item));
+        // 2. Nhóm các danh mục con theo ID của cha để tra cứu hiệu quả
+        Map<Integer, List<DanhMuc>> childrenByParentId = allActiveCategories.stream()
+                .filter(dm -> dm.getDanhMucCha() != null)
+                .collect(Collectors.groupingBy(dm -> dm.getDanhMucCha().getMaDanhMuc()));
 
-        // 3. Xây dựng cấu trúc cây
-        List<DanhMucMenuItemResponse> rootCategories = new ArrayList<>();
-        allActiveCategories.forEach(danhMuc -> {
-            DanhMucMenuItemResponse currentItem = categoryMap.get(danhMuc.getMaDanhMuc());
-            if (danhMuc.getDanhMucCha() == null) {
-                // Nếu là danh mục gốc, thêm vào danh sách kết quả
-                rootCategories.add(currentItem);
-            } else {
-                // Nếu là danh mục con, tìm cha của nó trong map và thêm vào danh sách con của cha
-                DanhMucMenuItemResponse parentItem = categoryMap.get(danhMuc.getDanhMucCha().getMaDanhMuc());
-                if (parentItem != null) {
-                    if (parentItem.getDanhMucCons() == null) {
-                        parentItem.setDanhMucCons(new ArrayList<>());
-                    }
-                    parentItem.getDanhMucCons().add(currentItem);
-                }
-            }
-        });
+        // 3. Lấy ra các danh mục gốc (không có cha)
+        List<DanhMuc> rootCategoryEntities = allActiveCategories.stream()
+                .filter(dm -> dm.getDanhMucCha() == null)
+                .toList();
 
-        return rootCategories;
+        // 4. Xây dựng cây DTO từ các danh mục gốc, áp dụng giới hạn cho các danh mục con
+        return rootCategoryEntities.stream()
+                .map(rootEntity -> {
+                    // Lấy danh sách con đầy đủ của danh mục gốc này
+                    List<DanhMuc> children = childrenByParentId.getOrDefault(rootEntity.getMaDanhMuc(), Collections.emptyList());
+
+                    // Giới hạn danh sách con để trả về cho menu
+                    List<DanhMucMenuItemResponse> limitedChildrenDTOs = children.stream()
+                            .limit(SUB_CATEGORY_LIMIT)
+                            .map(this::mapToMenuItem)
+                            .collect(Collectors.toList());
+
+                    // Xây dựng DTO cho danh mục gốc
+                    return DanhMucMenuItemResponse.builder()
+                            .maDanhMuc(rootEntity.getMaDanhMuc())
+                            .tenDanhMuc(rootEntity.getTenDanhMuc())
+                            .slug(rootEntity.getSlug())
+                            .danhMucCons(limitedChildrenDTOs.isEmpty() ? null : limitedChildrenDTOs)
+                            // Đặt cờ 'hasMoreChildren' nếu số lượng con thực tế > giới hạn,
+                            // để frontend biết có cần hiển thị nút "Xem thêm" hay không.
+                            .hasMoreChildren(children.size() > SUB_CATEGORY_LIMIT ? true : null) // Chỉ hiển thị khi là true
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -88,5 +99,13 @@ public class DanhMucServiceImpl implements DanhMucService {
         for (DanhMuc child : children) {
             collectIdsRecursively(child, resultIds, parentToChildrenMap);
         }
+    }
+
+    private DanhMucMenuItemResponse mapToMenuItem(DanhMuc danhMuc) {
+        return DanhMucMenuItemResponse.builder()
+                .maDanhMuc(danhMuc.getMaDanhMuc())
+                .tenDanhMuc(danhMuc.getTenDanhMuc())
+                .slug(danhMuc.getSlug())
+                .build();
     }
 }

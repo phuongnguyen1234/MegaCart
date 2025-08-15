@@ -1,5 +1,6 @@
 package com.megacart.dto.response;
 
+import com.megacart.enumeration.TrangThaiDonHang;
 import lombok.Builder;
 import lombok.Data;
 
@@ -7,6 +8,6 @@ import lombok.Data;
 @Builder
 public class DatHangResponse {
     private Integer maDonHang;
-    private String trangThai;
+    private TrangThaiDonHang trangThai;
     private String thongBao;
 }

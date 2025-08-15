@@ -172,8 +172,8 @@ public class SanPhamServiceImpl implements SanPhamService {
                 .donGia(sanPham.getDonGia())
                 .donVi(sanPham.getDonVi())
                 .nhaSanXuat(sanPham.getNhaSanXuat())
-                .nhan(sanPham.getNhan() != null ? sanPham.getNhan().getTenHienThi() : null)
-                .trangThaiTonKho(trangThaiTonKho.getTenHienThi())
+                .nhan(sanPham.getNhan())
+                .trangThaiTonKho(trangThaiTonKho)
                 .anhMinhHoaChinh(anhChinhUrl)
                 .banChay(sanPham.isBanChay()).build();
     }
@@ -210,7 +210,7 @@ public class SanPhamServiceImpl implements SanPhamService {
                 .nhaSanXuat(sanPham.getNhaSanXuat())
                 .moTa(sanPham.getMoTa())
                 .ghiChu(sanPham.getGhiChu())
-                .trangThaiTonKho(trangThaiTonKho.getTenHienThi())
+                .trangThaiTonKho(trangThaiTonKho)
                 .anhMinhHoas(anhMinhHoas)
                 .banChay(sanPham.isBanChay()).build();
                }

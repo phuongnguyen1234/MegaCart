@@ -72,7 +72,7 @@ public class QuanLyKhachHangServiceImpl implements QuanLyKhachHangService {
                 .email(khachHang.getTaiKhoan().getEmail())
                 .diaChi(khachHang.getDiaChi())
                 .soDienThoai(khachHang.getTaiKhoan().getSoDienThoai())
-                .trangThaiTaiKhoan(khachHang.getTaiKhoan().getTrangThaiTaiKhoan().getTenHienThi())
+                .trangThaiTaiKhoan(khachHang.getTaiKhoan().getTrangThaiTaiKhoan())
                 .build();
     }
 }
