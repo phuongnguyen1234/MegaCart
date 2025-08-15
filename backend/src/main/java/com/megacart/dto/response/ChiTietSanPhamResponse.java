@@ -19,6 +19,7 @@ public class ChiTietSanPhamResponse {
     private String moTa;
     private String ghiChu;
     private String trangThaiTonKho;
+    private boolean banChay;
     private List<AnhMinhHoaResponse> anhMinhHoas;
     @Setter
     private List<BreadcrumbItem> breadcrumbs;

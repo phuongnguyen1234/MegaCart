@@ -5,13 +5,11 @@ import com.megacart.dto.response.DatHangResponse;
 import com.megacart.model.TaiKhoan;
 
 public interface DatHangService {
-
     /**
-     * Xử lý quy trình nghiệp vụ phức tạp của việc đặt hàng.
-     *
-     * @param taiKhoan Người dùng đang thực hiện đặt hàng.
-     * @param request  Thông tin địa chỉ giao hàng và ghi chú.
-     * @return Phản hồi chứa thông tin về đơn hàng vừa tạo.
+     * Tạo một đơn hàng mới từ thông tin yêu cầu.
+     * @param request DTO chứa thông tin đơn hàng.
+     * @param taiKhoan Tài khoản của khách hàng đang đặt hàng.
+     * @return Một response chứa thông tin về đơn hàng vừa tạo.
      */
-    DatHangResponse datHang(DatHangRequest request, TaiKhoan taiKhoan);
+    DatHangResponse taoDonHang(DatHangRequest request, TaiKhoan taiKhoan);
 }

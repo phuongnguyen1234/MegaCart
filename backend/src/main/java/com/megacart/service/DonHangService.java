@@ -13,7 +13,7 @@ import java.time.LocalDate;
 
 public interface DonHangService {
 
-    PagedResponse<LichSuDonHangResponse> getLichSuMuaHang(TaiKhoan taiKhoan, TrangThaiDonHang trangThai, String tuKhoa, LocalDate tuNgay, LocalDate denNgay, Pageable pageable);
+    PagedResponse<LichSuDonHangResponse> getDSDonHangByMaKhachHangAndTrangThai(TaiKhoan taiKhoan, TrangThaiDonHang trangThai, String tuKhoa, LocalDate tuNgay, LocalDate denNgay, Pageable pageable);
 
     ChiTietDonHangResponse getChiTietDonHang(Integer maDonHang, TaiKhoan taiKhoan);
 

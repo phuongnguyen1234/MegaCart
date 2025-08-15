@@ -26,8 +26,8 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
            "AND (:tuKhoa IS NULL OR CAST(d.maDonHang AS string) LIKE %:tuKhoa% OR EXISTS (SELECT 1 FROM ChiTietDonHang ctdh WHERE ctdh.donHang = d AND ctdh.tenSanPham LIKE %:tuKhoa%)) " +
            "AND (:tuNgay IS NULL OR d.thoiGianDatHang >= :tuNgay) " +
            "AND (:denNgay IS NULL OR d.thoiGianDatHang <= :denNgay)")
-    @EntityGraph(attributePaths = {"chiTietDonHangs", "chiTietDonHangs.sanPham"})
-    Page<DonHang> searchByCriteria(
+    @EntityGraph(attributePaths = {"chiTietDonHangs", "chiTietDonHangs.sanPham"}) // Tối ưu query để lấy chi tiết đơn hàng
+    Page<DonHang> findByMaKhachHangAndTrangThaiDonHang(
             @Param("maKhachHang") Integer maKhachHang,
             @Param("trangThai") TrangThaiDonHang trangThai,
             @Param("tuKhoa") String tuKhoa,

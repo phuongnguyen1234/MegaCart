@@ -21,18 +21,12 @@ public interface SanPhamService {
     PagedResponse<SanPhamResponse> timKiemVaLocSanPham(
             String tuKhoa,
             Integer maDanhMuc,
+            Integer giaToiThieu,
             Integer giaToiDa,
             String nhaSanXuat,
             Pageable pageable
     );
 
-    /**
-     * Lấy danh sách sản phẩm theo danh mục.
-     * @param maDanhMuc ID của danh mục.
-     * @param pageable Thông tin phân trang.
-     * @return Danh sách sản phẩm được phân trang.
-     */
-    PagedResponse<SanPhamResponse> getSanPhamTheoDanhMuc(Integer maDanhMuc, Pageable pageable);
 
     /**
      * Lấy danh sách sản phẩm theo nhãn (brand).
@@ -40,19 +34,30 @@ public interface SanPhamService {
      * @param pageable Thông tin phân trang.
      * @return Danh sách sản phẩm được phân trang.
      */
-    PagedResponse<SanPhamResponse> getSanPhamTheoNhan(NhanSanPham nhan, Pageable pageable);
+    PagedResponse<SanPhamResponse> getSanPhamTheoNhan(
+            NhanSanPham nhan,
+            Integer maDanhMuc,
+            Integer giaToiThieu,
+            Integer giaToiDa,
+            String nhaSanXuat,
+            Pageable pageable);
 
     /**
      * Lấy danh sách sản phẩm bán chạy.
      * @param pageable Thông tin phân trang.
      * @return Danh sách sản phẩm được phân trang.
      */
-    PagedResponse<SanPhamResponse> getSanPhamBanChay(Pageable pageable);
+    PagedResponse<SanPhamResponse> getSanPhamBanChay(
+            Integer maDanhMuc,
+            Integer giaToiThieu,
+            Integer giaToiDa,
+            String nhaSanXuat,
+            Pageable pageable);
 
     /**
      * Lấy thông tin chi tiết của một sản phẩm.
      * @param maSanPham ID của sản phẩm.
      * @return Thông tin chi tiết sản phẩm.
      */
-    ChiTietSanPhamResponse getChiTietSanPham(Integer maSanPham);
+    ChiTietSanPhamResponse getSanPhamByMaSanPham(Integer maSanPham);
 }

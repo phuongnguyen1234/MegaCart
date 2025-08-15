@@ -34,36 +34,51 @@ public class SanPhamController {
     public ResponseEntity<PagedResponse<SanPhamResponse>> timKiemVaLocSanPham(
             @RequestParam(required = false) String tuKhoa,
             @RequestParam(required = false) Integer maDanhMuc,
+            @RequestParam(required = false) Integer giaToiThieu,
             @RequestParam(required = false) Integer giaToiDa,
             @RequestParam(required = false) String nhaSanXuat,
             // Sắp xếp mặc định theo đơn giá tăng dần, có thể thay đổi ở frontend
             @PageableDefault(size = 20, sort = "donGia") Pageable pageable
     ) {
-        return ResponseEntity.ok(sanPhamService.timKiemVaLocSanPham(tuKhoa, maDanhMuc, giaToiDa, nhaSanXuat, pageable));
+        return ResponseEntity.ok(sanPhamService.timKiemVaLocSanPham(tuKhoa, maDanhMuc, giaToiThieu, giaToiDa, nhaSanXuat, pageable));
     }
 
+    /* 
     @GetMapping("/theo-danh-muc/{maDanhMuc}")
     public ResponseEntity<PagedResponse<SanPhamResponse>> getSanPhamTheoDanhMuc(
             @PathVariable Integer maDanhMuc,
             @PageableDefault(size = 20, sort = "tenSanPham") Pageable pageable) {
         return ResponseEntity.ok(sanPhamService.getSanPhamTheoDanhMuc(maDanhMuc, pageable));
     }
-
+    */
     @GetMapping("/theo-nhan")
     public ResponseEntity<PagedResponse<SanPhamResponse>> getSanPhamTheoNhan(
             @RequestParam("nhan") NhanSanPham nhan,
-            @PageableDefault(size = 20, sort = "tenSanPham") Pageable pageable) {
-        return ResponseEntity.ok(sanPhamService.getSanPhamTheoNhan(nhan, pageable));
+            // Thêm các tham số lọc
+            @RequestParam(required = false) Integer maDanhMuc,
+            @RequestParam(required = false) Integer giaToiThieu,
+            @RequestParam(required = false) Integer giaToiDa,
+            @RequestParam(required = false) String nhaSanXuat,
+            @PageableDefault(size = 40, sort = "tenSanPham") Pageable pageable) {
+        // Gọi service với đầy đủ tham số
+        return ResponseEntity.ok(sanPhamService.getSanPhamTheoNhan(nhan, maDanhMuc, giaToiThieu, giaToiDa, nhaSanXuat, pageable));
     }
 
     @GetMapping("/ban-chay")
     public ResponseEntity<PagedResponse<SanPhamResponse>> getSanPhamBanChay(
-            @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(sanPhamService.getSanPhamBanChay(pageable));
+            // Thêm các tham số lọc
+            @RequestParam(required = false) Integer maDanhMuc,
+            @RequestParam(required = false) Integer giaToiThieu,
+            @RequestParam(required = false) Integer giaToiDa,
+            @RequestParam(required = false) String nhaSanXuat,
+            // Thêm sắp xếp mặc định theo tên sản phẩm
+            @PageableDefault(size = 40, sort = "tenSanPham") Pageable pageable) {
+        // Gọi service với đầy đủ tham số
+        return ResponseEntity.ok(sanPhamService.getSanPhamBanChay(maDanhMuc, giaToiThieu, giaToiDa, nhaSanXuat, pageable));
     }
 
     @GetMapping("/{maSanPham}")
     public ResponseEntity<ChiTietSanPhamResponse> getChiTietSanPham(@PathVariable Integer maSanPham) {
-        return ResponseEntity.ok(sanPhamService.getChiTietSanPham(maSanPham));
+        return ResponseEntity.ok(sanPhamService.getSanPhamByMaSanPham(maSanPham));
     }
 }

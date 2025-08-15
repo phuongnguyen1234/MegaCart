@@ -3,10 +3,6 @@ package com.megacart.enumeration;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Enum này thể hiện trạng thái kinh doanh của một sản phẩm.
- * Trạng thái tồn kho (còn hàng/hết hàng) sẽ được suy ra từ số lượng trong kho.
- */
 @Getter
 @RequiredArgsConstructor
 public enum TrangThaiSanPham {

@@ -22,5 +22,6 @@ public class GioHangResponse {
         private String donVi;
         private Integer soLuong;
         private long thanhTien;
+        private boolean banChay;
     }
 }

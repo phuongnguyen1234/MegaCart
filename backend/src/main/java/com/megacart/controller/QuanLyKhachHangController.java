@@ -2,6 +2,7 @@ package com.megacart.controller;
 
 import com.megacart.dto.request.CapNhatTrangThaiTaiKhoanRequest;
 import com.megacart.dto.response.HienThiDanhSachKhachHangResponse;
+import com.megacart.dto.response.MessageResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.service.QuanLyKhachHangService;
 import jakarta.validation.Valid;
@@ -65,11 +66,12 @@ public class QuanLyKhachHangController {
      * @param request DTO chứa trạng thái mới.
      */
     @PatchMapping("/{maKhachHang}/status")
-    public ResponseEntity<Void> capNhatTrangThai(
+    public ResponseEntity<MessageResponse> capNhatTrangThai(
             @PathVariable Integer maKhachHang,
             @Valid @RequestBody CapNhatTrangThaiTaiKhoanRequest request
     ) {
         quanLyKhachHangService.capNhatTrangThai(maKhachHang, request);
-        return ResponseEntity.noContent().build(); // Trả về 204 No Content khi cập nhật thành công
+        String message = "Cập nhật trạng thái tài khoản thành công.";
+        return ResponseEntity.ok(new MessageResponse(message));
     }
 }

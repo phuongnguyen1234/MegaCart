@@ -24,10 +24,10 @@ public class DatHangController {
     private final DatHangService datHangService;
 
     @PostMapping
-    public ResponseEntity<DatHangResponse> datHang(
+    public ResponseEntity<DatHangResponse> taoDonHang(
             @Valid @RequestBody DatHangRequest request,
             @AuthenticationPrincipal TaiKhoan taiKhoan) {
-        DatHangResponse response = datHangService.datHang(request, taiKhoan);
+        DatHangResponse response = datHangService.taoDonHang(request, taiKhoan);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
             }
     }

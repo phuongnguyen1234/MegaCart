@@ -40,5 +40,6 @@ public class ChiTietDonHangResponse {
         private long donGia;
         private int soLuong;
         private String trangThaiItem; // e.g., "Hết hàng"
+        private boolean banChay;
     }
 }

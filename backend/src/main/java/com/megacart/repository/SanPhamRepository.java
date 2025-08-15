@@ -28,50 +28,6 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
     List<String> findTenSanPhamByPrefixAndStatus(@Param("searchPattern") String searchPattern, @Param("trangThai") TrangThaiSanPham trangThai, Pageable pageable);
 
     /**
-     * Tìm kiếm sản phẩm đầy đủ thông tin theo từ khóa, có phân trang.
-     * Chỉ tìm các sản phẩm đang ở trạng thái DANG_BAN.
-     * Sử dụng EntityGraph để fetch các quan hệ cần thiết, tránh lỗi N+1 query.
-     */
-    @EntityGraph(attributePaths = {"kho", "anhMinhHoas"})
-    Page<SanPham> findByTenSanPhamContainingIgnoreCaseAndTrangThai(String tuKhoa, TrangThaiSanPham trangThai, Pageable pageable);
-
-    /**
-     * Lấy danh sách sản phẩm theo mã danh mục, có phân trang.
-     * Chỉ lấy các sản phẩm đang ở trạng thái DANG_BAN.
-     */
-    @EntityGraph(attributePaths = {"kho", "anhMinhHoas"})
-    Page<SanPham> findByDanhMuc_MaDanhMucAndTrangThai(Integer maDanhMuc, TrangThaiSanPham trangThai, Pageable pageable);
-
-    /**
-     * Lấy danh sách sản phẩm theo nhãn, có phân trang.
-     * Chỉ lấy các sản phẩm đang ở trạng thái DANG_BAN.
-     */
-    @EntityGraph(attributePaths = {"kho", "anhMinhHoas"})
-    Page<SanPham> findByNhanAndTrangThai(NhanSanPham nhan, TrangThaiSanPham trangThai, Pageable pageable);
-
-    /**
-     * Bước 1: Lấy danh sách ID của các sản phẩm bán chạy nhất, có phân trang.
-     * - Chỉ tính các sản phẩm trong các đơn hàng đã giao thành công (DA_GIAO).
-     * - Sử dụng LEFT JOIN để bao gồm cả các sản phẩm chưa bán được.
-     * - Sắp xếp dựa trên tổng số lượng đã bán.
-     */
-    @Query(value = "SELECT sp.maSanPham FROM SanPham sp " +
-                   "LEFT JOIN sp.chiTietDonHangs ctdh " +
-                   "LEFT JOIN ctdh.donHang dh " +
-                   "WHERE sp.trangThai = :trangThai AND (dh.trangThai = 'DA_GIAO' OR dh IS NULL) " +
-                   "GROUP BY sp.maSanPham " +
-                   "ORDER BY COALESCE(SUM(ctdh.soLuong), 0) DESC, sp.maSanPham ASC",
-           countQuery = "SELECT COUNT(sp) FROM SanPham sp WHERE sp.trangThai = :trangThai")
-    Page<Integer> findMaSanPhamBanChay(@Param("trangThai") TrangThaiSanPham trangThai, Pageable pageable);
-
-    /**
-     * Bước 2: Lấy đầy đủ thông tin chi tiết của các sản phẩm dựa trên danh sách ID.
-     */
-    @Query("SELECT sp FROM SanPham sp WHERE sp.maSanPham IN :ids")
-    @EntityGraph(attributePaths = {"kho", "anhMinhHoas"})
-    List<SanPham> findByIdsWithDetails(@Param("ids") List<Integer> ids);
-
-    /**
      * Ghi đè phương thức findById để luôn fetch các quan hệ cần thiết cho trang chi tiết.
      * @param maSanPham ID của sản phẩm.
      * @return Optional chứa sản phẩm nếu tìm thấy.
@@ -81,13 +37,13 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
     Optional<SanPham> findById(Integer maSanPham);
 
     /**
-     * Lấy danh sách các nhà sản xuất duy nhất cho một danh mục cụ thể.
-     * @param maDanhMuc ID của danh mục.
-     * @param trangThai Trạng thái sản phẩm (ví dụ: DANG_BAN).
+     * Lấy danh sách các nhà sản xuất duy nhất cho một hoặc nhiều danh mục.
+     * @param maDanhMucs Danh sách ID của các danh mục.
+     * @param trangThai Trạng thái sản phẩm (ví dụ: BAN).
      * @return Danh sách các tên nhà sản xuất.
      */
-    @Query("SELECT DISTINCT sp.nhaSanXuat FROM SanPham sp WHERE sp.danhMuc.maDanhMuc = :maDanhMuc AND sp.trangThai = :trangThai ORDER BY sp.nhaSanXuat ASC")
-    List<String> findDistinctNhaSanXuatByDanhMuc(@Param("maDanhMuc") Integer maDanhMuc, @Param("trangThai") TrangThaiSanPham trangThai);
+    @Query("SELECT DISTINCT sp.nhaSanXuat FROM SanPham sp WHERE sp.danhMuc.maDanhMuc IN :maDanhMucs AND sp.trangThai = :trangThai ORDER BY sp.nhaSanXuat ASC")
+    List<String> findDistinctNhaSanXuatByDanhMucIds(@Param("maDanhMucs") List<Integer> maDanhMucs, @Param("trangThai") TrangThaiSanPham trangThai);
 
     /**
      * Lấy danh sách tất cả các nhà sản xuất duy nhất trong hệ thống.
@@ -98,13 +54,13 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
     List<String> findAllDistinctNhaSanXuat(@Param("trangThai") TrangThaiSanPham trangThai);
 
     /**
-     * Lấy khoảng giá (thấp nhất và cao nhất) cho một danh mục cụ thể.
-     * @param maDanhMuc ID của danh mục.
-     * @param trangThai Trạng thái sản phẩm (ví dụ: DANG_BAN).
+     * Lấy khoảng giá (thấp nhất và cao nhất) cho một hoặc nhiều danh mục.
+     * @param maDanhMucs Danh sách ID của các danh mục.
+     * @param trangThai Trạng thái sản phẩm (ví dụ: BAN).
      * @return Một projection chứa minPrice và maxPrice.
      */
-    @Query("SELECT MIN(sp.donGia) as minPrice, MAX(sp.donGia) as maxPrice FROM SanPham sp WHERE sp.danhMuc.maDanhMuc = :maDanhMuc AND sp.trangThai = :trangThai")
-    Optional<PriceRangeProjection> findPriceRangeByDanhMuc(@Param("maDanhMuc") Integer maDanhMuc, @Param("trangThai") TrangThaiSanPham trangThai);
+    @Query("SELECT MIN(sp.donGia) as minPrice, MAX(sp.donGia) as maxPrice FROM SanPham sp WHERE sp.danhMuc.maDanhMuc IN :maDanhMucs AND sp.trangThai = :trangThai")
+    Optional<PriceRangeProjection> findPriceRangeByDanhMucIds(@Param("maDanhMucs") List<Integer> maDanhMucs, @Param("trangThai") TrangThaiSanPham trangThai);
 
     /**
      * Lấy khoảng giá (thấp nhất và cao nhất) cho tất cả sản phẩm.
@@ -131,4 +87,38 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
      */
     @Query("SELECT MIN(sp.donGia) as minPrice, MAX(sp.donGia) as maxPrice FROM SanPham sp WHERE sp.tenSanPham LIKE %:tuKhoa% AND sp.trangThai = :trangThai")
     Optional<PriceRangeProjection> findPriceRangeByTuKhoa(@Param("tuKhoa") String tuKhoa, @Param("trangThai") TrangThaiSanPham trangThai);
+
+    /**
+     * Lấy danh sách các nhà sản xuất riêng biệt dựa trên nhãn sản phẩm.
+     * @param nhan Nhãn sản phẩm (ví dụ: BAN_CHAY, MOI).
+     * @param trangThai Trạng thái của sản phẩm (ví dụ: BAN).
+     * @return Danh sách các nhà sản xuất.
+     */
+    @Query("SELECT DISTINCT sp.nhaSanXuat FROM SanPham sp WHERE sp.nhan = :nhan AND sp.trangThai = :trangThai ORDER BY sp.nhaSanXuat ASC")
+    List<String> findDistinctNhaSanXuatByNhan(@Param("nhan") NhanSanPham nhan, @Param("trangThai") TrangThaiSanPham trangThai);
+
+    /**
+     * Lấy khoảng giá (min/max) dựa trên nhãn sản phẩm.
+     * @param nhan Nhãn sản phẩm (ví dụ: BAN_CHAY, MOI).
+     * @param trangThai Trạng thái của sản phẩm (ví dụ: BAN).
+     * @return Một Optional chứa đối tượng PriceRangeProjection.
+     */
+    @Query("SELECT MIN(sp.donGia) as minPrice, MAX(sp.donGia) as maxPrice FROM SanPham sp WHERE sp.nhan = :nhan AND sp.trangThai = :trangThai")
+    Optional<PriceRangeProjection> findPriceRangeByNhan(@Param("nhan") NhanSanPham nhan, @Param("trangThai") TrangThaiSanPham trangThai);
+
+    /**
+     * Lấy danh sách các nhà sản xuất riêng biệt cho các sản phẩm bán chạy.
+     * @param trangThai Trạng thái của sản phẩm (ví dụ: BAN).
+     * @return Danh sách các nhà sản xuất.
+     */
+    @Query("SELECT DISTINCT sp.nhaSanXuat FROM SanPham sp WHERE sp.banChay = true AND sp.trangThai = :trangThai ORDER BY sp.nhaSanXuat ASC")
+    List<String> findDistinctNhaSanXuatByBanChayIsTrue(@Param("trangThai") TrangThaiSanPham trangThai);
+
+    /**
+     * Lấy khoảng giá (min/max) cho các sản phẩm bán chạy.
+     * @param trangThai Trạng thái của sản phẩm (ví dụ: BAN).
+     * @return Một Optional chứa đối tượng PriceRangeProjection.
+     */
+    @Query("SELECT MIN(sp.donGia) as minPrice, MAX(sp.donGia) as maxPrice FROM SanPham sp WHERE sp.banChay = true AND sp.trangThai = :trangThai")
+    Optional<PriceRangeProjection> findPriceRangeByBanChayIsTrue(@Param("trangThai") TrangThaiSanPham trangThai);
 }

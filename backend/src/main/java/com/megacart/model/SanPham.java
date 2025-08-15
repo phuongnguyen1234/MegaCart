@@ -44,6 +44,9 @@ public class SanPham {
     @Column(name = "Nhan") // Cho phép null vì không phải sản phẩm nào cũng có nhãn
     private NhanSanPham nhan;
 
+    @Column(name = "BanChay", nullable = false)
+    private boolean banChay;
+
     @Column(name = "NhaSanXuat", nullable = false)
     private String nhaSanXuat;
 

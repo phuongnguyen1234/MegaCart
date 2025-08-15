@@ -2,6 +2,7 @@ package com.megacart.service.impl;
 
 import com.megacart.dto.response.FilterDataResponse;
 import com.megacart.dto.response.PriceRangeResponse;
+import com.megacart.enumeration.NhanSanPham;
 import com.megacart.enumeration.TrangThaiDanhMuc;
 import com.megacart.enumeration.TrangThaiSanPham;
 import com.megacart.model.DanhMuc;
@@ -9,6 +10,7 @@ import com.megacart.dto.response.DanhMucMenuItemResponse;
 import com.megacart.repository.DanhMucRepository;
 import com.megacart.repository.projection.PriceRangeProjection;
 import com.megacart.repository.SanPhamRepository;
+import com.megacart.service.DanhMucService;
 import com.megacart.service.FilterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,10 +28,11 @@ public class FilterServiceImpl implements FilterService {
 
     private final SanPhamRepository sanPhamRepository;
     private final DanhMucRepository danhMucRepository;
+    private final DanhMucService danhMucService;
 
     @Override
     @Transactional(readOnly = true)
-    public FilterDataResponse getFilterData(String danhMucSlug, String tuKhoa) {
+    public FilterDataResponse getFilterData(String danhMucSlug, String tuKhoa, NhanSanPham nhan, boolean banChay) {
         List<String> nhaSanXuats;
         PriceRangeResponse khoangGia;
         List<DanhMucMenuItemResponse> danhMucs;
@@ -37,16 +40,20 @@ public class FilterServiceImpl implements FilterService {
         if (StringUtils.hasText(danhMucSlug)) {
             Optional<DanhMuc> danhMucOpt = danhMucRepository.findBySlug(danhMucSlug);
 
-            // Lấy nhà sản xuất theo danh mục
-            nhaSanXuats = danhMucOpt
-                    .map(danhMuc -> sanPhamRepository.findDistinctNhaSanXuatByDanhMuc(danhMuc.getMaDanhMuc(), TrangThaiSanPham.BAN))
+            // Lấy nhà sản xuất và khoảng giá theo danh mục và các danh mục con của nó
+            List<Integer> categoryIdsToSearch = danhMucOpt
+                    .map(danhMuc -> danhMucService.getAllSubCategoryIds(danhMuc.getMaDanhMuc()))
                     .orElse(List.of());
 
-            // Lấy khoảng giá theo danh mục
-            khoangGia = danhMucOpt
-                    .flatMap(danhMuc -> sanPhamRepository.findPriceRangeByDanhMuc(danhMuc.getMaDanhMuc(), TrangThaiSanPham.BAN))
-                    .map(projection -> new PriceRangeResponse(projection.getMinPrice(), projection.getMaxPrice()))
-                    .orElse(new PriceRangeResponse(0, 0)); // Mặc định nếu không có sản phẩm nào trong danh mục
+            if (categoryIdsToSearch.isEmpty()) {
+                nhaSanXuats = List.of();
+                khoangGia = new PriceRangeResponse(0, 0);
+            } else {
+                nhaSanXuats = sanPhamRepository.findDistinctNhaSanXuatByDanhMucIds(categoryIdsToSearch, TrangThaiSanPham.BAN);
+                khoangGia = sanPhamRepository.findPriceRangeByDanhMucIds(categoryIdsToSearch, TrangThaiSanPham.BAN)
+                        .map(projection -> new PriceRangeResponse(projection.getMinPrice(), projection.getMaxPrice()))
+                        .orElse(new PriceRangeResponse(0, 0));
+            }
 
             // Logic mới: Hiển thị các danh mục con, hoặc các danh mục anh em nếu không có con.
             danhMucs = danhMucOpt
@@ -100,6 +107,39 @@ public class FilterServiceImpl implements FilterService {
                     .map(this::mapToMenuItem)
                     .collect(Collectors.toList());
 
+        } else if (nhan != null) {
+            // Trường hợp người dùng xem theo nhãn (ví dụ: Mới)
+            // Lấy nhà sản xuất dựa trên các sản phẩm có nhãn đó
+            nhaSanXuats = sanPhamRepository.findDistinctNhaSanXuatByNhan(nhan, TrangThaiSanPham.BAN);
+
+            // Lấy khoảng giá dựa trên các sản phẩm có nhãn đó
+            khoangGia = sanPhamRepository.findPriceRangeByNhan(nhan, TrangThaiSanPham.BAN)
+                    .map(projection -> new PriceRangeResponse(projection.getMinPrice(), projection.getMaxPrice()))
+                    .orElse(new PriceRangeResponse(0, 0));
+
+            // Khi xem theo nhãn, sidebar vẫn hiển thị các danh mục gốc để người dùng có thể
+            // lọc các sản phẩm "Bán chạy" trong danh mục "Đồ điện tử" chẳng hạn.
+            danhMucs = danhMucRepository.findByDanhMucChaIsNullAndTrangThai(TrangThaiDanhMuc.HOAT_DONG)
+                    .stream()
+                    .map(this::mapToMenuItem)
+                    .collect(Collectors.toList());
+
+        } else if (banChay) {
+            // Trường hợp người dùng ở trang "Bán chạy"
+            // Lấy nhà sản xuất dựa trên các sản phẩm được đánh dấu là bán chạy
+            nhaSanXuats = sanPhamRepository.findDistinctNhaSanXuatByBanChayIsTrue(TrangThaiSanPham.BAN);
+
+            // Lấy khoảng giá dựa trên các sản phẩm bán chạy
+            khoangGia = sanPhamRepository.findPriceRangeByBanChayIsTrue(TrangThaiSanPham.BAN)
+                    .map(projection -> new PriceRangeResponse(projection.getMinPrice(), projection.getMaxPrice()))
+                    .orElse(new PriceRangeResponse(0, 0));
+
+            // Khi xem theo nhãn, sidebar vẫn hiển thị các danh mục gốc để người dùng có thể
+            // lọc các sản phẩm "Bán chạy" trong danh mục "Đồ điện tử" chẳng hạn.
+            danhMucs = danhMucRepository.findByDanhMucChaIsNullAndTrangThai(TrangThaiDanhMuc.HOAT_DONG)
+                    .stream()
+                    .map(this::mapToMenuItem)
+                    .collect(Collectors.toList());
         } else {
             // Lấy tất cả nhà sản xuất
             nhaSanXuats = sanPhamRepository.findAllDistinctNhaSanXuat(TrangThaiSanPham.BAN);

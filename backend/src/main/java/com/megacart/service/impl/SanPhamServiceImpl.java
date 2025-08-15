@@ -58,6 +58,7 @@ public class SanPhamServiceImpl implements SanPhamService {
     public PagedResponse<SanPhamResponse> timKiemVaLocSanPham(
             String tuKhoa,
             Integer maDanhMuc,
+            Integer giaToiThieu,
             Integer giaToiDa,
             String nhaSanXuat,
             Pageable pageable
@@ -69,7 +70,7 @@ public class SanPhamServiceImpl implements SanPhamService {
         }
 
         // Truyền danh sách ID vào Specification để lọc theo mệnh đề IN
-        Specification<SanPham> spec = sanPhamSpecification.filterBy(tuKhoa, categoryIdsToSearch, giaToiDa, nhaSanXuat);
+        Specification<SanPham> spec = sanPhamSpecification.filterBy(tuKhoa, categoryIdsToSearch, giaToiThieu, giaToiDa, nhaSanXuat, null, false);
         Page<SanPham> sanPhamPage = sanPhamRepository.findAll(spec, pageable);
 
         List<BreadcrumbItem> breadcrumbs = null;
@@ -84,16 +85,23 @@ public class SanPhamServiceImpl implements SanPhamService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<SanPhamResponse> getSanPhamTheoDanhMuc(Integer maDanhMuc, Pageable pageable) {
-        Page<SanPham> sanPhamPage = sanPhamRepository.findByDanhMuc_MaDanhMucAndTrangThai(maDanhMuc, TrangThaiSanPham.BAN, pageable);
-        List<BreadcrumbItem> breadcrumbs = danhMucRepository.findById(maDanhMuc).map(this::buildBreadcrumbs).orElse(null);
-        return convertPageToPagedResponse(sanPhamPage, breadcrumbs);
-    }
+    public PagedResponse<SanPhamResponse> getSanPhamTheoNhan(
+            NhanSanPham nhan,
+            Integer maDanhMuc,
+            Integer giaToiThieu,
+            Integer giaToiDa,
+            String nhaSanXuat,
+            Pageable pageable) {
 
-    @Override
-    @Transactional(readOnly = true)
-    public PagedResponse<SanPhamResponse> getSanPhamTheoNhan(NhanSanPham nhan, Pageable pageable) {
-        Page<SanPham> sanPhamPage = sanPhamRepository.findByNhanAndTrangThai(nhan, TrangThaiSanPham.BAN, pageable);
+        List<Integer> categoryIdsToSearch = null;
+        if (maDanhMuc != null) {
+            categoryIdsToSearch = danhMucService.getAllSubCategoryIds(maDanhMuc);
+        }
+
+        // Sử dụng Specification để lọc động, truyền nhãn vào tham số cuối cùng
+        Specification<SanPham> spec = sanPhamSpecification.filterBy(null, categoryIdsToSearch, giaToiThieu, giaToiDa, nhaSanXuat, nhan, false);
+        Page<SanPham> sanPhamPage = sanPhamRepository.findAll(spec, pageable);
+
         // Lấy tên hiển thị từ enum để code sạch hơn và dễ mở rộng
         List<BreadcrumbItem> breadcrumbs = buildStaticBreadcrumbs(nhan.getTenHienThi());
         return convertPageToPagedResponse(sanPhamPage, breadcrumbs);
@@ -101,36 +109,29 @@ public class SanPhamServiceImpl implements SanPhamService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<SanPhamResponse> getSanPhamBanChay(Pageable pageable) {
+    public PagedResponse<SanPhamResponse> getSanPhamBanChay(
+            Integer maDanhMuc,
+            Integer giaToiThieu,
+            Integer giaToiDa,
+            String nhaSanXuat,
+            Pageable pageable) {
+
         List<BreadcrumbItem> breadcrumbs = buildStaticBreadcrumbs("Bán chạy nhất");
-        // Bước 1: Lấy trang ID của các sản phẩm bán chạy
-        Page<Integer> maSanPhamPage = sanPhamRepository.findMaSanPhamBanChay(TrangThaiSanPham.BAN, pageable);
-        List<Integer> maSanPhams = maSanPhamPage.getContent();
 
-        if (maSanPhams.isEmpty()) {
-            return new PagedResponse<>(Collections.emptyList(), pageable.getPageNumber(), pageable.getPageSize(), 0, 0, breadcrumbs);
+        List<Integer> categoryIdsToSearch = null;
+        if (maDanhMuc != null) {
+            // Lấy ID của danh mục cha và tất cả các danh mục con cháu của nó
+            categoryIdsToSearch = danhMucService.getAllSubCategoryIds(maDanhMuc);
         }
-
-        // Bước 2: Lấy thông tin chi tiết cho các ID đó
-        List<SanPham> sanPhams = sanPhamRepository.findByIdsWithDetails(maSanPhams);
-
-        // Sắp xếp lại danh sách sản phẩm theo đúng thứ tự bán chạy từ Bước 1
-        Map<Integer, SanPham> sanPhamMap = sanPhams.stream()
-                .collect(Collectors.toMap(SanPham::getMaSanPham, sanPham -> sanPham));
-
-        List<SanPham> sortedSanPhams = maSanPhams.stream()
-                .map(sanPhamMap::get)
-                .filter(Objects::nonNull)
-                .toList();
-
-        // Chuyển đổi sang DTO và trả về PagedResponse
-        List<SanPhamResponse> sanPhamResponses = sortedSanPhams.stream().map(this::mapToSanPhamResponse).toList();
-        return new PagedResponse<>(sanPhamResponses, maSanPhamPage.getNumber(), maSanPhamPage.getSize(), maSanPhamPage.getTotalElements(), maSanPhamPage.getTotalPages(), breadcrumbs);
+        // Sử dụng Specification để lọc các sản phẩm được đánh dấu là bán chạy
+        Specification<SanPham> spec = sanPhamSpecification.filterBy(null, categoryIdsToSearch, giaToiThieu, giaToiDa, nhaSanXuat, null, true);
+        Page<SanPham> sanPhamPage = sanPhamRepository.findAll(spec, pageable);
+        return convertPageToPagedResponse(sanPhamPage, breadcrumbs);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ChiTietSanPhamResponse getChiTietSanPham(Integer maSanPham) {
+    public ChiTietSanPhamResponse getSanPhamByMaSanPham(Integer maSanPham) {
         SanPham sanPham = sanPhamRepository.findById(maSanPham)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + maSanPham));
 
@@ -173,7 +174,8 @@ public class SanPhamServiceImpl implements SanPhamService {
                 .nhaSanXuat(sanPham.getNhaSanXuat())
                 .nhan(sanPham.getNhan() != null ? sanPham.getNhan().getTenHienThi() : null)
                 .trangThaiTonKho(trangThaiTonKho.getTenHienThi())
-                .anhMinhHoaChinh(anhChinhUrl).build();
+                .anhMinhHoaChinh(anhChinhUrl)
+                .banChay(sanPham.isBanChay()).build();
     }
 
     private PagedResponse<SanPhamResponse> convertPageToPagedResponse(Page<SanPham> sanPhamPage, List<BreadcrumbItem> breadcrumbs) {
@@ -209,7 +211,8 @@ public class SanPhamServiceImpl implements SanPhamService {
                 .moTa(sanPham.getMoTa())
                 .ghiChu(sanPham.getGhiChu())
                 .trangThaiTonKho(trangThaiTonKho.getTenHienThi())
-                .anhMinhHoas(anhMinhHoas).build();
+                .anhMinhHoas(anhMinhHoas)
+                .banChay(sanPham.isBanChay()).build();
                }
 
     /**

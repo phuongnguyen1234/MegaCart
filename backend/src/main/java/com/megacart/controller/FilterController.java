@@ -1,6 +1,7 @@
 package com.megacart.controller;
 
 import com.megacart.dto.response.FilterDataResponse;
+import com.megacart.enumeration.NhanSanPham;
 import com.megacart.service.FilterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/filter-options") // <-- ĐỔI TÊN ENDPOINT
+@RequestMapping("/api/filter-options") 
 @RequiredArgsConstructor
 @Slf4j
 public class FilterController {
@@ -21,9 +22,11 @@ public class FilterController {
     @GetMapping
     public ResponseEntity<FilterDataResponse> getFilters(
             @RequestParam(required = false) String danhMucSlug,
-            @RequestParam(required = false) String tuKhoa
+            @RequestParam(required = false) String tuKhoa,
+            @RequestParam(required = false) NhanSanPham nhan,
+            @RequestParam(defaultValue = "false") boolean banChay
     ) {
-        log.info(">>> Request received for /api/filter-options with slug: {} and keyword: {}", danhMucSlug, tuKhoa);
-        return ResponseEntity.ok(filterService.getFilterData(danhMucSlug, tuKhoa));
+        log.info(">>> Request received for /api/filter-options with slug: {}, keyword: {}, label: {}, bestSelling: {}", danhMucSlug, tuKhoa, nhan, banChay);
+        return ResponseEntity.ok(filterService.getFilterData(danhMucSlug, tuKhoa, nhan, banChay));
     }
 }

@@ -223,6 +223,7 @@ public class GioHangServiceImpl implements GioHangService {
                             .donVi(item.getSanPham().getDonVi())
                             .soLuong(item.getSoLuong())
                             .thanhTien(thanhTien)
+                            .banChay(item.getSanPham().isBanChay())
                             .build();
                 }).collect(Collectors.toList());
         
