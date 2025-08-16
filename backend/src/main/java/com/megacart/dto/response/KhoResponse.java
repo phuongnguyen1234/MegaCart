@@ -13,4 +13,5 @@ public class KhoResponse {
     private String danhMucCon;
     private Integer soLuong;
     private String noiDungCapNhat;
+    private String thongBao;
 }

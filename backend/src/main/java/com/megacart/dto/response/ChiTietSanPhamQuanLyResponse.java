@@ -1,5 +1,6 @@
 package com.megacart.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.megacart.enumeration.NhanSanPham;
 import com.megacart.enumeration.TrangThaiSanPham;
 import lombok.Builder;
@@ -9,6 +10,7 @@ import java.util.List;
 
 @Data
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ChiTietSanPhamQuanLyResponse {
     private Integer maSanPham;
     private String tenSanPham;
@@ -21,4 +23,5 @@ public class ChiTietSanPhamQuanLyResponse {
     private String ghiChu;
     private TrangThaiSanPham trangThai;
     private List<AnhMinhHoaResponse> anhMinhHoas;
+    private String thongBao;
 }

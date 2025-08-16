@@ -273,8 +273,9 @@ public class DonHangServiceImpl implements DonHangService {
             Kho kho = chiTiet.getSanPham().getKho();
             kho.setSoLuong(kho.getSoLuong() - chiTiet.getSoLuong());
         }
-        donHang.setTrangThai(TrangThaiDonHang.CHO_XU_LY); // Chuyển sang chờ xử lý để nhân viên đóng gói
-
+        donHang.setTrangThai(TrangThaiDonHang.DANG_GIAO); // Chuyển sang trạng thái đang giao
+         // Tính toán và gán ngày giao hàng dự kiến
+         donHang.setDuKienGiaoHang(ThoiGianGiaoHangUtils.tinhThoiGianGiaoHangDuKien(LocalDateTime.now()));
         DonHang savedDonHang = donHangRepository.save(donHang);
         return mapToChiTietDonHangResponse(savedDonHang);
     }

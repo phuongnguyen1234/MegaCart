@@ -95,7 +95,9 @@ public class QuanLyNhanVienServiceImpl implements QuanLyNhanVienService {
         thongBaoService.guiEmailChaoMungNhanVien(savedNhanVien, matKhauNgauNhien);
 
         // 6. Trả về DTO của nhân viên vừa tạo
-        return mapToNhanVienResponse(savedNhanVien);
+        HienThiDanhSachNhanVienResponse response = mapToNhanVienResponse(savedNhanVien);
+        response.setThongBao("Thêm nhân viên thành công.");
+        return response;
     }
 
     @Override
@@ -119,7 +121,9 @@ public class QuanLyNhanVienServiceImpl implements QuanLyNhanVienService {
         updateTrangThai(maNhanVien, nhanVien.getTaiKhoan(), request.getTrangThai());
 
         // Không cần gọi save() vì entity đang ở trạng thái managed trong transaction
-        return mapToNhanVienResponse(nhanVien);
+        HienThiDanhSachNhanVienResponse response = mapToNhanVienResponse(nhanVien);
+        response.setThongBao("Cập nhật thông tin nhân viên thành công.");
+        return response;
     }
 
     private void updateHoTen(NhanVien nhanVien, String newHoTen) {

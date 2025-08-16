@@ -24,10 +24,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.text.Collator;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Map;
 import java.util.Optional;
@@ -40,13 +43,16 @@ public class DanhMucServiceImpl implements DanhMucService {
     private final DanhMucRepository danhMucRepository;
     private final SanPhamRepository sanPhamRepository;
 
+    // Khởi tạo Collator cho tiếng Việt để sắp xếp đúng chuẩn
+    private static final Collator VIETNAMESE_COLLATOR = Collator.getInstance(new Locale("vi", "VN"));
+
     @Override
     @Transactional(readOnly = true)
     public List<DanhMucMenuItemResponse> getMenuDanhMucs() {
         final int SUB_CATEGORY_LIMIT = 12;
 
-        // 1. Lấy tất cả danh mục đang hoạt động
-        List<DanhMuc> allActiveCategories = danhMucRepository.findAllByTrangThai(TrangThaiDanhMuc.HOAT_DONG);
+        // 1. Lấy tất cả danh mục đang hoạt động, dùng JOIN FETCH để lấy luôn danh mục cha
+        List<DanhMuc> allActiveCategories = danhMucRepository.findAllByTrangThaiWithParent(TrangThaiDanhMuc.HOAT_DONG);
 
         // 2. Nhóm các danh mục con theo ID của cha để tra cứu hiệu quả
         Map<Integer, List<DanhMuc>> childrenByParentId = allActiveCategories.stream()
@@ -56,6 +62,7 @@ public class DanhMucServiceImpl implements DanhMucService {
         // 3. Lấy ra các danh mục gốc (không có cha)
         List<DanhMuc> rootCategoryEntities = allActiveCategories.stream()
                 .filter(dm -> dm.getDanhMucCha() == null)
+                .sorted(Comparator.comparing(DanhMuc::getTenDanhMuc, VIETNAMESE_COLLATOR)) // Sắp xếp danh mục cha
                 .toList();
 
         // 4. Xây dựng cây DTO từ các danh mục gốc, áp dụng giới hạn cho các danh mục con
@@ -64,8 +71,9 @@ public class DanhMucServiceImpl implements DanhMucService {
                     // Lấy danh sách con đầy đủ của danh mục gốc này
                     List<DanhMuc> children = childrenByParentId.getOrDefault(rootEntity.getMaDanhMuc(), Collections.emptyList());
 
-                    // Giới hạn danh sách con để trả về cho menu
+                    // Sắp xếp danh mục con theo tên (A-Z) trước khi giới hạn số lượng
                     List<DanhMucMenuItemResponse> limitedChildrenDTOs = children.stream()
+                            .sorted(Comparator.comparing(DanhMuc::getTenDanhMuc, VIETNAMESE_COLLATOR))
                             .limit(SUB_CATEGORY_LIMIT)
                             .map(this::mapToMenuItem)
                             .collect(Collectors.toList());
@@ -130,7 +138,7 @@ public class DanhMucServiceImpl implements DanhMucService {
     @Override
     @Transactional(readOnly = true)
     public List<DanhMucOptionResponse> getDanhMucOptionsForFilter() {
-        List<DanhMuc> allActiveCategories = danhMucRepository.findAllByTrangThai(TrangThaiDanhMuc.HOAT_DONG);
+        List<DanhMuc> allActiveCategories = danhMucRepository.findAllByTrangThaiWithParent(TrangThaiDanhMuc.HOAT_DONG);
 
         Map<Integer, List<DanhMuc>> childrenByParentId = allActiveCategories.stream()
                 .filter(dm -> dm.getDanhMucCha() != null)
@@ -138,6 +146,7 @@ public class DanhMucServiceImpl implements DanhMucService {
 
         List<DanhMuc> rootCategories = allActiveCategories.stream()
                 .filter(dm -> dm.getDanhMucCha() == null)
+                .sorted(Comparator.comparing(DanhMuc::getTenDanhMuc, VIETNAMESE_COLLATOR)) // Sắp xếp danh mục cha
                 .toList();
 
         List<DanhMucOptionResponse> options = new ArrayList<>();
@@ -152,6 +161,7 @@ public class DanhMucServiceImpl implements DanhMucService {
         options.add(new DanhMucOptionResponse(category.getMaDanhMuc(), prefix + (level > 0 ? "- " : "") + category.getTenDanhMuc()));
 
         List<DanhMuc> children = childrenByParentId.getOrDefault(category.getMaDanhMuc(), Collections.emptyList());
+        children.sort(Comparator.comparing(DanhMuc::getTenDanhMuc, VIETNAMESE_COLLATOR)); // Sắp xếp danh mục con
         for (DanhMuc child : children) {
             addCategoryToOptions(child, level + 1, options, childrenByParentId);
         }
@@ -222,7 +232,9 @@ public class DanhMucServiceImpl implements DanhMucService {
 
         DanhMuc savedDanhMuc = danhMucRepository.save(danhMucMoi);
 
-        return mapToDanhMucQuanLyResponse(savedDanhMuc);
+        DanhMucQuanLyResponse response = mapToDanhMucQuanLyResponse(savedDanhMuc);
+        response.setThongBao("Thêm danh mục thành công.");
+        return response;
     }
 
     @Override
@@ -290,7 +302,9 @@ public class DanhMucServiceImpl implements DanhMucService {
         }
 
         DanhMuc savedDanhMuc = danhMucRepository.save(danhMucToUpdate);
-        return mapToDanhMucQuanLyResponse(savedDanhMuc);
+        DanhMucQuanLyResponse response = mapToDanhMucQuanLyResponse(savedDanhMuc);
+        response.setThongBao("Cập nhật danh mục thành công.");
+        return response;
     }
 
     /**
