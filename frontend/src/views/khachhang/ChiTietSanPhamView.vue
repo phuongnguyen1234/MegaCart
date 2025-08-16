@@ -41,12 +41,23 @@
                 class="w-full h-full object-cover transition-opacity duration-300"
                 :key="selectedImage"
               />
-              <span
-                v-if="sanPham.nhan"
-                class="absolute top-3 right-3 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md"
+              <!-- Labels container -->
+              <div
+                class="absolute top-3 right-3 flex flex-col items-end gap-y-2"
               >
-                {{ sanPham.nhan.replace("_", " ") }}
-              </span>
+                <span
+                  v-if="sanPham.nhan"
+                  class="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md"
+                >
+                  {{ sanPham.nhan.label }}
+                </span>
+                <span
+                  v-if="sanPham.banChay"
+                  class="bg-orange-400 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md"
+                >
+                  Bán chạy
+                </span>
+              </div>
             </div>
             <div class="flex space-x-2 overflow-x-auto">
               <img
@@ -180,8 +191,10 @@ import { useRoute, useRouter } from "vue-router";
 import { getChiTietSanPham } from "@/service/sanpham.service";
 import { themVaoGioHang } from "@/service/giohang.service";
 import { useCartStore } from "@/store/giohang.store";
-import type { ChiTietSanPhamResponse } from "@/types/sanpham.types";
-import { TrangThaiTonKho } from "@/types/sanpham.types";
+import {
+  TrangThaiTonKhoKey,
+  type ChiTietSanPhamResponse,
+} from "@/types/sanpham.types";
 import { AxiosError } from "axios";
 
 const route = useRoute();
@@ -194,40 +207,13 @@ const isLoading = ref(true);
 const error = ref<string | null>(null);
 const isRedirecting = ref(false);
 
-const isAddToCartModalVisible = ref(false);
 const selectedImage = ref("");
 
 const isOutOfStock = computed(
-  () => sanPham.value?.trangThaiTonKho === TrangThaiTonKho.HET_HANG
+  () => sanPham.value?.trangThaiTonKho.value === TrangThaiTonKhoKey.HET_HANG
 );
 
 const dinhDangTien = (val: number) => val.toLocaleString("vi-VN") + " VND";
-
-const closeAddToCartModal = () => {
-  isAddToCartModalVisible.value = false;
-};
-
-const handleAddToCart = async (payload: {
-  sanPham: SanPhamResponse; // Modal emits SanPhamResponse
-  soLuong: number;
-}) => {
-  closeAddToCartModal();
-  try {
-    const response = await themVaoGioHang({
-      maSanPham: payload.sanPham.maSanPham,
-      soLuong: payload.soLuong,
-    });
-    cartStore.setCartCount(response.tongSoLuongSanPham);
-    showToast({
-      thongBao: response.message,
-      loai: "thanhCong",
-    });
-  } catch (error: any) {
-    const message =
-      error.response?.data?.message || "Thêm vào giỏ hàng thất bại!";
-    showToast({ thongBao: message, loai: "loi" });
-  }
-};
 
 const fetchSanPham = async () => {
   const maSanPham = Number(route.params.maSanPham);

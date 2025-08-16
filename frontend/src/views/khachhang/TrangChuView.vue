@@ -18,7 +18,7 @@
     <ListSanPham
       tieuDe="Bán chạy nhất"
       :dsSanPham="dsBanChay"
-      linkXemThem="/ban-chay-nhat"
+      linkXemThem="/ban-chay"
       @themVaoGioHang="hienThiThemVaoGioHangModal"
     />
   </CustomerWithNav>

@@ -4,7 +4,6 @@ import { decodeJwtPayload } from "@/utils/jwt";
 // --- General & Customer Views ---
 import DangNhapView from "@/views/DangNhapView.vue";
 import TrangChuView from "@/views/khachhang/TrangChuView.vue";
-import KetQuaTimKiemView from "@/views/khachhang/KetQuaTimKiemView.vue";
 import XemDanhSachSanPhamView from "@/views/khachhang/XemDanhSachSanPhamView.vue";
 import ChiTietSanPhamView from "@/views/khachhang/ChiTietSanPhamView.vue";
 import GioHangView from "@/views/khachhang/GioHangView.vue";
@@ -50,7 +49,7 @@ const router = createRouter({
       // Đường dẫn cho trang kết quả tìm kiếm, ví dụ: /tim-kiem?q=laptop
       path: "/tim-kiem",
       name: "KetQuaTimKiem",
-      component: KetQuaTimKiemView,
+      component: XemDanhSachSanPhamView,
       meta: { customerOnly: true },
     },
     {
@@ -136,16 +135,10 @@ const router = createRouter({
     // Phải được đặt ở cuối để không ghi đè các route tĩnh ở trên.
     // Sắp xếp từ cụ thể nhất đến chung chung nhất.
     {
-      path: "/:danhMucCha/:danhMucCon",
-      name: "DanhMucCon",
-      component: XemDanhSachSanPhamView,
-      meta: { customerOnly: true },
-    },
-    {
       // Route này sẽ bắt các URL như /thoi-trang-nam, /dien-tu, v.v.
       // Nó phải là route động cuối cùng để không bắt các route như /gio-hang, /admin.
-      path: "/:danhMucCha",
-      name: "DanhMucCha",
+      path: "/danh-muc/:danhMucCha/:danhMucCon?", // danhMucCon là optional
+      name: "XemDanhMuc",
       component: XemDanhSachSanPhamView,
       meta: { customerOnly: true },
     },

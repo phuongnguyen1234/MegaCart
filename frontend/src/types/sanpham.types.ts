@@ -25,10 +25,37 @@ export interface NhanSanPhamObject {
   label: string; // Nhãn hiển thị, ví dụ: "Mới"
 }
 
-export enum TrangThaiTonKho {
-  CON_HANG = "Còn hàng",
-  HET_HANG = "Hết hàng",
+/**
+ * Các key của trạng thái tồn kho, dùng để nhận từ API.
+ * Giá trị của enum này phải TRÙNG KHỚP với tên của enum constant trong `TrangThaiTonKho.java` ở backend.
+ */
+export enum TrangThaiTonKhoKey {
+  CON_HANG = "CON_HANG",
+  HET_HANG = "HET_HANG",
 }
+
+/**
+ * Ánh xạ từ key của trạng thái tồn kho sang tên hiển thị (label).
+ */
+export const TrangThaiTonKhoLabel: Record<TrangThaiTonKhoKey, string> = {
+  [TrangThaiTonKhoKey.CON_HANG]: "Còn hàng",
+  [TrangThaiTonKhoKey.HET_HANG]: "Hết hàng",
+};
+
+/**
+ * Cấu trúc đối tượng trạng thái tồn kho nhận về từ API.
+ */
+export interface TrangThaiTonKhoObject {
+  value: TrangThaiTonKhoKey;
+  label: string;
+}
+
+/**
+ * @deprecated Alias for `TrangThaiTonKhoKey`. Provided for backward compatibility to fix import errors.
+ * Please update imports from `TrangThaiTonKho` to `TrangThaiTonKhoKey`.
+ * Also, note that product objects now use `TrangThaiTonKhoObject`, so you should check against `product.trangThaiTonKho.value`.
+ */
+export const TrangThaiTonKho = TrangThaiTonKhoKey;
 
 export interface AnhMinhHoa {
   duongDan: string;
@@ -52,7 +79,7 @@ interface SanPhamBase {
   donGia: number;
   donVi: string;
   nhaSanXuat: string;
-  trangThaiTonKho: TrangThaiTonKho;
+  trangThaiTonKho: TrangThaiTonKhoObject;
   nhan?: NhanSanPhamObject;
   banChay: boolean;
 }
@@ -85,4 +112,17 @@ export interface TimKiemFilterParams {
   giaToiThieu?: number;
   giaToiDa?: number;
   nhaSanXuat?: string;
+  nhan?: NhanSanPhamKey;
+  banChay?: boolean;
+}
+
+/**
+ * Các tham số để lấy dữ liệu cho bộ lọc.
+ * Tương ứng với các @RequestParam trong FilterController.java
+ */
+export interface FilterParams {
+  danhMucSlug?: string;
+  tuKhoa?: string;
+  nhan?: NhanSanPhamKey;
+  banChay?: boolean;
 }

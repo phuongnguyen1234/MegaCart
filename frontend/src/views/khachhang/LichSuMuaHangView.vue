@@ -1,26 +1,28 @@
 <template>
   <CustomerWithNav>
-    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-6 gap-4 p-6">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6 p-6">
       <!-- BỘ LỌC -->
-      <div class="md:col-span-1">
+      <div class="lg:col-span-1">
         <AccordionBoLocDonHang
           v-model:tuNgay="tuNgay"
           v-model:denNgay="denNgay"
-          v-model:maDonHang="maDonHang"
+          v-model:maDonHang="tuKhoa"
           @timKiem="timKiemDonHang"
         />
       </div>
 
       <!-- DANH SÁCH ĐƠN HÀNG -->
-      <div class="md:col-span-5">
+      <div class="lg:col-span-3">
         <h2 class="text-center text-xl font-bold mb-4">LỊCH SỬ MUA HÀNG</h2>
 
         <!-- TAB -->
-        <div class="flex border-b mb-4">
+        <div
+          class="flex border-b mb-4 overflow-x-auto overflow-y-hidden -mx-4 px-4"
+        >
           <button
             v-for="trangThai in trangThaiList"
             :key="trangThai.value"
-            class="relative px-4 py-2 -mb-px text-sm font-medium transition-colors duration-200"
+            class="relative px-4 py-2 -mb-px text-sm font-medium transition-colors duration-200 shrink-0"
             :class="[
               trangThaiDangChon === trangThai.value
                 ? 'border-b-2 border-blue-600 text-blue-600'
@@ -28,198 +30,134 @@
             ]"
             @click="trangThaiDangChon = trangThai.value"
           >
-            {{ trangThai.label }} ({{
-              soLuongTheoTrangThai[trangThai.value] || 0
-            }})
+            {{ trangThai.label }}
+            <!-- TODO: Cần API riêng để lấy số lượng đơn hàng theo từng trạng thái -->
           </button>
         </div>
 
+        <!-- Loading State -->
+        <div v-if="isLoading" class="text-center py-10">
+          <div
+            class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"
+          ></div>
+          <p class="mt-3 text-gray-600">Đang tải đơn hàng...</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="apiError" class="text-center py-10">
+          <p class="text-red-500">{{ apiError }}</p>
+        </div>
+
+        <!-- Empty State -->
+        <div
+          v-else-if="donHangList.length === 0"
+          class="text-center py-10 text-gray-500"
+        >
+          <i class="fi fi-rr-box-open text-6xl mb-3"></i>
+          <p>Không có đơn hàng nào trong mục này.</p>
+        </div>
+
         <!-- DANH SÁCH ĐƠN -->
-        <div class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+        <div v-else class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           <CardDonHang
-            v-for="donHang in donHangHienTai"
-            :key="donHang.ma"
+            v-for="donHang in donHangList"
+            :key="donHang.maDonHang"
             :donHang="donHang"
             @xemChiTiet="xemChiTietDonHang(donHang)"
           />
         </div>
+
+        <!-- TODO: Thêm phân trang -->
       </div>
     </div>
 
     <ChiTietDonHangModal
       v-if="donHangDangChon"
       :visible="isModalVisible"
-      :danh-sach-san-pham="donHangDangChon.danhSachSanPham"
-      :thong-tin="donHangDangChon.thongTin"
-      :ma-don-hang="donHangDangChon.ma"
-      :tong-tien="donHangDangChon.tongTien"
+      :ma-don-hang="donHangDangChon.maDonHang"
       @close="dongModal"
-      @huyDon="huyDonHang"
-      @giaoPhanConLai="giaoPhanConLai"
+      @update="handleModalUpdate"
     />
   </CustomerWithNav>
 </template>
 
-<script setup>
-import { ref, computed } from "vue";
+<script setup lang="ts">
+import { ref, onMounted, watch } from "vue";
 import CustomerWithNav from "@/components/layouts/CustomerWithNav.vue";
 import AccordionBoLocDonHang from "@/components/base/AccordionBoLocDonHang.vue";
 import CardDonHang from "@/components/base/card/CardDonHang.vue";
 import ChiTietDonHangModal from "@/components/base/modals/ChiTietDonHangModal.vue";
+import { useToast } from "@/composables/useToast";
+import { getLichSuMuaHang } from "@/service/donhang.service";
+import type { LichSuDonHang } from "@/types/donhang.types";
+import { TrangThaiDonHangFilter } from "@/types/donhang.types";
+import { AxiosError } from "axios";
 
-const tuNgay = ref("2025-01-01");
-const denNgay = ref("2025-01-02");
-const maDonHang = ref("");
+const { showToast } = useToast();
+
+// --- Helper Functions for Dates ---
+const getISODateString = (date: Date): string => {
+  return date.toISOString().split("T")[0];
+};
+
+const getFirstDayOfMonth = (): string => {
+  const now = new Date();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+  return getISODateString(firstDay);
+};
+
+// --- State for Filters ---
+const tuNgay = ref<string | undefined>(getFirstDayOfMonth());
+const denNgay = ref<string | undefined>(getISODateString(new Date()));
+const tuKhoa = ref(""); // Dùng cho tìm kiếm theo mã đơn hàng hoặc tên sản phẩm
 
 const trangThaiList = [
-  { label: "Chờ xác nhận", value: "cho-xac-nhan" },
-  { label: "Chờ xử lí", value: "cho-xu-li" },
-  { label: "Đang giao", value: "dang-giao" },
-  { label: "Đã giao", value: "da-giao" },
-  { label: "Đã huỷ", value: "da-huy" },
+  { label: "Chờ xác nhận", value: TrangThaiDonHangFilter.CHO_XAC_NHAN },
+  { label: "Chờ xử lý", value: TrangThaiDonHangFilter.CHO_XU_LY },
+  { label: "Đang giao", value: TrangThaiDonHangFilter.DANG_GIAO },
+  { label: "Đã giao", value: TrangThaiDonHangFilter.DA_GIAO },
+  { label: "Đã huỷ", value: TrangThaiDonHangFilter.DA_HUY },
 ];
-const trangThaiDangChon = ref("cho-xac-nhan");
-
-const danhSachDonHang = ref([
-  {
-    ma: "1234567",
-    sanPhamTieuBieu: {
-      ten: "Laptop Pro Max",
-      soLuong: 2,
-    },
-    soSanPhamConLai: 1,
-    tongTien: 50500000,
-    thoiGianDat: "2025-06-25 10:10:00",
-    trangThai: "cho-xac-nhan",
-    danhSachSanPham: [
-      {
-        id: 1,
-        ten: "Laptop Pro Max",
-        donGia: 25000000,
-        soLuong: 2,
-        hinhAnh: "",
-      },
-      {
-        id: 2,
-        ten: "Chuột không dây",
-        donGia: 500000,
-        soLuong: 1,
-        hinhAnh: "",
-      },
-    ],
-    thongTin: {
-      ten: "Nguyễn Văn A",
-      soDienThoai: "0987654321",
-      diaChi: "123 Đường ABC, Phường XYZ, Quận 1, TP. Hồ Chí Minh",
-      trangThai: "Chờ xác nhận",
-      giaoHang: "Giao hàng nhanh",
-      thanhToan: "Thanh toán khi nhận hàng (COD)",
-      thoiGianDat: "2025-06-25 10:10:00",
-      duKienGiao: "2025-06-26",
-      ghiChu: "Giao giờ hành chính",
-    },
-  },
-  {
-    ma: "8765432",
-    sanPhamTieuBieu: {
-      ten: "Điện thoại XYZ",
-      soLuong: 1,
-    },
-    soSanPhamConLai: 0,
-    tongTien: 12000000,
-    thoiGianDat: "2025-06-24 15:30:00",
-    trangThai: "dang-giao",
-    danhSachSanPham: [
-      {
-        id: 3,
-        ten: "Điện thoại XYZ",
-        donGia: 12000000,
-        soLuong: 1,
-        hinhAnh: "",
-      },
-    ],
-    thongTin: {
-      ten: "Trần Thị B",
-      soDienThoai: "0123456789",
-      diaChi: "456 Đường DEF, Phường UVW, Quận 2, TP. Hồ Chí Minh",
-      trangThai: "Đang giao",
-      giaoHang: "Giao hàng nhanh",
-      thanhToan: "Thanh toán khi nhận hàng (COD)",
-      thoiGianDat: "2025-06-24 15:30:00",
-      duKienGiao: "2025-06-27",
-      ghiChu: "Giao giờ hành chính",
-    },
-  },
-  {
-    ma: "9988776",
-    sanPhamTieuBieu: {
-      ten: "Sách Lập trình Vue.js",
-      soLuong: 1,
-    },
-    soSanPhamConLai: 2,
-    tongTien: 750000,
-    thoiGianDat: "2025-06-23 09:00:00",
-    trangThai: "da-giao",
-    danhSachSanPham: [
-      {
-        id: 4,
-        ten: "Sách Lập trình Vue.js",
-        donGia: 300000,
-        soLuong: 1,
-        hinhAnh: "",
-      },
-      { id: 5, ten: "Bàn phím cơ", donGia: 400000, soLuong: 1, hinhAnh: "" },
-      { id: 6, ten: "Lót chuột", donGia: 50000, soLuong: 1, hinhAnh: "" },
-    ],
-    thongTin: {
-      ten: "Lê Văn C",
-      soDienThoai: "0912345678",
-      diaChi: "789 Đường GHI, Phường KLM, Quận 3, TP. Hồ Chí Minh",
-      trangThai: "Đã giao",
-      giaoHang: "Giao hàng nhanh",
-      thanhToan: "Thanh toán khi nhận hàng (COD)",
-      thoiGianDat: "2025-06-23 09:00:00",
-      duKienGiao: "2025-06-24",
-      ghiChu: "Cảm ơn shop",
-    },
-  },
-  {
-    ma: "1122334",
-    sanPhamTieuBieu: {
-      ten: "Tai nghe Bluetooth",
-      soLuong: 1,
-    },
-    soSanPhamConLai: 0,
-    tongTien: 800000,
-    thoiGianDat: "2025-06-22 20:00:00",
-    trangThai: "da-huy",
-    danhSachSanPham: [
-      {
-        id: 7,
-        ten: "Tai nghe Bluetooth",
-        donGia: 800000,
-        soLuong: 1,
-        hinhAnh: "",
-      },
-    ],
-    thongTin: {
-      ten: "Phạm Thị D",
-      soDienThoai: "0909090909",
-      diaChi: "101 Đường MNO, Phường PQR, Quận 4, TP. Hồ Chí Minh",
-      trangThai: "Đã huỷ",
-      giaoHang: "Giao hàng nhanh",
-      thanhToan: "Thanh toán khi nhận hàng (COD)",
-      thoiGianDat: "2025-06-22 20:00:00",
-      duKienGiao: "2025-06-23",
-      ghiChu: "Đổi ý, không mua nữa",
-    },
-  },
-]);
+const trangThaiDangChon = ref<TrangThaiDonHangFilter>(
+  TrangThaiDonHangFilter.CHO_XAC_NHAN
+);
+// --- State for Data & UI ---
+const isLoading = ref(true);
+const apiError = ref<string | null>(null);
+const donHangList = ref<LichSuDonHang[]>([]);
+const currentPage = ref(0);
+const totalPages = ref(0);
 
 const isModalVisible = ref(false);
-const donHangDangChon = ref(null);
+const donHangDangChon = ref<LichSuDonHang | null>(null);
+const fetchLichSuDonHang = async () => {
+  isLoading.value = true;
+  apiError.value = null;
+  try {
+    const response = await getLichSuMuaHang({
+      trangThai: trangThaiDangChon.value,
+      tuKhoa: tuKhoa.value || undefined,
+      tuNgay: tuNgay.value,
+      denNgay: denNgay.value,
+      page: currentPage.value,
+      size: 10, // Hoặc một giá trị khác bạn muốn
+    });
+    donHangList.value = response.content;
+    totalPages.value = response.totalPages;
+  } catch (err) {
+    console.error("Lỗi khi tải lịch sử đơn hàng:", err);
+    if (err instanceof AxiosError && err.response?.data?.message) {
+      apiError.value = err.response.data.message;
+    } else {
+      apiError.value = "Không thể tải dữ liệu. Vui lòng thử lại sau.";
+    }
+    donHangList.value = []; // Xóa danh sách cũ nếu có lỗi
+  } finally {
+    isLoading.value = false;
+  }
+};
 
-const xemChiTietDonHang = (donHang) => {
+const xemChiTietDonHang = (donHang: LichSuDonHang) => {
   donHangDangChon.value = donHang;
   isModalVisible.value = true;
 };
@@ -229,43 +167,28 @@ const dongModal = () => {
   donHangDangChon.value = null;
 };
 
-const donHangHienTai = computed(() =>
-  danhSachDonHang.value.filter((d) => d.trangThai === trangThaiDangChon.value)
-);
+const timKiemDonHang = () => {
+  currentPage.value = 0;
+  fetchLichSuDonHang();
+};
 
-const soLuongTheoTrangThai = computed(() => {
-  const dem = {};
-  for (const dh of danhSachDonHang.value) {
-    dem[dh.trangThai] = (dem[dh.trangThai] || 0) + 1;
-  }
-  return dem;
+watch(trangThaiDangChon, () => {
+  currentPage.value = 0; // Reset về trang đầu tiên khi đổi tab
+  // Reset toàn bộ bộ lọc khi đổi tab trạng thái
+  tuKhoa.value = "";
+  tuNgay.value = getFirstDayOfMonth();
+  denNgay.value = getISODateString(new Date());
+  fetchLichSuDonHang();
 });
 
-const timKiemDonHang = () => {
-  console.log("Bắt đầu tìm kiếm đơn hàng với các bộ lọc:", {
-    tuNgay: tuNgay.value,
-    denNgay: denNgay.value,
-    maDonHang: maDonHang.value,
-  });
-  // TODO: Gọi API với các giá trị lọc ở trên
-};
+onMounted(() => {
+  fetchLichSuDonHang();
+});
 
-const huyDonHang = (payload) => {
-  // Đảm bảo rằng donHangDangChon vẫn tồn tại
-  if (!donHangDangChon.value) return;
-
-  console.log(`Yêu cầu hủy đơn hàng: #${donHangDangChon.value.ma}`);
-  console.log(`Lý do: ${payload.lyDo}`);
-  if (payload.ghiChu) {
-    console.log(`Ghi chú: ${payload.ghiChu}`);
-  }
-  // TODO: Thêm logic gọi API hủy đơn với `payload`
-  dongModal();
-};
-
-const giaoPhanConLai = () => {
-  console.log("Giao phần còn lại cho đơn hàng:", donHangDangChon.value.ma);
-  // TODO: Thêm logic gọi API
-  dongModal();
+const handleModalUpdate = () => {
+  // Đóng modal và tải lại danh sách đơn hàng khi có cập nhật
+  isModalVisible.value = false;
+  donHangDangChon.value = null;
+  fetchLichSuDonHang();
 };
 </script>

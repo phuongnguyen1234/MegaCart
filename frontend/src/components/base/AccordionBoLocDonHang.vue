@@ -80,7 +80,6 @@
               class="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500 transition"
             />
           </div>
-
           <button
             class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-2"
             @click="emit('timKiem')"
@@ -98,8 +97,8 @@ import { ref } from "vue";
 
 const emit = defineEmits(["timKiem"]);
 
-const modelTuNgay = defineModel<string>("tuNgay");
-const modelDenNgay = defineModel<string>("denNgay");
+const modelTuNgay = defineModel<string | undefined>("tuNgay");
+const modelDenNgay = defineModel<string | undefined>("denNgay");
 const modelMaDonHang = defineModel<string>("maDonHang");
 
 const isOpen = ref({

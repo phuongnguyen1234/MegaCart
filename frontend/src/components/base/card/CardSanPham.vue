@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative bg-white border rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col cursor-pointer group"
+    class="relative bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col cursor-pointer group"
     @click="navigateToDetail"
   >
     <!-- Nhãn sản phẩm (Mới, Bán chạy, v.v.) -->
@@ -63,7 +63,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRouter } from "vue-router";
-import { TrangThaiTonKho, type SanPhamResponse } from "@/types/sanpham.types";
+import {
+  TrangThaiTonKhoKey,
+  type SanPhamResponse,
+} from "@/types/sanpham.types";
 
 const props = defineProps<{
   sanPham: SanPhamResponse;
@@ -76,7 +79,7 @@ const emit = defineEmits<{
 }>();
 
 const isOutOfStock = computed(
-  () => props.sanPham.trangThaiTonKho === TrangThaiTonKho.HET_HANG
+  () => props.sanPham.trangThaiTonKho.value === TrangThaiTonKhoKey.HET_HANG
 );
 
 const onAdd = () => emit("mo-modal-them", props.sanPham);

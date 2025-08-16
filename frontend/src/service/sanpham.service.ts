@@ -5,10 +5,12 @@ import type {
   SortDirection,
 } from "@/types/api.types";
 import { NhanSanPhamKey } from "@/types/sanpham.types";
+import type { FilterDataResponse } from "@/types/filter.types";
 import type {
   SanPhamResponse,
   ChiTietSanPhamResponse,
   TimKiemFilterParams,
+  FilterParams,
 } from "@/types/sanpham.types";
 
 export { NhanSanPhamKey };
@@ -37,6 +39,18 @@ export const createSortString = (
  */
 export const goiYTimKiem = (tuKhoa: string): Promise<string[]> => {
   return apiClient.get("/san-pham/goi-y", { params: { tuKhoa } });
+};
+
+/**
+ * Lấy các tùy chọn bộ lọc (nhà sản xuất, khoảng giá) dựa trên các tiêu chí hiện tại.
+ * @param filters - Các tiêu chí lọc như slug danh mục, từ khóa, v.v.
+ * @returns Promise chứa dữ liệu cho bộ lọc.
+ */
+export const getFilterOptions = (
+  filters: FilterParams
+): Promise<FilterDataResponse> => {
+  // Endpoint này được định nghĩa trong FilterController
+  return apiClient.get("/filter-options", { params: filters });
 };
 
 /**
@@ -71,23 +85,24 @@ export const timKiemVaLocSanPham = (
  */
 export const getSanPhamTheoNhan = (
   nhan: NhanSanPhamKey,
-  filters: Partial<TimKiemFilterParams>,
+  filters: TimKiemFilterParams,
   pageable: PageableParams
 ): Promise<PagedResponse<SanPhamResponse>> => {
-  // Backend yêu cầu param là `nhan`
-  const params = { nhan, ...filters, ...pageable };
-  return apiClient.get("/san-pham/theo-nhan", { params });
+  // Sử dụng endpoint tìm kiếm chung với bộ lọc `nhan`
+  const allFilters: TimKiemFilterParams = { ...filters, nhan };
+  return timKiemVaLocSanPham(allFilters, pageable);
 };
 
 /**
  * Lấy danh sách sản phẩm bán chạy nhất.
  */
 export const getSanPhamBanChay = (
-  filters: Partial<TimKiemFilterParams>,
+  filters: TimKiemFilterParams,
   pageable: PageableParams
 ): Promise<PagedResponse<SanPhamResponse>> => {
-  const params = { ...filters, ...pageable };
-  return apiClient.get("/san-pham/ban-chay", { params });
+  // Sử dụng endpoint tìm kiếm chung với bộ lọc `banChay`
+  const allFilters: TimKiemFilterParams = { ...filters, banChay: true };
+  return timKiemVaLocSanPham(allFilters, pageable);
 };
 
 /**

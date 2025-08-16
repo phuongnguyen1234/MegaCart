@@ -6,20 +6,18 @@
     <div class="border-b border-gray-200">
       <button
         class="cursor-pointer w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 font-semibold text-gray-700 flex justify-between items-center transition-colors"
-        @click="toggle('danhMucCon')"
+        @click="toggle('danhMuc')"
       >
         Danh mục
         <i
           :class="
-            isOpen.danhMucCon
-              ? 'fi-rr-angle-small-up'
-              : 'fi-rr-angle-small-down'
+            isOpen.danhMuc ? 'fi-rr-angle-small-up' : 'fi-rr-angle-small-down'
           "
           class="text-xl flex items-center"
         ></i>
       </button>
       <transition name="slide-fade">
-        <div v-if="isOpen.danhMucCon" class="px-4 py-3 space-y-2 bg-white">
+        <div v-if="isOpen.danhMuc" class="px-4 py-3 space-y-2 bg-white">
           <label class="flex items-center gap-2 cursor-pointer">
             <input
               type="radio"
@@ -32,17 +30,17 @@
           </label>
           <label
             v-for="danhMuc in danhMucOption"
-            :key="danhMuc.id"
+            :key="danhMuc.maDanhMuc"
             class="flex items-center gap-2 cursor-pointer"
           >
             <input
               type="radio"
               name="category"
-              :value="danhMuc.id"
+              :value="danhMuc.maDanhMuc"
               v-model="modelDanhMuc"
               class="text-blue-600 focus:ring-blue-500"
             />
-            {{ danhMuc.ten }}
+            {{ danhMuc.tenDanhMuc }}
           </label>
         </div>
       </transition>
@@ -153,19 +151,10 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-
-interface Option {
-  id: number;
-  ten: string;
-}
-
-interface KhoangGia {
-  min: number;
-  max: number;
-}
+import type { FilterOption, KhoangGia } from "@/types/filter.types";
 
 defineProps<{
-  danhMucOption: Option[];
+  danhMucOption: FilterOption[];
   nhaSanXuatOption: string[];
   khoangGia?: KhoangGia;
 }>();
@@ -177,7 +166,7 @@ const modelDonGia = defineModel<number>("donGia", { default: 0 });
 const modelSapXep = defineModel<"asc" | "desc">("sapXep");
 
 const isOpen = ref({
-  danhMucCon: true,
+  danhMuc: true,
   donGia: true,
   nhaSanXuat: true,
 });

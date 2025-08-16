@@ -1,7 +1,9 @@
 <template>
   <section class="px-4 py-6 max-w-7xl mx-auto">
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold">{{ tieuDe }}</h2>
+      <h2 class="text-2xl font-bold tracking-tight text-blue-600">
+        {{ tieuDe }}
+      </h2>
       <a
         v-if="linkXemThem"
         :href="linkXemThem"
@@ -15,24 +17,26 @@
       <button
         v-if="canScrollLeft"
         @click="scrollLeft"
-        class="absolute -left-6 top-1/2 z-10 transform -translate-y-1/2 bg-white rounded-full shadow p-2 hover:bg-gray-100"
+        class="cursor-pointer absolute -left-5 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow-md backdrop-blur-sm transition-colors hover:bg-white"
       >
-        ◀
+        <i class="fi fi-rr-angle-left text-xl leading-none"></i>
       </button>
 
       <!-- Nút phải -->
       <button
         v-if="canScrollRight"
         @click="scrollRight"
-        class="absolute -right-6 top-1/2 z-10 transform -translate-y-1/2 bg-white rounded-full shadow p-2 hover:bg-gray-100"
+        class="cursor-pointer absolute -right-5 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow-md backdrop-blur-sm transition-colors hover:bg-white"
       >
-        ▶
+        <i
+          class="fi fi-rr-angle-right text-xl leading-none text-blue-600 font-bold"
+        ></i>
       </button>
 
       <!-- Danh sách sản phẩm -->
       <div
         ref="containerRef"
-        class="grid transition-all duration-300 ease-in-out gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+        class="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
       >
         <CardSanPham
           v-for="sanPham in pagedProducts"
