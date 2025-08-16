@@ -11,7 +11,7 @@ public interface QuanLyKhachHangService {
      * @param pageable Thông tin phân trang và sắp xếp.
      * @return Một trang chứa thông tin các khách hàng.
      */
-    PagedResponse<HienThiDanhSachKhachHangResponse> getDanhSachKhachHang(String searchField, String searchValue, boolean hienThiTaiKhoanBiKhoa, Pageable pageable);
+    PagedResponse<HienThiDanhSachKhachHangResponse> getDSKhachHang(String searchField, String searchValue, boolean hienThiTaiKhoanBiKhoa, Pageable pageable);
 
     /**
      * Lấy thông tin chi tiết của một khách hàng để admin xem/sửa.

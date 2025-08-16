@@ -1,5 +1,6 @@
 package com.megacart.dto.response;
 
+import com.megacart.enumeration.TrangThaiSanPham;
 import com.megacart.enumeration.TrangThaiTonKho;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,6 +20,7 @@ public class ChiTietSanPhamResponse {
     private String moTa;
     private String ghiChu;
     private TrangThaiTonKho trangThaiTonKho;
+    private TrangThaiSanPham trangThai;
     private boolean banChay;
     private List<AnhMinhHoaResponse> anhMinhHoas;
     private List<BreadcrumbItem> breadcrumbs;

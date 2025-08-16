@@ -14,7 +14,7 @@ public interface QuanLyNhanVienService {
      * @param pageable Thông tin phân trang và sắp xếp.
      * @return Một trang chứa thông tin các nhân viên.
      */
-    PagedResponse<HienThiDanhSachNhanVienResponse> getDanhSachNhanVien(String searchField, String searchValue, ViTri viTri, boolean hienThiTaiKhoanBiKhoa, Pageable pageable);
+    PagedResponse<HienThiDanhSachNhanVienResponse> getDSNhanVien(String searchField, String searchValue, ViTri viTri, boolean hienThiTaiKhoanBiKhoa, Pageable pageable);
 
     /**
      * Tạo một tài khoản nhân viên mới.

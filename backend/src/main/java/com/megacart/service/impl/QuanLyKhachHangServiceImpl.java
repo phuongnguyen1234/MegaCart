@@ -29,7 +29,7 @@ public class QuanLyKhachHangServiceImpl implements QuanLyKhachHangService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<HienThiDanhSachKhachHangResponse> getDanhSachKhachHang(String searchField, String searchValue, boolean hienThiTaiKhoanBiKhoa, Pageable pageable) {
+    public PagedResponse<HienThiDanhSachKhachHangResponse> getDSKhachHang(String searchField, String searchValue, boolean hienThiTaiKhoanBiKhoa, Pageable pageable) {
         // 1. Tạo Specification để xây dựng câu lệnh WHERE động
         Specification<KhachHang> spec = timKiemKhachHangSpecification.filterBy(searchField, searchValue, hienThiTaiKhoanBiKhoa);
 

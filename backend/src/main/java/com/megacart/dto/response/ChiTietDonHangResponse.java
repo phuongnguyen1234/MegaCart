@@ -5,7 +5,7 @@ import com.megacart.enumeration.HinhThucNhanHang;
 import com.megacart.enumeration.HinhThucThanhToan;
 import com.megacart.enumeration.TrangThaiDonHang;
 import com.megacart.enumeration.TrangThaiThanhToan;
-import com.megacart.enumeration.TrangThaiTonKho;
+import com.megacart.enumeration.TrangThaiSanPham;
 import lombok.Builder;
 import lombok.Data;
 
@@ -44,6 +44,6 @@ public class ChiTietDonHangResponse {
         private String anhMinhHoa;
         private long donGia;
         private int soLuong;
-        private TrangThaiTonKho trangThaiItem; // e.g., "Hết hàng"
+        private TrangThaiSanPham trangThaiSanPham; // e.g., "BAN", "KHONG_BAN"
     }
 }

@@ -156,7 +156,7 @@ public class DanhMucServiceImpl implements DanhMucService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<DanhMucQuanLyResponse> getDanhSachDanhMuc(String tuKhoa, TrangThaiDanhMuc trangThai, Pageable pageable) {
+    public PagedResponse<DanhMucQuanLyResponse> getDSDanhMuc(String tuKhoa, TrangThaiDanhMuc trangThai, Pageable pageable) {
         Specification<DanhMuc> spec = (root, query, cb) -> {
             // Để tránh N+1 query, fetch sẵn danh mục cha
             if (Long.class != query.getResultType() && long.class != query.getResultType()) {

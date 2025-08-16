@@ -9,6 +9,7 @@ import com.megacart.dto.response.XoaKhoiGioHangResponse;
 import com.megacart.dto.response.ThongTinKhachHangResponse;
 import com.megacart.dto.response.ThongTinThanhToanResponse;
 import com.megacart.exception.ResourceNotFoundException;
+import com.megacart.enumeration.TrangThaiSanPham;
 import com.megacart.enumeration.HinhThucNhanHang;
 import com.megacart.enumeration.HinhThucThanhToan;
 import com.megacart.utils.ImageUtils;
@@ -43,6 +44,11 @@ public class GioHangServiceImpl implements GioHangService {
         // 1. Tìm sản phẩm và kiểm tra tồn kho
         SanPham sanPham = sanPhamRepository.findById(request.getMaSanPham())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + request.getMaSanPham()));
+
+        // Chốt chặn: Không cho phép thêm sản phẩm không còn bán vào giỏ hàng
+        if (sanPham.getTrangThai() != TrangThaiSanPham.BAN) {
+            throw new IllegalArgumentException("Sản phẩm này hiện không còn được bán.");
+        }
 
         if (sanPham.getKho() == null || sanPham.getKho().getSoLuong() < request.getSoLuong()) {
             throw new IllegalArgumentException("Sản phẩm đã hết hàng hoặc không đủ số lượng yêu cầu.");
@@ -183,6 +189,12 @@ public class GioHangServiceImpl implements GioHangService {
 
         // Kiểm tra tồn kho
         SanPham sanPham = chiTietGioHang.getSanPham();
+
+        // Chốt chặn: Không cho phép cập nhật sản phẩm không còn bán
+        if (sanPham.getTrangThai() != TrangThaiSanPham.BAN) {
+            throw new IllegalArgumentException("Sản phẩm '" + sanPham.getTenSanPham() + "' không còn được bán và không thể cập nhật.");
+        }
+
         if (sanPham.getKho() == null || sanPham.getKho().getSoLuong() < soLuongMoi) {
             throw new IllegalArgumentException("Sản phẩm không đủ số lượng yêu cầu trong kho.");
         }
@@ -213,21 +225,26 @@ public class GioHangServiceImpl implements GioHangService {
     private GioHangResponse buildGioHangResponse(GioHang gioHang) {
         // Không cần tải lại giỏ hàng vì @EntityGraph đã làm việc đó
         List<GioHangResponse.ChiTietGioHangItem> items = gioHang.getChiTietGioHangs().stream()
-                .map(item -> {
-                    long thanhTien = (long) item.getSanPham().getDonGia() * item.getSoLuong();
+                .map(chiTiet -> {
+                    SanPham sanPham = chiTiet.getSanPham();
+                    long thanhTien = (long) sanPham.getDonGia() * chiTiet.getSoLuong();
                     return GioHangResponse.ChiTietGioHangItem.builder()
-                            .maSanPham(item.getSanPham().getMaSanPham())
-                            .tenSanPham(item.getSanPham().getTenSanPham())
-                            .anhMinhHoa(ImageUtils.getAnhMinhHoaChinhUrl(item.getSanPham().getAnhMinhHoas()))
-                            .donGia(item.getSanPham().getDonGia())
-                            .donVi(item.getSanPham().getDonVi())
-                            .soLuong(item.getSoLuong())
+                            .maSanPham(sanPham.getMaSanPham())
+                            .tenSanPham(sanPham.getTenSanPham())
+                            .anhMinhHoa(ImageUtils.getAnhMinhHoaChinhUrl(sanPham.getAnhMinhHoas()))
+                            .donGia(sanPham.getDonGia())
+                            .donVi(sanPham.getDonVi())
+                            .soLuong(chiTiet.getSoLuong())
                             .thanhTien(thanhTien)
-                            .banChay(item.getSanPham().isBanChay())
+                            .banChay(sanPham.isBanChay())
+                            .trangThai(sanPham.getTrangThai()) // Trả về trạng thái của sản phẩm
                             .build();
                 }).collect(Collectors.toList());
         
-        long tongTien = items.stream().mapToLong(GioHangResponse.ChiTietGioHangItem::getThanhTien).sum();
+        // Tổng tiền chỉ được tính cho các sản phẩm đang ở trạng thái "BÁN"
+        long tongTien = items.stream()
+                .filter(item -> item.getTrangThai() == TrangThaiSanPham.BAN)
+                .mapToLong(GioHangResponse.ChiTietGioHangItem::getThanhTien).sum();
 
         return GioHangResponse.builder().items(items).tongSoLuongSanPham(items.size()).tongTien(tongTien).build();
     }

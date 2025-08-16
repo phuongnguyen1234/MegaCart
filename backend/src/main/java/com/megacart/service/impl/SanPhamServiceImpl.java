@@ -65,6 +65,14 @@ public class SanPhamServiceImpl implements SanPhamService {
     ) {
         // 1. Build the dynamic query using Specification
         Specification<SanPham> spec = (root, query, cb) -> {
+            // Để tránh vấn đề N+1 query, chúng ta sử dụng fetch join.
+            // Điều này đặc biệt quan trọng đối với các kết quả được phân trang.
+            // Nó sẽ gom các query lấy ảnh và kho vào cùng 1 query lấy sản phẩm.
+            if (query.getResultType() != Long.class && query.getResultType() != long.class) {
+                root.fetch("anhMinhHoas", jakarta.persistence.criteria.JoinType.LEFT);
+                root.fetch("kho", jakarta.persistence.criteria.JoinType.LEFT);
+            }
+
             List<Predicate> predicates = new ArrayList<>();
 
             // Luôn lọc các sản phẩm đang được bán
@@ -93,7 +101,8 @@ public class SanPhamServiceImpl implements SanPhamService {
 
             // Lọc theo nhà sản xuất
             if (StringUtils.hasText(nhaSanXuat)) {
-                predicates.add(cb.equal(root.get("nhaSanXuat"), nhaSanXuat));
+                // Sử dụng 'like' thay vì 'equal' để tìm kiếm linh hoạt hơn (ví dụ: "Xiaomi" sẽ khớp với "Xiaomi Corporation")
+                predicates.add(cb.like(cb.lower(root.get("nhaSanXuat")), "%" + nhaSanXuat.toLowerCase() + "%"));
             }
 
             // Lọc theo nhãn (ví dụ: Mới)
@@ -132,11 +141,6 @@ public class SanPhamServiceImpl implements SanPhamService {
     public ChiTietSanPhamResponse getSanPhamByMaSanPham(Integer maSanPham) {
         SanPham sanPham = sanPhamRepository.findById(maSanPham)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + maSanPham));
-
-        // Chỉ cho phép xem sản phẩm đang được bán
-        if (sanPham.getTrangThai() != TrangThaiSanPham.BAN) {
-            throw new ResourceNotFoundException("Sản phẩm này không tồn tại hoặc đã ngừng kinh doanh.");
-        }
 
         ChiTietSanPhamResponse response = mapToChiTietSanPhamResponse(sanPham);
 
@@ -211,6 +215,7 @@ public class SanPhamServiceImpl implements SanPhamService {
                 .moTa(sanPham.getMoTa())
                 .ghiChu(sanPham.getGhiChu())
                 .trangThaiTonKho(trangThaiTonKho)
+                .trangThai(sanPham.getTrangThai()) // Thêm trạng thái sản phẩm
                 .anhMinhHoas(anhMinhHoas)
                 .banChay(sanPham.isBanChay()).build();
                }
@@ -233,12 +238,14 @@ public class SanPhamServiceImpl implements SanPhamService {
         }
 
         // Xây dựng đường dẫn phân cấp dựa trên slug 
-        StringBuilder pathBuilder = new StringBuilder();
+        // Thêm tiền tố /danh-muc/ để khớp với cấu trúc route mới của frontend
+        StringBuilder pathBuilder = new StringBuilder("/danh-muc");
         for (DanhMuc dm : path) {
             // Nối slug của mục hiện tại vào đường dẫn chung
             pathBuilder.append("/").append(dm.getSlug());
             breadcrumbs.add(BreadcrumbItem.builder()
                     .text(dm.getTenDanhMuc())
+                    // Trả về đường dẫn đầy đủ mà frontend mong đợi
                     .to(pathBuilder.toString())
                     .build());
         }

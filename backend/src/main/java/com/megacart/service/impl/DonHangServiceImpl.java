@@ -8,6 +8,7 @@ import com.megacart.dto.response.DatHangResponse;
 import com.megacart.dto.response.LichSuDonHangResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.enumeration.TrangThaiDonHang;
+import com.megacart.enumeration.TrangThaiSanPham;
 import com.megacart.enumeration.TrangThaiThanhToan;
 import com.megacart.enumeration.TrangThaiTonKho;
 import com.megacart.enumeration.TrangThaiXuLi;
@@ -116,6 +117,8 @@ public class DonHangServiceImpl implements DonHangService {
                 .soLuongDauTien(sanPhamDauTien.getSoLuong())
                 .banChayDauTien(sanPhamEntity != null && sanPhamEntity.isBanChay())
                 .soLuongLoaiSanPhamKhac(soLuongLoaiSanPhamKhac)
+                // Nếu sản phẩm đã bị xóa khỏi CSDL (sanPhamEntity == null), coi như là KHONG_BAN
+                .trangThaiSanPhamDauTien(sanPhamEntity != null ? sanPhamEntity.getTrangThai() : TrangThaiSanPham.KHONG_BAN)
                 .build();
     }
 
@@ -151,37 +154,24 @@ public class DonHangServiceImpl implements DonHangService {
                 .trangThaiThanhToan(donHang.getTrangThaiThanhToan())
                 .tongTien(tongTien);
 
-        List<ChiTietDonHangResponse.ItemResponse> items;
+        // Chuyển đổi danh sách chi tiết đơn hàng
+        List<ChiTietDonHangResponse.ItemResponse> items = mapToStandardItemResponseList(donHang);
+
         // Thêm trường thông tin tùy theo trạng thái đơn hàng
         switch (donHang.getTrangThai()) {
             case CHO_XAC_NHAN:
-                responseBuilder.duKienGiaoHang(donHang.getDuKienGiaoHang());
+            case DA_HUY:
                 responseBuilder.ghiChu(donHang.getGhiChu());
-                // Kiểm tra lại tồn kho hiện tại của từng sản phẩm
-                items = donHang.getChiTietDonHangs().stream().map(chiTiet -> {
-                    boolean isOutOfStock = chiTiet.getSanPham().getKho() == null || chiTiet.getSanPham().getKho().getSoLuong() < chiTiet.getSoLuong();
-                    return ChiTietDonHangResponse.ItemResponse.builder()
-                            .maSanPham(chiTiet.getSanPham().getMaSanPham())
-                            .tenSanPham(chiTiet.getTenSanPham())
-                            .anhMinhHoa(chiTiet.getAnhMinhHoa())
-                            .donGia(chiTiet.getDonGia())
-                            .soLuong(chiTiet.getSoLuong())
-                            .trangThaiItem(isOutOfStock ? TrangThaiTonKho.HET_HANG : null)
-                            .build();
-                }).collect(Collectors.toList());
                 break;
             case DA_GIAO:
                 responseBuilder.thoiGianThanhToan(donHang.getThoiGianThanhToan());
-                items = mapToStandardItemResponseList(donHang);
-                break;
-            case DA_HUY:
-                responseBuilder.ghiChu(donHang.getGhiChu());
-                items = mapToStandardItemResponseList(donHang);
+                // Fall-through để gán cả ngày giao hàng dự kiến nếu có
+            case DANG_GIAO:
+                // Chỉ trạng thái ĐANG_GIAO và các trạng thái sau đó mới có ngày giao hàng dự kiến
+                responseBuilder.duKienGiaoHang(donHang.getDuKienGiaoHang());
                 break;
             default:
-                // Các trạng thái còn lại hiển thị ngày giao hàng dự kiến
-                responseBuilder.duKienGiaoHang(donHang.getDuKienGiaoHang());
-                items = mapToStandardItemResponseList(donHang);
+                // Các trạng thái khác (ví dụ: CHO_XU_LY) không hiển thị ngày giao hàng dự kiến
                 break;
         }
 
@@ -190,9 +180,17 @@ public class DonHangServiceImpl implements DonHangService {
 
     private List<ChiTietDonHangResponse.ItemResponse> mapToStandardItemResponseList(DonHang donHang) {
         return donHang.getChiTietDonHangs().stream()
-                .map(chiTiet -> ChiTietDonHangResponse.ItemResponse.builder().maSanPham(chiTiet.getSanPham().getMaSanPham())
-                        .tenSanPham(chiTiet.getTenSanPham()).anhMinhHoa(chiTiet.getAnhMinhHoa()).donGia(chiTiet.getDonGia())
-                        .soLuong(chiTiet.getSoLuong()).build())
+                .map(chiTiet -> {
+                    SanPham sanPhamEntity = chiTiet.getSanPham();
+                    return ChiTietDonHangResponse.ItemResponse.builder()
+                            .maSanPham(sanPhamEntity.getMaSanPham())
+                            .tenSanPham(chiTiet.getTenSanPham())
+                            .anhMinhHoa(chiTiet.getAnhMinhHoa())
+                            .donGia(chiTiet.getDonGia())
+                            .soLuong(chiTiet.getSoLuong())
+                            .trangThaiSanPham(sanPhamEntity != null ? sanPhamEntity.getTrangThai() : TrangThaiSanPham.KHONG_BAN)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 

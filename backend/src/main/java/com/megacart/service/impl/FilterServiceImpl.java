@@ -77,7 +77,7 @@ public class FilterServiceImpl implements FilterService {
                         // 1. Thêm mục "Tất cả" cho danh mục cha theo ngữ cảnh
                         categoryOptions.add(DanhMucMenuItemResponse.builder()
                                 .maDanhMuc(contextParentCategory.getMaDanhMuc())
-                                .tenDanhMuc("Tất cả " + contextParentCategory.getTenDanhMuc())
+                                .tenDanhMuc("Tất cả")
                                 .slug(contextParentCategory.getSlug())
                                 .build());
 
