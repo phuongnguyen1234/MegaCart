@@ -1,4 +1,4 @@
-import type { TrangThaiTonKhoObject } from "./sanpham.types";
+import type { TrangThaiSanPhamObject } from "./sanpham.types";
 /**
  * A generic structure for enum-like objects returned from the backend.
  * Contains the enum constant name (value) and its display name (label).
@@ -76,10 +76,10 @@ export interface ChiTietDonHangItem {
   donGia: number;
   soLuong: number;
   /**
-   * The status of the item in the order, e.g., out of stock.
-   * Corresponds to the `TrangThaiTonKho` enum from the backend.
+   * The business status of the product at the time of viewing the order (e.g., Discontinued).
+   * Corresponds to the `TrangThaiSanPham` enum from the backend.
    */
-  trangThaiItem?: TrangThaiTonKhoObject;
+  trangThaiSanPham?: TrangThaiSanPhamObject;
 }
 
 /**

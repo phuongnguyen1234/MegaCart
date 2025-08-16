@@ -31,7 +31,9 @@
           <div class="flex items-center justify-between mb-2 text-sm">
             <span
               >Đã chọn
-              <strong>{{ selectedItems.size }}/{{ cartItems.length }}</strong>
+              <strong
+                >{{ selectedItems.size }}/{{ availableItems.length }}</strong
+              >
               sản phẩm</span
             >
             <label class="flex items-center gap-1">
@@ -50,6 +52,7 @@
               :key="sp.maSanPham"
               :sanPham="sp"
               :isChecked="selectedItems.has(sp.maSanPham)"
+              :disabled="sp.trangThai.value !== TrangThaiSanPhamKey.DANG_BAN"
               @chon="(isChecked:boolean) => toggleChon(sp.maSanPham, isChecked)"
               @thay-doi-so-luong="
                 (soLuong:number) => handleCapNhatSoLuong(sp.maSanPham, soLuong)
@@ -197,6 +200,7 @@ import type {
   ThongTinGiaoHangMacDinh,
 } from "@/types/giohang.types";
 import type { DatHangRequest } from "@/types/dathang.types";
+import { TrangThaiSanPhamKey } from "@/types/sanpham.types";
 import { useCartStore } from "@/store/giohang.store";
 
 const router = useRouter();
@@ -222,13 +226,24 @@ const hinhThucThanhToan = ref("cod");
 
 // --- Computed Properties ---
 
+const availableItems = computed(() =>
+  cartItems.value.filter(
+    (item) => item.trangThai.value === TrangThaiSanPhamKey.DANG_BAN
+  )
+);
+
 const chonTatCa = computed({
-  get: () =>
-    cartItems.value.length > 0 &&
-    selectedItems.value.size === cartItems.value.length,
+  get: () => {
+    // Chỉ có thể "chọn tất cả" nếu có sản phẩm và tất cả sản phẩm có thể mua đã được chọn
+    return (
+      availableItems.value.length > 0 &&
+      selectedItems.value.size === availableItems.value.length
+    );
+  },
   set: (value) => {
     if (value) {
-      cartItems.value.forEach((item) =>
+      // Chỉ chọn những sản phẩm đang được bán
+      availableItems.value.forEach((item) =>
         selectedItems.value.add(item.maSanPham)
       );
     } else {
@@ -272,8 +287,11 @@ const fetchCartData = async () => {
     cartItems.value = response.items;
     thongTinGiaoHangMacDinh.value = response.thongTinGiaoHangMacDinh;
 
-    // Tự động chọn tất cả sản phẩm khi tải trang
-    response.items.forEach((item) => selectedItems.value.add(item.maSanPham));
+    // Tự động chọn tất cả sản phẩm CÓ THỂ MUA khi tải trang
+    response.items.forEach((item) => {
+      if (item.trangThai.value === TrangThaiSanPhamKey.DANG_BAN)
+        selectedItems.value.add(item.maSanPham);
+    });
 
     // Điền thông tin giao hàng mặc định vào form
     if (response.thongTinGiaoHangMacDinh) {

@@ -22,10 +22,10 @@
         <span>Số lượng: {{ sanPham.soLuong }}</span>
       </div>
       <div
-        v-if="sanPham.trangThaiItem"
+        v-if="sanPham.trangThaiSanPham?.value === TrangThaiSanPhamKey.NGUNG_BAN"
         class="text-xs font-semibold text-red-600 mt-1"
       >
-        <i class="fi fi-rr-info mr-1"></i>{{ sanPham.trangThaiItem.label }}
+        <i class="fi fi-rr-info mr-1"></i>{{ sanPham.trangThaiSanPham.label }}
       </div>
     </div>
 
@@ -37,6 +37,7 @@
 
 <script setup lang="ts">
 import type { ChiTietDonHangItem } from "@/types/donhang.types";
+import { TrangThaiSanPhamKey } from "@/types/sanpham.types";
 
 defineProps<{
   sanPham: ChiTietDonHangItem;
