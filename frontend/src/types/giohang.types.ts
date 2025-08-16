@@ -1,3 +1,4 @@
+import type { TrangThaiSanPhamObject } from "./sanpham.types";
 /**
  * Dữ liệu gửi lên khi thêm sản phẩm vào giỏ hàng.
  */
@@ -21,11 +22,12 @@ export interface ThemVaoGioHangResponse {
 export interface GioHangItem {
   maSanPham: number;
   tenSanPham: string;
-  hinhAnh: string;
+  anhMinhHoa: string; // Đồng bộ tên trường với backend (anhMinhHoa)
   donGia: number;
   soLuong: number;
   thanhTien: number; // Đơn giá * số lượng
   donVi: string;
+  trangThai: TrangThaiSanPhamObject; // Thêm trạng thái sản phẩm
 }
 
 /**

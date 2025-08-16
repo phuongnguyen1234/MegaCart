@@ -57,6 +57,23 @@ export interface TrangThaiTonKhoObject {
  */
 export const TrangThaiTonKho = TrangThaiTonKhoKey;
 
+/**
+ * Các key của trạng thái kinh doanh sản phẩm (dành cho quản lý và kiểm tra logic).
+ * Giá trị của enum này phải TRÙNG KHỚP với tên của enum constant trong `TrangThaiSanPham.java` ở backend.
+ */
+export enum TrangThaiSanPhamKey {
+  DANG_BAN = "BAN", // Lưu ý: Backend đang dùng "BAN"
+  NGUNG_BAN = "KHONG_BAN", // Lưu ý: Backend đang dùng "KHONG_BAN"
+}
+
+/**
+ * Cấu trúc đối tượng trạng thái kinh doanh sản phẩm nhận về từ API.
+ */
+export interface TrangThaiSanPhamObject {
+  value: TrangThaiSanPhamKey;
+  label: string;
+}
+
 export interface AnhMinhHoa {
   duongDan: string;
   laAnhChinh: boolean;
