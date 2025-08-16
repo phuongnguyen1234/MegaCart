@@ -5,6 +5,8 @@ import lombok.Data;
 
 import java.util.List;
 
+import com.megacart.enumeration.TrangThaiSanPham;
+
 @Data
 @Builder
 public class GioHangResponse {
@@ -23,5 +25,6 @@ public class GioHangResponse {
         private Integer soLuong;
         private long thanhTien;
         private boolean banChay;
+        private TrangThaiSanPham trangThai;
     }
 }

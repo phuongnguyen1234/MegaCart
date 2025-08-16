@@ -39,14 +39,14 @@ public class QuanLyKhachHangController {
      * @return Một trang chứa danh sách khách hàng.
      */
     @GetMapping
-    public ResponseEntity<PagedResponse<HienThiDanhSachKhachHangResponse>> getDanhSachKhachHang(
+    public ResponseEntity<PagedResponse<HienThiDanhSachKhachHangResponse>> getDSKhachHang(
             @RequestParam(required = false) String searchField,
             @RequestParam(required = false) String searchValue,
             @RequestParam(defaultValue = "false") boolean hienThiTaiKhoanBiKhoa,
             // Yêu cầu: 30 tài khoản/trang, sắp xếp theo tên tăng dần
             @PageableDefault(size = 30, sort = "tenKhachHang", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        PagedResponse<HienThiDanhSachKhachHangResponse> response = quanLyKhachHangService.getDanhSachKhachHang(searchField, searchValue, hienThiTaiKhoanBiKhoa, pageable);
+        PagedResponse<HienThiDanhSachKhachHangResponse> response = quanLyKhachHangService.getDSKhachHang(searchField, searchValue, hienThiTaiKhoanBiKhoa, pageable);
         return ResponseEntity.ok(response);
     }
     

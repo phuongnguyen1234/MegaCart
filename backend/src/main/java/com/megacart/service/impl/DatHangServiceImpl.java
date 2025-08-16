@@ -2,6 +2,7 @@ package com.megacart.service.impl;
 
 import com.megacart.dto.request.DatHangRequest;
 import com.megacart.dto.response.DatHangResponse;
+import com.megacart.enumeration.TrangThaiSanPham;
 import com.megacart.enumeration.TrangThaiDonHang;
 import com.megacart.enumeration.TrangThaiThanhToan;
 import com.megacart.enumeration.TrangThaiXuLi;
@@ -55,24 +56,41 @@ public class DatHangServiceImpl implements DatHangService {
 
         Map<Integer, SanPham> sanPhamMap = sanPhamsInDB.stream().collect(Collectors.toMap(SanPham::getMaSanPham, sp -> sp));
 
-        // 2. Kiểm tra tồn kho cho tất cả sản phẩm
-        boolean isSufficientStock = true;
+        // 2. Kiểm tra tồn kho và đếm số lượng sản phẩm hết hàng
+        int outOfStockCount = 0;
         for (DatHangRequest.SanPhamDatHang item : requestedItems) {
             SanPham sanPham = sanPhamMap.get(item.getMaSanPham());
-            if (sanPham.getKho() == null || sanPham.getKho().getSoLuong() < item.getSoLuong()) {
-                isSufficientStock = false;
-                break; // Nếu một sản phẩm hết hàng, không cần kiểm tra tiếp
+            // Coi sản phẩm không còn bán hoặc hết hàng là một trường hợp không đủ hàng
+            if (sanPham.getTrangThai() != TrangThaiSanPham.BAN || sanPham.getKho() == null || sanPham.getKho().getSoLuong() < item.getSoLuong()) {
+                outOfStockCount++;
             }
         }
 
-        // 3. Xác định trạng thái đơn hàng dựa trên tình trạng tồn kho
-        // Nếu đủ hàng, chuyển thẳng sang trạng thái ĐANG_GIAO.
-        // Nếu không, chuyển sang CHO_XAC_NHAN để nhân viên xử lý.
-        TrangThaiDonHang trangThaiDonHang = isSufficientStock ? TrangThaiDonHang.DANG_GIAO : TrangThaiDonHang.CHO_XAC_NHAN;
+        // 3. Xác định trạng thái đơn hàng và thông báo dựa trên tình trạng tồn kho
+        TrangThaiDonHang trangThaiDonHang;
+        String thongBao;
+        String ghiChuHeThong = null;
+        boolean isSufficientStock = (outOfStockCount == 0);
+        boolean isCompletelyOutOfStock = (outOfStockCount == requestedItems.size());
+
+        if (isCompletelyOutOfStock) {
+            // Trường hợp tất cả sản phẩm đều hết hàng -> Tự động hủy
+            trangThaiDonHang = TrangThaiDonHang.DA_HUY;
+            thongBao = "Đặt hàng không thành công. Tất cả sản phẩm trong đơn đã hết hàng.";
+            ghiChuHeThong = "Hệ thống tự động hủy do tất cả sản phẩm đã hết hàng tại thời điểm đặt.";
+        } else if (!isSufficientStock) {
+            // Trường hợp một vài sản phẩm hết hàng -> Chờ xác nhận
+            trangThaiDonHang = TrangThaiDonHang.CHO_XAC_NHAN;
+            thongBao = "Một hoặc nhiều sản phẩm không đủ số lượng. Đơn hàng của bạn đang chờ nhân viên xác nhận.";
+        } else {
+            // Trường hợp tất cả sản phẩm đều đủ hàng -> Đang giao
+            trangThaiDonHang = TrangThaiDonHang.DANG_GIAO;
+            thongBao = "Đặt hàng thành công! Đơn hàng của bạn đang được giao.";
+        }
 
         // 4. Tạo đối tượng DonHang
         LocalDateTime thoiGianDatHang = LocalDateTime.now();
-        DonHang donHang = DonHang.builder()
+        DonHang.DonHangBuilder donHangBuilder = DonHang.builder()
                 .khachHang(khachHang)
                 .tenKhachHang(request.getTenNguoiNhan())
                 .diaChiNhanHang(request.getDiaChiNhanHang())
@@ -81,11 +99,15 @@ public class DatHangServiceImpl implements DatHangService {
                 .hinhThucThanhToan(request.getHinhThucThanhToan())
                 .thoiGianDatHang(thoiGianDatHang)
                 .trangThai(trangThaiDonHang)
+                .ghiChu(ghiChuHeThong) // Thêm ghi chú nếu có
                 .trangThaiXuLi(TrangThaiXuLi.CHO_XU_LY)
-                .trangThaiThanhToan(TrangThaiThanhToan.CHUA_THANH_TOAN) // Mặc định là chưa thanh toán
-                .duKienGiaoHang(ThoiGianGiaoHangUtils.tinhThoiGianGiaoHangDuKien(thoiGianDatHang))
-                .build();
+                .trangThaiThanhToan(TrangThaiThanhToan.CHUA_THANH_TOAN); // Mặc định là chưa thanh toán
 
+        // Chỉ tính ngày giao hàng dự kiến khi đơn hàng được xác nhận đủ hàng ngay lập tức
+        if (isSufficientStock) {
+            donHangBuilder.duKienGiaoHang(ThoiGianGiaoHangUtils.tinhThoiGianGiaoHangDuKien(thoiGianDatHang));
+        }
+        DonHang donHang = donHangBuilder.build();
         // 5. Tạo ChiTietDonHang và cập nhật số lượng tồn kho (nếu đủ hàng)
         for (DatHangRequest.SanPhamDatHang item : requestedItems) {
             SanPham sanPham = sanPhamMap.get(item.getMaSanPham());
@@ -109,17 +131,15 @@ public class DatHangServiceImpl implements DatHangService {
         // 6. Lưu đơn hàng vào CSDL
         DonHang savedDonHang = donHangRepository.save(donHang);
 
-        // 7. Xóa các sản phẩm đã đặt khỏi giỏ hàng
-        List<ChiTietGioHangId> cartItemIdsToRemove = maSanPhams.stream()
-                .map(maSP -> new ChiTietGioHangId(maSP, khachHang.getMaKhachHang()))
-                .toList();
-        chiTietGioHangRepository.deleteAllByIdInBatch(cartItemIdsToRemove);
+        // 7. Xóa các sản phẩm đã đặt khỏi giỏ hàng (chỉ khi đơn hàng không bị hủy ngay lập tức)
+        if (!isCompletelyOutOfStock) {
+            List<ChiTietGioHangId> cartItemIdsToRemove = maSanPhams.stream()
+                    .map(maSP -> new ChiTietGioHangId(maSP, khachHang.getMaKhachHang()))
+                    .toList();
+            chiTietGioHangRepository.deleteAllByIdInBatch(cartItemIdsToRemove);
+        }
 
         // 8. Tạo và trả về response
-        String thongBao = isSufficientStock
-                ? "Đặt hàng thành công! Đơn hàng của bạn đang được giao."
-                : "Một hoặc nhiều sản phẩm không đủ số lượng. Đơn hàng của bạn đang chờ nhân viên xác nhận.";
-
         return DatHangResponse.builder()
                 .maDonHang(savedDonHang.getMaDonHang())
                 .trangThai(savedDonHang.getTrangThai())

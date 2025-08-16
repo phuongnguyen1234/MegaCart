@@ -17,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,14 +33,14 @@ public class QuanLyNhanVienController {
     private final QuanLyNhanVienService quanLyNhanVienService;
 
     @GetMapping
-    public ResponseEntity<PagedResponse<HienThiDanhSachNhanVienResponse>> getDanhSachNhanVien(
+    public ResponseEntity<PagedResponse<HienThiDanhSachNhanVienResponse>> getDSNhanVien(
             @RequestParam(required = false) String searchField,
             @RequestParam(required = false) String searchValue,
             @RequestParam(required = false) ViTri viTri,
             @RequestParam(defaultValue = "false") boolean hienThiTaiKhoanBiKhoa,
             @PageableDefault(size = 30, sort = "hoTen", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        return ResponseEntity.ok(quanLyNhanVienService.getDanhSachNhanVien(searchField, searchValue, viTri, hienThiTaiKhoanBiKhoa, pageable));
+        return ResponseEntity.ok(quanLyNhanVienService.getDSNhanVien(searchField, searchValue, viTri, hienThiTaiKhoanBiKhoa, pageable));
     }
 
     /**
