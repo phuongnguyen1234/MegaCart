@@ -23,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,7 +116,7 @@ public class QuanLyNhanVienServiceImpl implements QuanLyNhanVienService {
         updateViTri(nhanVien, request.getViTri());
         updateEmail(nhanVien.getTaiKhoan(), request.getEmail());
         updateSoDienThoai(nhanVien.getTaiKhoan(), request.getSoDienThoai());
-        updateTrangThai(nhanVien.getTaiKhoan(), request.getTrangThai());
+        updateTrangThai(maNhanVien, nhanVien.getTaiKhoan(), request.getTrangThai());
 
         // Không cần gọi save() vì entity đang ở trạng thái managed trong transaction
         return mapToNhanVienResponse(nhanVien);
@@ -155,8 +157,16 @@ public class QuanLyNhanVienServiceImpl implements QuanLyNhanVienService {
         }
     }
 
-    private void updateTrangThai(TaiKhoan taiKhoan, TrangThaiTaiKhoan newTrangThai) {
+    private void updateTrangThai(Integer maNhanVienBiCapNhat, TaiKhoan taiKhoan, TrangThaiTaiKhoan newTrangThai) {
         if (newTrangThai != null && !Objects.equals(newTrangThai, taiKhoan.getTrangThaiTaiKhoan())) {
+            // Kiểm tra để ngăn admin tự khóa tài khoản của chính mình
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (principal instanceof TaiKhoan) {
+                Integer currentAdminId = ((TaiKhoan) principal).getMaTaiKhoan();
+                if (currentAdminId.equals(maNhanVienBiCapNhat) && newTrangThai == TrangThaiTaiKhoan.KHOA) {
+                    throw new IllegalArgumentException("Bạn không thể tự khóa tài khoản của chính mình.");
+                }
+            }
             taiKhoan.setTrangThaiTaiKhoan(newTrangThai);
         }
     }

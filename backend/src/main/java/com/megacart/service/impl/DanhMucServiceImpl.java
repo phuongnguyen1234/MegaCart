@@ -8,9 +8,11 @@ import com.megacart.dto.response.DanhMucOptionResponse;
 import com.megacart.dto.response.DanhMucMenuItemResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.enumeration.TrangThaiDanhMuc;
+import com.megacart.enumeration.TrangThaiSanPham;
 import com.megacart.exception.ResourceNotFoundException;
 import com.megacart.model.DanhMuc;
 import com.megacart.repository.DanhMucRepository;
+import com.megacart.repository.SanPhamRepository;
 import com.megacart.service.DanhMucService;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -36,6 +38,7 @@ import java.util.stream.Collectors;
 public class DanhMucServiceImpl implements DanhMucService {
 
     private final DanhMucRepository danhMucRepository;
+    private final SanPhamRepository sanPhamRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -249,7 +252,16 @@ public class DanhMucServiceImpl implements DanhMucService {
         }
 
         // Cập nhật trạng thái
-        if (request.getTrangThai() != null) {
+        if (request.getTrangThai() != null && request.getTrangThai() != danhMucToUpdate.getTrangThai()) {
+            // Trước khi ngừng hoạt động một danh mục, kiểm tra xem nó có chứa sản phẩm nào đang bán không.
+            if (request.getTrangThai() == TrangThaiDanhMuc.KHONG_HOAT_DONG) {
+                // Lấy ID của danh mục này và tất cả các danh mục con của nó
+                List<Integer> allRelatedCategoryIds = getAllSubCategoryIds(maDanhMuc);
+                // Kiểm tra xem có sản phẩm nào đang "BÁN" trong các danh mục này không
+                if (sanPhamRepository.existsByDanhMuc_MaDanhMucInAndTrangThai(allRelatedCategoryIds, TrangThaiSanPham.BAN)) {
+                    throw new IllegalArgumentException("Không thể ngừng hoạt động danh mục này vì vẫn còn sản phẩm đang bán trong đó hoặc trong các danh mục con.");
+                }
+            }
             danhMucToUpdate.setTrangThai(request.getTrangThai());
         }
 

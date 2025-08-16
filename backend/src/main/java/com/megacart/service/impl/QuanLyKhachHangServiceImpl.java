@@ -3,8 +3,11 @@ package com.megacart.service.impl;
 import com.megacart.dto.request.CapNhatTrangThaiTaiKhoanRequest;
 import com.megacart.dto.response.HienThiDanhSachKhachHangResponse;
 import com.megacart.dto.response.PagedResponse;
+import com.megacart.enumeration.TrangThaiDonHang;
+import com.megacart.enumeration.TrangThaiTaiKhoan;
 import com.megacart.exception.ResourceNotFoundException;
 import com.megacart.model.KhachHang;
+import com.megacart.repository.DonHangRepository;
 import com.megacart.repository.KhachHangRepository;
 import com.megacart.repository.TaiKhoanRepository;
 import com.megacart.repository.specification.TimKiemKhachHangSpecification;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +29,7 @@ public class QuanLyKhachHangServiceImpl implements QuanLyKhachHangService {
 
     private final KhachHangRepository khachHangRepository;
     private final TaiKhoanRepository taiKhoanRepository; // Sẽ cần để cập nhật trạng thái
+    private final DonHangRepository donHangRepository;
     private final TimKiemKhachHangSpecification timKiemKhachHangSpecification;
 
     @Override
@@ -55,6 +60,14 @@ public class QuanLyKhachHangServiceImpl implements QuanLyKhachHangService {
     @Override
     @Transactional
     public void capNhatTrangThai(Integer maKhachHang, CapNhatTrangThaiTaiKhoanRequest request) {
+        // Chỉ kiểm tra khi hành động là "KHÓA" tài khoản
+        if (request.getTrangThai() == TrangThaiTaiKhoan.KHOA) {
+            List<TrangThaiDonHang> activeStatuses = List.of(TrangThaiDonHang.CHO_XAC_NHAN, TrangThaiDonHang.CHO_XU_LY, TrangThaiDonHang.DANG_GIAO);
+            if (donHangRepository.existsByKhachHang_MaKhachHangAndTrangThaiIn(maKhachHang, activeStatuses)) {
+                throw new IllegalArgumentException("Không thể khóa tài khoản của khách hàng đang có đơn hàng chưa hoàn thành.");
+            }
+        }
+
         // Dùng TaiKhoanRepository vì trạng thái nằm ở bảng TaiKhoan
         // và mã khách hàng cũng chính là mã tài khoản trong ngữ cảnh này.
         taiKhoanRepository.findById(maKhachHang).ifPresentOrElse(
