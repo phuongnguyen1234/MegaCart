@@ -182,6 +182,12 @@ public class DonHangServiceImpl implements DonHangService {
         return donHang.getChiTietDonHangs().stream()
                 .map(chiTiet -> {
                     SanPham sanPhamEntity = chiTiet.getSanPham();
+
+                    // Xác định trạng thái tồn kho hiện tại của sản phẩm
+                    TrangThaiTonKho trangThaiTonKho = (sanPhamEntity != null && sanPhamEntity.getKho() != null && sanPhamEntity.getKho().getSoLuong() > 0)
+                            ? TrangThaiTonKho.CON_HANG
+                            : TrangThaiTonKho.HET_HANG;
+
                     return ChiTietDonHangResponse.ItemResponse.builder()
                             .maSanPham(sanPhamEntity.getMaSanPham())
                             .tenSanPham(chiTiet.getTenSanPham())
@@ -189,6 +195,7 @@ public class DonHangServiceImpl implements DonHangService {
                             .donGia(chiTiet.getDonGia())
                             .soLuong(chiTiet.getSoLuong())
                             .trangThaiSanPham(sanPhamEntity != null ? sanPhamEntity.getTrangThai() : TrangThaiSanPham.KHONG_BAN)
+                            .trangThaiTonKho(trangThaiTonKho)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -243,8 +250,11 @@ public class DonHangServiceImpl implements DonHangService {
 
         // Phân loại sản phẩm còn hàng và hết hàng
         for (ChiTietDonHang chiTiet : donHang.getChiTietDonHangs()) {
-            boolean hetHang = chiTiet.getSanPham().getKho() == null || chiTiet.getSanPham().getKho().getSoLuong() < chiTiet.getSoLuong();
-            if (hetHang) {
+            SanPham sanPham = chiTiet.getSanPham();
+            // Một sản phẩm không thể giao nếu nó đã ngừng bán, hoặc hết hàng, hoặc không đủ số lượng.
+            boolean khongTheGiao = sanPham.getTrangThai() != TrangThaiSanPham.BAN ||
+                                  sanPham.getKho() == null || sanPham.getKho().getSoLuong() < chiTiet.getSoLuong();
+            if (khongTheGiao) {
                 itemsToRemove.add(chiTiet);
             } else {
                 itemsToKeep.add(chiTiet);

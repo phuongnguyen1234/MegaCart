@@ -2,6 +2,8 @@ package com.megacart.repository;
 
 import com.megacart.enumeration.TrangThaiDonHang;
 import com.megacart.model.DonHang;
+
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -10,12 +12,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
 
     @EntityGraph(attributePaths = {"chiTietDonHangs", "chiTietDonHangs.sanPham"})
     Optional<DonHang> findByMaDonHangAndKhachHang_MaKhachHang(Integer maDonHang, Integer maKhachHang);
+    
+    boolean existsByKhachHang_MaKhachHangAndTrangThaiIn(Integer maKhachHang, List<TrangThaiDonHang> trangThais);
 
     /**
      * Tìm kiếm và lọc đơn hàng theo nhiều tiêu chí.

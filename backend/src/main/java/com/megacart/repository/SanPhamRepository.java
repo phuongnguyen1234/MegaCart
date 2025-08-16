@@ -121,4 +121,12 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
      */
     @Query("SELECT MIN(sp.donGia) as minPrice, MAX(sp.donGia) as maxPrice FROM SanPham sp WHERE sp.banChay = true AND sp.trangThai = :trangThai")
     Optional<PriceRangeProjection> findPriceRangeByBanChayIsTrue(@Param("trangThai") TrangThaiSanPham trangThai);
+
+    /**
+     * Kiểm tra xem có sản phẩm nào đang hoạt động trong một danh sách các danh mục hay không.
+     * @param maDanhMucs Danh sách ID của các danh mục.
+     * @param trangThai Trạng thái sản phẩm cần kiểm tra (ví dụ: BAN).
+     * @return true nếu có ít nhất một sản phẩm khớp, ngược lại là false.
+     */
+    boolean existsByDanhMuc_MaDanhMucInAndTrangThai(List<Integer> maDanhMucs, TrangThaiSanPham trangThai);
 }
