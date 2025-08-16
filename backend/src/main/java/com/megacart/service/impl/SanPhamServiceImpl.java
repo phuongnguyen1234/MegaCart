@@ -142,6 +142,12 @@ public class SanPhamServiceImpl implements SanPhamService {
         SanPham sanPham = sanPhamRepository.findById(maSanPham)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + maSanPham));
 
+        // Chỉ cho phép xem chi tiết các sản phẩm đang được bán.
+        // Nếu sản phẩm không còn bán, trả về lỗi 404 để thân thiện với người dùng và SEO.
+        if (sanPham.getTrangThai() != TrangThaiSanPham.BAN) {
+            throw new ResourceNotFoundException("Sản phẩm này không tồn tại hoặc đã ngừng kinh doanh.");
+        }
+
         ChiTietSanPhamResponse response = mapToChiTietSanPhamResponse(sanPham);
 
         // Xây dựng và thêm breadcrumbs vào response
@@ -215,7 +221,6 @@ public class SanPhamServiceImpl implements SanPhamService {
                 .moTa(sanPham.getMoTa())
                 .ghiChu(sanPham.getGhiChu())
                 .trangThaiTonKho(trangThaiTonKho)
-                .trangThai(sanPham.getTrangThai()) // Thêm trạng thái sản phẩm
                 .anhMinhHoas(anhMinhHoas)
                 .banChay(sanPham.isBanChay()).build();
                }
