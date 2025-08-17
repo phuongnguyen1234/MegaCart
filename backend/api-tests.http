@@ -1,0 +1,87 @@
+### Đăng nhập và lưu token của Admin
+# @name loginAdmin
+POST http://localhost:8080/api/auth/dang-nhap
+Content-Type: application/json
+
+{
+  "email": "admin@megacart.com",
+  "matKhau": "admin123"
+}
+
+> {%
+    client.global.set("admin_token", response.body.token);
+%}
+
+###
+
+### Thêm sản phẩm mới (kèm ảnh)
+POST http://localhost:8080/api/admin/san-pham
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJmdWxsTmFtZSI6IkFkbWluaXN0cmF0b3IiLCJ1c2VySWQiOjksInN1YiI6ImFkbWluQG1lZ2FjYXJ0LmNvbSIsImlhdCI6MTc1NTQyNjI1NCwiZXhwIjoxNzU1NTEyNjU0fQ.HMT6BvKW-h5IQuZZf-ZZmjcdobXTUaK_AN3G-E1cE_g
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="sanPham"
+Content-Type: application/json
+
+{
+  "tenSanPham": "Laptop Văn Phòng",
+  "maDanhMuc": 3,
+  "moTa": "Laptop văn phòng cấu hình vừa đủ, phục vụ tốt cho công việc.",
+  "nhaSanXuat": "MegaCorp",
+  "donGia": 19000000,
+  "donVi": "Cái",
+  "nhan": "MOI",
+  "ghiChu": "Bảo hành 12 tháng",
+  "trangThai": "BAN",
+  "anhChinhIndex": 0
+}
+
+--boundary
+Content-Disposition: form-data; name="files"; filename="laptop1.webp"
+Content-Type: image/webp
+
+< D:\HOCTAP\Dai Hoc\Ky 7\Đồ án chuyên ngành\Ảnh\234.webp
+
+--boundary
+Content-Disposition: form-data; name="files"; filename="laptop2.webp"
+Content-Type: image/webp
+
+< D:\HOCTAP\Dai Hoc\Ky 7\Đồ án chuyên ngành\Ảnh\345.webp
+
+--boundary
+Content-Disposition: form-data; name="files"; filename="laptop3.webp"
+Content-Type: image/webp
+
+< D:\HOCTAP\Dai Hoc\Ky 7\Đồ án chuyên ngành\Ảnh\456.webp
+
+--boundary--
+
+### Cập nhật sản phẩm (thêm ảnh mới, xóa ảnh cũ)
+# Thay {maSanPham} bằng ID sản phẩm thật
+PATCH http://localhost:8080/api/admin/san-pham/33
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJmdWxsTmFtZSI6IkFkbWluaXN0cmF0b3IiLCJ1c2VySWQiOjksInN1YiI6ImFkbWluQG1lZ2FjYXJ0LmNvbSIsImlhdCI6MTc1NTQyNjI1NCwiZXhwIjoxNzU1NTEyNjU0fQ.HMT6BvKW-h5IQuZZf-ZZmjcdobXTUaK_AN3G-E1cE_g
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="sanPham"
+Content-Type: application/json
+
+{
+  "tenSanPham": "Laptop Văn Phòng Đẹp Trai",
+  "donGia": 15000000,
+  // Với ảnh cần xóa, phải cung cấp đúng đường dẫn đầy đủ từ CSDL (bắt đầu bằng /)
+  "urlsAnhXoa": [
+    "/uploads/sanpham/33/ca858dc2-b1f2-47a5-bc09-2e810313ee9e.webp"
+  ],
+  // Với ảnh đã có, phải dùng đường dẫn đầy đủ để định danh.
+  // Nếu muốn đặt ảnh MỚI upload làm ảnh chính, hãy dùng tên file gốc của nó (ví dụ: "laptop_new_main.jpg")
+  "anhChinhIdentifier": "/uploads/sanpham/33/a2e464e3-77bc-48e0-bb95-5458aef90cc7.webp"
+}
+
+--boundary
+Content-Disposition: form-data; name="files"; filename="laptop_new_main.jpg"
+Content-Type: image/webp
+
+< D:\HOCTAP\Dai Hoc\Ky 7\Đồ án chuyên ngành\Ảnh\345.webp
+
+--boundary--
