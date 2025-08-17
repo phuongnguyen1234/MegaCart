@@ -222,7 +222,8 @@ public class SanPhamServiceImpl implements SanPhamService {
                 .ghiChu(sanPham.getGhiChu())
                 .trangThaiTonKho(trangThaiTonKho)
                 .anhMinhHoas(anhMinhHoas)
-                .banChay(sanPham.isBanChay()).build();
+                .banChay(sanPham.isBanChay())
+                .nhan(sanPham.getNhan()).build();
                }
 
     /**
