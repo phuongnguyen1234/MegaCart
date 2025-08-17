@@ -33,7 +33,7 @@
           <!-- Image Gallery (Left - 3/10) -->
           <div class="lg:col-span-3">
             <div
-              class="relative w-full aspect-square border rounded-lg overflow-hidden shadow-sm mb-3"
+              class="relative w-full aspect-square rounded-lg overflow-hidden shadow-sm mb-3"
             >
               <img
                 :src="selectedImage"
@@ -59,7 +59,7 @@
                 </span>
               </div>
             </div>
-            <div class="flex space-x-2 overflow-x-auto">
+            <div class="flex space-x-2 overflow-x-auto overflow-y-hidden p-2">
               <img
                 v-for="anh in sanPham.anhMinhHoas"
                 :key="anh.duongDan"
@@ -126,7 +126,7 @@
 
           <!-- Thêm vào giỏ -->
           <div
-            class="lg:col-span-3 border rounded-lg bg-gray-50 p-5 h-fit shadow-sm space-y-5"
+            class="lg:col-span-3 rounded-lg bg-blue-50 p-5 h-fit shadow-sm space-y-5"
           >
             <h2 class="text-lg font-semibold border-b pb-3">
               🛒 Thêm vào giỏ hàng
@@ -139,7 +139,7 @@
                 <button
                   @click="giamSoLuong"
                   :disabled="isOutOfStock"
-                  class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-200 text-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  class="w-9 h-9 flex items-center justify-center rounded-full bg-blue-200 text-blue-800 text-lg hover:bg-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
                 >
                   −
                 </button>
@@ -150,7 +150,7 @@
                 <button
                   @click="tangSoLuong"
                   :disabled="isOutOfStock"
-                  class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-200 text-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  class="w-9 h-9 flex items-center justify-center rounded-full bg-blue-200 text-blue-800 text-lg hover:bg-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
                 >
                   +
                 </button>
@@ -167,7 +167,7 @@
 
             <!-- Nút thêm vào giỏ -->
             <button
-              class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+              class="w-full bg-[linear-gradient(135deg,_#1E88E5,_#1565C0)] hover:bg-[linear-gradient(135deg,_#42A5F5,_#1E88E5)] text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
               @click="themVaoGio"
               :disabled="isOutOfStock"
             >
@@ -207,6 +207,11 @@ const isLoading = ref(true);
 const error = ref<string | null>(null);
 const isRedirecting = ref(false);
 
+const VITE_API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(
+  "/api",
+  ""
+);
+
 const selectedImage = ref("");
 
 const isOutOfStock = computed(
@@ -225,6 +230,14 @@ const fetchSanPham = async () => {
 
   try {
     const data = await getChiTietSanPham(maSanPham);
+
+    // Chuyển đổi đường dẫn ảnh tương đối thành URL đầy đủ
+    data.anhMinhHoas.forEach((anh) => {
+      if (anh.duongDan && !anh.duongDan.startsWith("http")) {
+        anh.duongDan = `${VITE_API_BASE_URL}${anh.duongDan}`;
+      }
+    });
+
     sanPham.value = data;
     // Set ảnh chính làm ảnh được chọn ban đầu
     selectedImage.value =
