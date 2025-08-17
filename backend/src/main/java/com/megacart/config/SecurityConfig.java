@@ -38,7 +38,8 @@ public class SecurityConfig {
                                 // Cho phép tất cả mọi người xem sản phẩm
                                 "/api/san-pham/**",
                                 "/api/danh-muc/**",
-                                "/api/filter-options/**" // <-- CẬP NHẬT TÊN ENDPOINT
+                                "/api/filter-options/**",
+                                "/uploads/**" // Cho phép truy cập công khai vào thư mục chứa ảnh
                         ).permitAll()
                         .anyRequest()
                         .authenticated()
