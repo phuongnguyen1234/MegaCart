@@ -3,6 +3,8 @@ package com.megacart.repository;
 import com.megacart.enumeration.TrangThaiDanhMuc;
 import com.megacart.model.DanhMuc;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
@@ -16,7 +18,8 @@ public interface DanhMucRepository extends JpaRepository<DanhMuc, Integer>, JpaS
      * @param trangThai Trạng thái cần tìm (ví dụ: HOAT_DONG).
      * @return Danh sách các danh mục khớp với trạng thái.
      */
-    List<DanhMuc> findAllByTrangThai(TrangThaiDanhMuc trangThai);
+    @Query("SELECT dm FROM DanhMuc dm LEFT JOIN FETCH dm.danhMucCha WHERE dm.trangThai = :trangThai")
+    List<DanhMuc> findAllByTrangThaiWithParent(@Param("trangThai") TrangThaiDanhMuc trangThai);
 
     /**
      * Tìm một danh mục bằng slug của nó.

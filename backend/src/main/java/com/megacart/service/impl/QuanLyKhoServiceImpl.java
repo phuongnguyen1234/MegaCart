@@ -8,9 +8,15 @@ import com.megacart.model.SanPham;
 import com.megacart.repository.KhoRepository;
 import com.megacart.service.DanhMucService;
 import com.megacart.service.QuanLyKhoService;
+import com.megacart.dto.request.CapNhatKhoRequest;
+import com.megacart.enumeration.TrangThaiSanPham;
+import com.megacart.dto.response.ChiTietKhoResponse;
+import com.megacart.enumeration.HinhThucCapNhatKho;
+import com.megacart.exception.ResourceNotFoundException;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -18,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -85,5 +92,59 @@ public class QuanLyKhoServiceImpl implements QuanLyKhoService {
                 .soLuong(kho.getSoLuong())
                 .noiDungCapNhat(kho.getNoiDungCapNhat())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ChiTietKhoResponse getChiTietKho(Integer maSanPham) {
+        Kho kho = khoRepository.findById(maSanPham)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy kho cho sản phẩm với mã: " + maSanPham));
+
+        return ChiTietKhoResponse.builder()
+                .maSanPham(kho.getMaSanPham())
+                .tenSanPham(kho.getSanPham().getTenSanPham())
+                .soLuongHienTai(kho.getSoLuong())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public KhoResponse capNhatKho(Integer maSanPham, CapNhatKhoRequest request) {
+        // Sử dụng phương thức mới để khóa hàng dữ liệu trong suốt transaction
+        Kho kho = khoRepository.findByIdWithPessimisticLock(maSanPham)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy kho cho sản phẩm với mã: " + maSanPham));
+
+        // Trường hợp ngoại lệ 1: Không cho phép cập nhật kho của sản phẩm đã ngừng kinh doanh.
+        // Điều này giúp tránh việc nhập hàng cho một sản phẩm sẽ không bao giờ được bán.
+        if (kho.getSanPham().getTrangThai() == TrangThaiSanPham.KHONG_BAN) {
+            throw new IllegalArgumentException("Không thể cập nhật kho cho sản phẩm đã ngừng kinh doanh.");
+        }
+
+        int soLuongMoi;
+
+        if (request.getHinhThuc() == HinhThucCapNhatKho.GHI_DE) {
+            // Khi ghi đè, số lượng nhập vào không được phép là số âm.
+            if (request.getSoLuong() < 0) {
+                throw new IllegalArgumentException("Số lượng để ghi đè không được là số âm.");
+            }
+            soLuongMoi = request.getSoLuong();
+        } else { // HinhThucCapNhatKho.THEM_VAO_HIEN_TAI
+            soLuongMoi = kho.getSoLuong() + request.getSoLuong();
+        }
+
+        // Đảm bảo số lượng tồn kho cuối cùng không bao giờ là số âm.
+        if (soLuongMoi < 0) {
+            throw new IllegalArgumentException("Số lượng tồn kho không thể là số âm.");
+        }
+
+        kho.setSoLuong(soLuongMoi);
+        kho.setNoiDungCapNhat(request.getNoiDung());
+
+        
+        Kho savedKho = khoRepository.save(kho);
+        KhoResponse response = mapToKhoResponse(savedKho);
+        response.setThongBao("Cập nhật kho thành công.");
+        return response;
+
     }
 }

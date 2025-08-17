@@ -156,7 +156,9 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
         savedSanPham.setKho(kho); // Cập nhật lại kho cho entity
 
         // 6. Trả về response
-        return mapToSanPhamQuanLyResponse(savedSanPham);
+        SanPhamQuanLyResponse response = mapToSanPhamQuanLyResponse(savedSanPham);
+        response.setThongBao("Thêm sản phẩm thành công.");
+        return response;
     }
 
     @Override
@@ -278,7 +280,9 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
 
         // 7. Lưu lại sản phẩm và trả về response
         SanPham updatedSanPham = sanPhamRepository.save(sanPham);
-        return mapToChiTietSanPhamQuanLyResponse(updatedSanPham);
+        ChiTietSanPhamQuanLyResponse response = mapToChiTietSanPhamQuanLyResponse(updatedSanPham);
+        response.setThongBao("Cập nhật sản phẩm thành công.");
+        return response;
     }
 
     private void reorderImages(SanPham sanPham) {

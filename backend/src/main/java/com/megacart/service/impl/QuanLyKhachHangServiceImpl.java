@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,7 +58,7 @@ public class QuanLyKhachHangServiceImpl implements QuanLyKhachHangService {
 
     @Override
     @Transactional
-    public void capNhatTrangThai(Integer maKhachHang, CapNhatTrangThaiTaiKhoanRequest request) {
+    public HienThiDanhSachKhachHangResponse capNhatTrangThai(Integer maKhachHang, CapNhatTrangThaiTaiKhoanRequest request) {
         // Chỉ kiểm tra khi hành động là "KHÓA" tài khoản
         if (request.getTrangThai() == TrangThaiTaiKhoan.KHOA) {
             List<TrangThaiDonHang> activeStatuses = List.of(TrangThaiDonHang.CHO_XAC_NHAN, TrangThaiDonHang.CHO_XU_LY, TrangThaiDonHang.DANG_GIAO);
@@ -68,14 +67,16 @@ public class QuanLyKhachHangServiceImpl implements QuanLyKhachHangService {
             }
         }
 
-        // Dùng TaiKhoanRepository vì trạng thái nằm ở bảng TaiKhoan
-        // và mã khách hàng cũng chính là mã tài khoản trong ngữ cảnh này.
-        taiKhoanRepository.findById(maKhachHang).ifPresentOrElse(
-                taiKhoan -> taiKhoan.setTrangThaiTaiKhoan(request.getTrangThai()),
-                () -> {
-                    throw new ResourceNotFoundException("Không tìm thấy tài khoản với mã: " + maKhachHang);
-                }
-        );
+        // Lấy khách hàng và tài khoản liên kết để cập nhật
+        KhachHang khachHang = khachHangRepository.findByIdWithTaiKhoan(maKhachHang)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khách hàng với mã: " + maKhachHang));
+
+        // Cập nhật trạng thái
+        khachHang.getTaiKhoan().setTrangThaiTaiKhoan(request.getTrangThai());
+
+        HienThiDanhSachKhachHangResponse response = mapToAdminKhachHangResponse(khachHang);
+        response.setThongBao("Cập nhật trạng thái tài khoản thành công.");
+        return response;
     }
 
     private HienThiDanhSachKhachHangResponse mapToAdminKhachHangResponse(KhachHang khachHang) {
