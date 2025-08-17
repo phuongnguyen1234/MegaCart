@@ -10,9 +10,19 @@ export interface SanPhamTonKho {
   noiDungCapNhat: string;
 }
 
+/**
+ * Represents the type of inventory update operation.
+ * 'them': Adds to the existing quantity.
+ * 'ghide': Overwrites the existing quantity with the new value.
+ */
+export enum HinhThucCapNhatKho {
+  THEM = "them",
+  GHI_DE = "ghide",
+}
+
 export interface DuLieuCapNhat {
   maSanPham: string;
-  hinhThuc: "them" | "ghide";
+  hinhThuc: HinhThucCapNhatKho;
   soLuong: number;
   noiDung: string;
 }

@@ -24,3 +24,13 @@ export interface PagedResponse<T> {
   last: boolean;
   first: boolean;
 }
+
+/**
+ * Cấu trúc chung cho các đối tượng giống enum được trả về từ backend.
+ * Chứa tên hằng số enum (value) và tên hiển thị (label).
+ * @template T - Kiểu string literal cho các key của enum.
+ */
+export interface EnumObject<T extends string> {
+  value: T;
+  label: string;
+}

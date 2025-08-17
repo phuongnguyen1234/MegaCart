@@ -1,3 +1,5 @@
+import type { EnumObject } from "./api.types";
+
 /**
  * Các key của nhãn sản phẩm, dùng để gửi lên API.
  * Giá trị của enum này phải TRÙNG KHỚP với tên của enum constant trong `NhanSanPham.java` ở backend.
@@ -20,10 +22,7 @@ export const NhanSanPhamLabel: Record<NhanSanPhamKey, string> = {
  * Cấu trúc đối tượng nhãn sản phẩm nhận về từ API.
  * Backend serialize enum thành một object chứa key (value) và tên hiển thị (label).
  */
-export interface NhanSanPhamObject {
-  value: NhanSanPhamKey; // Key của enum, ví dụ: "MOI"
-  label: string; // Nhãn hiển thị, ví dụ: "Mới"
-}
+export type NhanSanPhamObject = EnumObject<NhanSanPhamKey>;
 
 /**
  * Các key của trạng thái tồn kho, dùng để nhận từ API.
@@ -45,10 +44,7 @@ export const TrangThaiTonKhoLabel: Record<TrangThaiTonKhoKey, string> = {
 /**
  * Cấu trúc đối tượng trạng thái tồn kho nhận về từ API.
  */
-export interface TrangThaiTonKhoObject {
-  value: TrangThaiTonKhoKey;
-  label: string;
-}
+export type TrangThaiTonKhoObject = EnumObject<TrangThaiTonKhoKey>;
 
 /**
  * @deprecated Alias for `TrangThaiTonKhoKey`. Provided for backward compatibility to fix import errors.
@@ -69,10 +65,7 @@ export enum TrangThaiSanPhamKey {
 /**
  * Cấu trúc đối tượng trạng thái kinh doanh sản phẩm nhận về từ API.
  */
-export interface TrangThaiSanPhamObject {
-  value: TrangThaiSanPhamKey;
-  label: string;
-}
+export type TrangThaiSanPhamObject = EnumObject<TrangThaiSanPhamKey>;
 
 export interface AnhMinhHoa {
   duongDan: string;

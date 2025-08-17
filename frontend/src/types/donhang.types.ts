@@ -1,16 +1,8 @@
+import type { EnumObject } from "./api.types";
 import type {
   TrangThaiSanPhamObject,
   TrangThaiTonKhoObject,
 } from "./sanpham.types";
-/**
- * A generic structure for enum-like objects returned from the backend.
- * Contains the enum constant name (value) and its display name (label).
- * @template T - The string literal type for the enum keys.
- */
-export interface EnumObject<T extends string> {
-  value: T;
-  label: string;
-}
 
 /**
  * Represents the canonical keys for order statuses, matching the backend's enum constant names.
@@ -137,9 +129,9 @@ export interface HuyDonHangRequest {
 
 /**
  * Represents the string values used for filtering order history via API request parameters.
- * These kebab-case values are what `LichSuMuaHangView.vue` uses and what the backend
+ * These `UPPER_SNAKE_CASE` values are what `LichSuMuaHangView.vue` uses and what the backend
  * `DonHangController` expects for the `@RequestParam("trangThai")`.
- * Spring Boot automatically maps "dang-giao" to the `TrangThaiDonHang.DANG_GIAO` enum.
+ * Spring Boot automatically maps the string "DANG_GIAO" to the `TrangThaiDonHang.DANG_GIAO` enum constant.
  */
 export enum TrangThaiDonHangFilter {
   CHO_XAC_NHAN = "CHO_XAC_NHAN",

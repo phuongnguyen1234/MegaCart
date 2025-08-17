@@ -1,11 +1,11 @@
 <template>
   <div
-    class="w-full border border-gray-200 rounded-lg text-sm overflow-hidden bg-white shadow-sm"
+    class="w-full border border-blue-500 rounded-lg text-sm overflow-hidden bg-white shadow-sm"
   >
     <!-- Danh mục -->
-    <div class="border-b border-gray-200">
+    <div class="border-b border-blue-500">
       <button
-        class="cursor-pointer w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 font-semibold text-gray-700 flex justify-between items-center transition-colors"
+        class="cursor-pointer w-full text-left px-4 py-3 bg-blue-500 hover:bg-blue-600 font-semibold text-white flex justify-between items-center transition-colors"
         @click="toggle('danhMuc')"
       >
         Danh mục
@@ -47,9 +47,9 @@
     </div>
 
     <!-- Đơn giá -->
-    <div class="border-b border-gray-200">
+    <div class="border-b border-blue-500">
       <button
-        class="cursor-pointer w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 font-semibold text-gray-700 flex justify-between items-center transition-colors"
+        class="cursor-pointer w-full text-left px-4 py-3 bg-blue-500 hover:bg-blue-600 font-semibold text-white flex justify-between items-center transition-colors"
         @click="toggle('donGia')"
       >
         Đơn giá
@@ -104,7 +104,7 @@
     <!-- Nhà sản xuất -->
     <div>
       <button
-        class="cursor-pointer w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 font-semibold text-gray-700 flex justify-between items-center transition-colors"
+        class="cursor-pointer w-full text-left px-4 py-3 bg-blue-500 hover:bg-blue-600 font-semibold text-white flex justify-between items-center transition-colors"
         @click="toggle('nhaSanXuat')"
       >
         Nhà sản xuất

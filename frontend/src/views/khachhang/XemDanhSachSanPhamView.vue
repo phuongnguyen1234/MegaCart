@@ -494,4 +494,11 @@ watch(selectedCategory, (newVal, oldVal) => {
   currentPage.value = 0;
   fetchProducts();
 });
+
+// Watch các bộ lọc khác (nhà sản xuất, giá, sắp xếp) để tải lại dữ liệu
+watch([selectedManufacturer, selectedPrice, selectedSort], () => {
+  // Reset về trang đầu tiên mỗi khi bộ lọc thay đổi
+  currentPage.value = 0;
+  fetchProducts();
+});
 </script>

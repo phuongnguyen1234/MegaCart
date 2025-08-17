@@ -39,11 +39,10 @@
         <li
           v-for="(item, index) in suggestions"
           :key="index"
-          class="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+          class="px-4 py-2 hover:bg-blue-100 cursor-pointer text-gray-800"
           @click="selectSuggestion(item)"
-        >
-          {{ item }}
-        </li>
+          v-html="highlightMatch(item)"
+        ></li>
       </ul>
     </div>
 
@@ -213,13 +212,12 @@ const fetchSuggestions = () => {
     return;
   }
 
-  // Chỉ gọi API sau khi người dùng ngừng gõ 300ms
   debounceTimer = window.setTimeout(async () => {
     try {
-      suggestions.value = await goiYTimKiem(query);
+      const newData = await goiYTimKiem(query);
+      suggestions.value = newData; // chỉ update khi API trả về
     } catch (error) {
       console.error("Lỗi khi lấy gợi ý tìm kiếm:", error);
-      suggestions.value = []; // Xóa gợi ý nếu có lỗi
     }
   }, 300);
 };
@@ -237,6 +235,62 @@ const performSearch = () => {
 const selectSuggestion = (item: string) => {
   searchQuery.value = item; // Cập nhật ô tìm kiếm với gợi ý đã chọn
   performSearch(); // Thực hiện tìm kiếm
+};
+
+/**
+ * Loại bỏ dấu tiếng Việt khỏi một chuỗi.
+ * @param str Chuỗi đầu vào.
+ * @returns Chuỗi đã được loại bỏ dấu.
+ */
+const removeDiacritics = (str: string) => {
+  return str
+    .normalize("NFD") // Tách ký tự thành ký tự cơ bản và dấu
+    .replace(/[\u0300-\u036f]/g, ""); // Loại bỏ các ký tự dấu
+};
+
+/**
+ * Bọc phần văn bản trùng khớp trong chuỗi gợi ý bằng thẻ <strong> để in đậm.
+ * Hàm này không phân biệt chữ hoa/thường và dấu tiếng Việt, và xử lý nhiều lần xuất hiện.
+ * @param text - Chuỗi gợi ý cần làm nổi bật.
+ * @returns Một chuỗi HTML với phần truy vấn tìm kiếm được in đậm.
+ */
+const highlightMatch = (text: string) => {
+  const query = searchQuery.value.trim();
+  if (!query) return text;
+
+  // Chuẩn hóa truy vấn
+  const normalizedQuery = removeDiacritics(query).toLowerCase();
+
+  if (!normalizedQuery) return text;
+
+  // Regex để escape ký tự đặc biệt
+  const escapedQuery = normalizedQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(escapedQuery, "gi");
+
+  let result = "";
+  let lastIndex = 0;
+
+  // Duyệt từng ký tự trong text gốc, nhưng so khớp bằng normalizedText
+  const normalizedText = removeDiacritics(text).toLowerCase();
+
+  let match;
+  while ((match = regex.exec(normalizedText)) !== null) {
+    const start = match.index;
+    const end = start + match[0].length;
+
+    // Thêm phần trước đoạn match
+    result += text.slice(lastIndex, start);
+
+    // Thêm phần match được bôi đậm
+    result += `<strong>${text.slice(start, end)}</strong>`;
+
+    lastIndex = end;
+  }
+
+  // Thêm phần còn lại
+  result += text.slice(lastIndex);
+
+  return result;
 };
 
 const handleClickOutside = (event: MouseEvent) => {

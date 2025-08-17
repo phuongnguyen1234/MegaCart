@@ -42,6 +42,14 @@ export enum TrangThaiDanhMuc {
 }
 
 /**
+ * Represents the display labels for category statuses.
+ */
+export enum TrangThaiDanhMucLabel {
+  DANG_HOAT_DONG = "Đang hoạt động",
+  NGUNG_HOAT_DONG = "Ngừng hoạt động",
+}
+
+/**
  * Represents a category in the admin list view.
  * Corresponds to `DanhMucQuanLyResponse` in the backend.
  */
@@ -49,7 +57,7 @@ export interface DanhMucQuanLyResponse {
   maDanhMuc: number;
   tenDanhMuc: string;
   tenDanhMucCha?: string; // Optional because a parent category won't have one
-  trangThai: string; // e.g., "Đang hoạt động"
+  trangThai: TrangThaiDanhMucLabel;
 }
 
 /**

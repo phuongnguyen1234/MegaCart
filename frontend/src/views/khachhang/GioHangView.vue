@@ -128,7 +128,9 @@
               v-model="hinhThucNhanHang"
               class="w-full border rounded px-3 py-2 cursor-pointer bg-white"
             >
-              <option value="giao-tan-nha">Giao hàng tận nhà</option>
+              <option :value="HinhThucNhanHangRequest.GIAO_HANG_TAN_NHA">
+                Giao hàng tận nhà
+              </option>
             </select>
           </div>
 
@@ -138,7 +140,11 @@
               v-model="hinhThucThanhToan"
               class="w-full border rounded px-3 py-2 cursor-pointer bg-white"
             >
-              <option value="cod">Thanh toán khi nhận hàng</option>
+              <option
+                :value="HinhThucThanhToanRequest.THANH_TOAN_KHI_NHAN_HANG"
+              >
+                Thanh toán khi nhận hàng
+              </option>
             </select>
           </div>
 
@@ -199,7 +205,11 @@ import type {
   GioHangItem,
   ThongTinGiaoHangMacDinh,
 } from "@/types/giohang.types";
-import type { DatHangRequest } from "@/types/dathang.types";
+import {
+  HinhThucNhanHangRequest,
+  HinhThucThanhToanRequest,
+  type DatHangRequest,
+} from "@/types/dathang.types";
 import { TrangThaiSanPhamKey } from "@/types/sanpham.types";
 import { useCartStore } from "@/store/giohang.store";
 
@@ -221,8 +231,10 @@ const thongTinGiaoHangForm = ref({
 });
 
 const suDungThongTinMacDinh = ref(true);
-const hinhThucNhanHang = ref("giao-tan-nha");
-const hinhThucThanhToan = ref("cod");
+const hinhThucNhanHang = ref(HinhThucNhanHangRequest.GIAO_HANG_TAN_NHA);
+const hinhThucThanhToan = ref(
+  HinhThucThanhToanRequest.THANH_TOAN_KHI_NHAN_HANG
+);
 
 // --- Computed Properties ---
 
@@ -270,9 +282,12 @@ const thongTinXacNhan = computed(() => {
     soDienThoai: thongTinGiaoHangForm.value.soDienThoai,
     diaChi: thongTinGiaoHangForm.value.diaChi,
     giaoHang:
-      hinhThucNhanHang.value === "GIAO_HANG_TAN_NHA" ? "Giao hàng tận nhà" : "",
+      hinhThucNhanHang.value === HinhThucNhanHangRequest.GIAO_HANG_TAN_NHA
+        ? "Giao hàng tận nhà"
+        : "",
     thanhToan:
-      hinhThucThanhToan.value === "THANH_TOAN_KHI_NHAN_HANG"
+      hinhThucThanhToan.value ===
+      HinhThucThanhToanRequest.THANH_TOAN_KHI_NHAN_HANG
         ? "Thanh toán khi nhận hàng"
         : "",
   };
@@ -405,14 +420,12 @@ const handleXacNhanDatHang = async () => {
       diaChiNhanHang: thongTinGiaoHangForm.value.diaChi,
       sdtNhanHang: thongTinGiaoHangForm.value.soDienThoai,
 
-      hinhThucThanhToan: "THANH_TOAN_KHI_NHAN_HANG", // TODO: Cần làm động nếu có nhiều lựa chọn
-      hinhThucNhanHang: "GIAO_HANG_TAN_NHA", // TODO: Cần làm động
+      hinhThucThanhToan: hinhThucThanhToan.value,
+      hinhThucNhanHang: hinhThucNhanHang.value,
     };
 
-    console.log(payload);
-
     const response = await taoDonHang(payload);
-    showToast({ thongBao: response.message, loai: "thanhCong" });
+    showToast({ thongBao: response.thongBao, loai: "thanhCong" });
 
     // Cập nhật lại số lượng giỏ hàng trên header
     await cartStore.fetchCartCount();
