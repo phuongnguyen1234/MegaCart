@@ -2,28 +2,24 @@ package com.megacart.utils;
 
 import com.megacart.model.AnhMinhHoa;
 
+import java.util.Comparator;
 import java.util.List;
 
-public final class ImageUtils {
-
-    private ImageUtils() {
-        // Private constructor để ngăn việc tạo instance của utility class
-    }
-
-    // Mã hóa URL cho ảnh sản phẩm
+public class ImageUtils {
 
     /**
-     * Lấy URL của ảnh đại diện từ một danh sách ảnh.
-     * Ưu tiên ảnh được đánh dấu là 'laAnhChinh'.
-     * Nếu không có, lấy ảnh đầu tiên trong danh sách làm ảnh đại diện.
-     * @param anhMinhHoas Danh sách các ảnh minh họa của sản phẩm.
-     * @return URL của ảnh đại diện, hoặc null nếu không có ảnh nào.
+     * Lấy URL của ảnh chính từ danh sách ảnh minh họa.
+     * Nếu không có ảnh nào được đánh dấu là chính, nó sẽ lấy ảnh đầu tiên theo số thứ tự.
+     * Nếu không có ảnh nào, trả về null.
+     * @param anhMinhHoas Danh sách các đối tượng AnhMinhHoa.
+     * @return URL của ảnh chính, hoặc ảnh đầu tiên, hoặc null.
      */
     public static String getAnhMinhHoaChinhUrl(List<AnhMinhHoa> anhMinhHoas) {
         if (anhMinhHoas == null || anhMinhHoas.isEmpty()) {
-            return null;
+            return null; // Hoặc một URL placeholder mặc định
         }
+
         return anhMinhHoas.stream().filter(AnhMinhHoa::isLaAnhChinh).findFirst().map(AnhMinhHoa::getDuongDan)
-                .orElse(anhMinhHoas.get(0).getDuongDan());
+                .orElseGet(() -> anhMinhHoas.stream().min(Comparator.comparing(AnhMinhHoa::getSoThuTu, Comparator.nullsLast(Comparator.naturalOrder()))).map(AnhMinhHoa::getDuongDan).orElse(null));
     }
 }
