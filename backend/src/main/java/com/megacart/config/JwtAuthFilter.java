@@ -4,11 +4,15 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import com.megacart.service.JwtService;
 import com.megacart.service.TokenBlacklistService;
+
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -17,6 +21,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -53,13 +59,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
             if (jwtService.isTokenValid(jwt, userDetails)) {
+                // Lấy các quyền mặc định từ UserDetails (ví dụ: "NHAN_VIEN")
+                List<GrantedAuthority> authorities = new ArrayList<>(userDetails.getAuthorities());
+
+                // Trích xuất 'viTri' từ token và thêm vào danh sách quyền
+                final Claims claims = jwtService.extractAllClaims(jwt);
+                String viTri = claims.get("viTri", String.class);
+                if (viTri != null && !viTri.isEmpty()) {
+                    authorities.add(new SimpleGrantedAuthority(viTri));
+                }
+
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
+                        userDetails,
+                        null,
+                        authorities // <-- Sử dụng danh sách quyền đã được bổ sung 'viTri'
                 );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
-            }
-        }
-        filterChain.doFilter(request, response);
+    }
+}
+filterChain.doFilter(request, response);
     }
 }

@@ -47,8 +47,8 @@ public class QuanLyNhanVienServiceImpl implements QuanLyNhanVienService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<HienThiDanhSachNhanVienResponse> getDSNhanVien(String searchField, String searchValue, ViTri viTri, boolean hienThiTaiKhoanBiKhoa, Pageable pageable) {
-        Specification<NhanVien> spec = timKiemNhanVienSpecification.filterBy(searchField, searchValue, viTri, hienThiTaiKhoanBiKhoa);
+    public PagedResponse<HienThiDanhSachNhanVienResponse> getDSNhanVien(String searchField, String searchValue, ViTri viTri, TrangThaiTaiKhoan trangThai, Pageable pageable) {
+        Specification<NhanVien> spec = timKiemNhanVienSpecification.filterBy(searchField, searchValue, viTri, trangThai);
 
         Page<NhanVien> nhanVienPage = nhanVienRepository.findAll(spec, pageable);
         // Chuyển đổi từ Page<Entity> sang PagedResponse<DTO>

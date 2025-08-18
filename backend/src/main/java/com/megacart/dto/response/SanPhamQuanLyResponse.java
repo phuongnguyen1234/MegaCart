@@ -11,6 +11,7 @@ import lombok.Data;
 public class SanPhamQuanLyResponse {
     private Integer maSanPham;
     private String tenSanPham;
+    private String anhMinhHoaChinh; // Ảnh để hiển thị trên danh sách quản lý
     private String danhMucCha;
     private String danhMucCon;
     private int donGia;

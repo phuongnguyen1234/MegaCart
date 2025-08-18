@@ -327,6 +327,9 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
             }
         }
 
+        // Lấy URL ảnh chính để hiển thị
+        String anhChinhUrl = ImageUtils.getAnhMinhHoaChinhUrl(sanPham.getAnhMinhHoas());
+
         return SanPhamQuanLyResponse.builder()
                 .maSanPham(sanPham.getMaSanPham())
                 .tenSanPham(sanPham.getTenSanPham())
@@ -334,6 +337,7 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
                 .danhMucCon(danhMucCon)
                 .donGia(sanPham.getDonGia())
                 .trangThai(sanPham.getTrangThai())
+                .anhMinhHoaChinh(anhChinhUrl)
                 .build();
     }
 }

@@ -89,16 +89,33 @@ public class TaiKhoanServiceImpl implements TaiKhoanService {
 
     @Override
     public AuthResponse xacThucTaiKhoan(DangNhapRequest request) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getMatKhau()));
+        // 1. Xác thực người dùng (email/password)
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getMatKhau()
+                )
+        );
+
+        // 2. Lấy thông tin đầy đủ của tài khoản từ CSDL
         var taiKhoan = taiKhoanRepository.findByEmail(request.getEmail()).orElseThrow(
                 () -> new ResourceNotFoundException("Tài khoản không tồn tại sau khi xác thực. Lỗi hệ thống."));
 
+        // 3. Chuẩn bị các thông tin (claims) để nhúng vào token
         Map<String, Object> extraClaims = new HashMap<>();
         extraClaims.put("userId", taiKhoan.getMaTaiKhoan());
         extraClaims.put("role", taiKhoan.getQuyenTruyCap().name());
         extraClaims.put("fullName", getFullNameForTaiKhoan(taiKhoan));
 
+        // Nếu là nhân viên, thêm vị trí vào claims
+        if (taiKhoan.getQuyenTruyCap() == QuyenTruyCap.NHAN_VIEN && taiKhoan.getNhanVien() != null && taiKhoan.getNhanVien().getViTri() != null) {
+            extraClaims.put("viTri", taiKhoan.getNhanVien().getViTri().name());
+        }
+
+        // 4. Tạo JWT token với các claims đã chuẩn bị
         var jwtToken = jwtService.generateToken(extraClaims, taiKhoan);
+
+        // 5. Trả về response chỉ chứa token
         return AuthResponse.builder().token(jwtToken).build();
     }
 

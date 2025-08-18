@@ -34,14 +34,17 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/auth/**", // Gộp các endpoint auth cho gọn
-                                // Cho phép tất cả mọi người xem sản phẩm
+                                "/api/auth/**",
+                                // Các API công khai cho tất cả mọi người
                                 "/api/san-pham/**",
                                 "/api/danh-muc/**",
                                 "/api/filter-options/**"
                         ).permitAll()
-                        .anyRequest()
-                        .authenticated()
+                        // Chỉ ADMIN và NHAN_VIEN mới được truy cập vào các API quản trị
+                        .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "NHAN_VIEN")
+                        // Các API còn lại (ví dụ: giỏ hàng, đặt hàng) yêu cầu phải đăng nhập
+                        // (Spring Security sẽ tự kiểm tra, nhưng việc khai báo rõ ràng giúp dễ đọc hơn)
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)

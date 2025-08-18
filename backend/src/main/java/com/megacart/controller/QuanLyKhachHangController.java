@@ -3,6 +3,7 @@ package com.megacart.controller;
 import com.megacart.dto.request.CapNhatTrangThaiTaiKhoanRequest;
 import com.megacart.dto.response.HienThiDanhSachKhachHangResponse;
 import com.megacart.dto.response.PagedResponse;
+import com.megacart.enumeration.TrangThaiTaiKhoan;
 import com.megacart.service.QuanLyKhachHangService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/quan-ly/khach-hang")
+@RequestMapping("/api/admin/khach-hang") // Đồng bộ với các controller admin khác
 @RequiredArgsConstructor
 @PreAuthorize("hasAuthority('ADMIN')")
 public class QuanLyKhachHangController {
@@ -24,9 +25,9 @@ public class QuanLyKhachHangController {
     public ResponseEntity<PagedResponse<HienThiDanhSachKhachHangResponse>> getDSKhachHang(
             @RequestParam(required = false) String searchField,
             @RequestParam(required = false) String searchValue,
-            @RequestParam(defaultValue = "false") boolean hienThiTaiKhoanBiKhoa,
+            @RequestParam(required = false) TrangThaiTaiKhoan trangThai, // Nếu không truyền, sẽ lấy tất cả
             @PageableDefault(size = 20, sort = "maKhachHang") Pageable pageable) {
-        return ResponseEntity.ok(quanLyKhachHangService.getDSKhachHang(searchField, searchValue, hienThiTaiKhoanBiKhoa, pageable));
+        return ResponseEntity.ok(quanLyKhachHangService.getDSKhachHang(searchField, searchValue, trangThai, pageable));
     }
 
     @GetMapping("/{maKhachHang}")
