@@ -263,48 +263,86 @@ public class DanhMucServiceImpl implements DanhMucService {
             danhMucToUpdate.setSlug(generateUniqueSlug(request.getTenDanhMuc()));
         }
 
+        // Cập nhật danh mục cha (phải thực hiện trước cập nhật trạng thái)
+        if (request.isDanhMucChaUpdated()) {
+            xuLyThayDoiDanhMucCha(danhMucToUpdate, request.getMaDanhMucCha());
+        }
+
         // Cập nhật trạng thái
         if (request.getTrangThai() != null && request.getTrangThai() != danhMucToUpdate.getTrangThai()) {
-            // Trước khi ngừng hoạt động một danh mục, kiểm tra xem nó có chứa sản phẩm nào đang bán không.
-            if (request.getTrangThai() == TrangThaiDanhMuc.KHONG_HOAT_DONG) {
-                // Lấy ID của danh mục này và tất cả các danh mục con của nó
-                List<Integer> allRelatedCategoryIds = getAllSubCategoryIds(maDanhMuc);
-                // Kiểm tra xem có sản phẩm nào đang "BÁN" trong các danh mục này không
-                if (sanPhamRepository.existsByDanhMuc_MaDanhMucInAndTrangThai(allRelatedCategoryIds, TrangThaiSanPham.BAN)) {
-                    throw new IllegalArgumentException("Không thể ngừng hoạt động danh mục này vì vẫn còn sản phẩm đang bán trong đó hoặc trong các danh mục con.");
-                }
-            }
-            danhMucToUpdate.setTrangThai(request.getTrangThai());
+            xuLyThayDoiTrangThai(danhMucToUpdate, request.getTrangThai());
         }
 
-        // Chỉ cập nhật danh mục cha nếu client gửi tín hiệu rõ ràng
-        if (request.isDanhMucChaUpdated()) {
-            Integer maDanhMucChaMoi = request.getMaDanhMucCha();
-            Integer maDanhMucChaHienTai = danhMucToUpdate.getDanhMucCha() != null ? danhMucToUpdate.getDanhMucCha().getMaDanhMuc() : null;
-
-            if (!Objects.equals(maDanhMucChaMoi, maDanhMucChaHienTai)) {
-                if (maDanhMucChaMoi == null) {
-                    danhMucToUpdate.setDanhMucCha(null); // Trở thành danh mục gốc
-                } else {
-                    // Kiểm tra vòng lặp: không thể tự làm cha của chính mình
-                    if (maDanhMucChaMoi.equals(maDanhMuc)) {
-                        throw new IllegalArgumentException("Một danh mục không thể là danh mục cha của chính nó.");
-                    }
-                    // Kiểm tra vòng lặp: không thể làm con của một trong các con cháu của mình
-                    if (getAllSubCategoryIds(maDanhMuc).contains(maDanhMucChaMoi)) {
-                        throw new IllegalArgumentException("Không thể di chuyển danh mục vào một trong các danh mục con của nó.");
-                    }
-                    DanhMuc danhMucChaMoiEntity = danhMucRepository.findById(maDanhMucChaMoi)
-                            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục cha với mã: " + maDanhMucChaMoi));
-                    danhMucToUpdate.setDanhMucCha(danhMucChaMoiEntity);
-                }
-            }
-        }
-
-        DanhMuc savedDanhMuc = danhMucRepository.save(danhMucToUpdate);
-        DanhMucQuanLyResponse response = mapToDanhMucQuanLyResponse(savedDanhMuc);
+        // Không cần gọi save() vì entity đang ở trạng thái managed trong transaction
+        DanhMucQuanLyResponse response = mapToDanhMucQuanLyResponse(danhMucToUpdate);
         response.setThongBao("Cập nhật danh mục thành công.");
         return response;
+    }
+
+    private void xuLyThayDoiDanhMucCha(DanhMuc danhMuc, Integer maDanhMucChaMoi) {
+        Integer maDanhMucHienTai = danhMuc.getMaDanhMuc();
+        Integer maDanhMucChaHienTai = Optional.ofNullable(danhMuc.getDanhMucCha()).map(DanhMuc::getMaDanhMuc).orElse(null);
+
+        // Nếu không có thay đổi, không làm gì cả
+        if (Objects.equals(maDanhMucChaMoi, maDanhMucChaHienTai)) {
+            return;
+        }
+
+        // Ràng buộc: Không cho phép di chuyển một danh mục đang có danh mục con.
+        // Điều này giúp đơn giản hóa logic và ngăn ngừa việc vô tình làm gãy cấu trúc cây.
+        if (!danhMuc.getDanhMucCons().isEmpty()) {
+            throw new IllegalArgumentException("Không thể di chuyển một danh mục đang có danh mục con.");
+        }
+
+        // Trường hợp 1: Biến thành danh mục gốc
+        if (maDanhMucChaMoi == null) {
+            danhMuc.setDanhMucCha(null);
+        } else { // Trường hợp 2: Gán một danh mục cha mới
+            // Ràng buộc: Không thể tự làm cha của chính mình.
+            if (maDanhMucChaMoi.equals(maDanhMucHienTai)) {
+                throw new IllegalArgumentException("Một danh mục không thể là danh mục cha của chính nó.");
+            }
+
+            DanhMuc danhMucChaMoiEntity = danhMucRepository.findById(maDanhMucChaMoi)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không thể tìm thấy danh mục cha với mã: " + maDanhMucChaMoi));
+
+            // Ràng buộc: Không thể gán vào một danh mục cha đang không hoạt động.
+            if (danhMucChaMoiEntity.getTrangThai() == TrangThaiDanhMuc.KHONG_HOAT_DONG) {
+                throw new IllegalArgumentException("Không thể gán vào danh mục cha đang ở trạng thái không hoạt động.");
+            }
+
+            danhMuc.setDanhMucCha(danhMucChaMoiEntity);
+        }
+    }
+
+    private void xuLyThayDoiTrangThai(DanhMuc danhMuc, TrangThaiDanhMuc trangThaiMoi) {
+        // Ràng buộc: Khi kích hoạt một danh mục con, cha của nó phải đang hoạt động.
+        if (trangThaiMoi == TrangThaiDanhMuc.HOAT_DONG && danhMuc.getDanhMucCha() != null) {
+            if (danhMuc.getDanhMucCha().getTrangThai() == TrangThaiDanhMuc.KHONG_HOAT_DONG) {
+                throw new IllegalArgumentException("Không thể kích hoạt danh mục con khi danh mục cha đang không hoạt động.");
+            }
+        }
+
+        // Ràng buộc: Khi ngừng hoạt động một danh mục, tất cả con cháu của nó cũng bị ngừng theo.
+        if (trangThaiMoi == TrangThaiDanhMuc.KHONG_HOAT_DONG) {
+            // Lấy ID của danh mục này và tất cả các danh mục con cháu của nó.
+            List<Integer> allRelatedCategoryIds = getAllSubCategoryIds(danhMuc.getMaDanhMuc());
+
+            // Kiểm tra xem có sản phẩm nào đang "BÁN" trong cây danh mục này không.
+            if (sanPhamRepository.existsByDanhMuc_MaDanhMucInAndTrangThai(allRelatedCategoryIds, TrangThaiSanPham.BAN)) {
+                throw new IllegalArgumentException("Không thể ngừng hoạt động danh mục này vì vẫn còn sản phẩm đang bán trong đó hoặc trong các danh mục con.");
+            }
+
+            // Lấy tất cả các entity con cháu để cập nhật trạng thái.
+            // Việc này hiệu quả hơn là gọi save() cho từng cái vì tất cả đều trong cùng 1 transaction.
+            List<DanhMuc> descendants = danhMucRepository.findAllById(allRelatedCategoryIds);
+            for (DanhMuc desc : descendants) {
+                desc.setTrangThai(TrangThaiDanhMuc.KHONG_HOAT_DONG);
+            }
+        } else {
+            // Nếu là kích hoạt, chỉ cần đặt trạng thái cho chính nó.
+            danhMuc.setTrangThai(trangThaiMoi);
+        }
     }
 
     /**
@@ -315,21 +353,20 @@ public class DanhMucServiceImpl implements DanhMucService {
      * @return Một chuỗi slug duy nhất.
      */
     private String generateUniqueSlug(String name) {
-        // 1. Chuyển đổi chuỗi có dấu thành không dấu
-        String normalized = Normalizer.normalize(name, Normalizer.Form.NFD);
-        normalized = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        // 1. Chuẩn hóa chuỗi: bỏ dấu, chuyển thành chữ thường
+        String normalized = Normalizer.normalize(name, Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .toLowerCase(Locale.ENGLISH)
+                .replaceAll("đ", "d");
 
-        // 2. Chuyển thành chữ thường, thay thế khoảng trắng bằng gạch nối, và loại bỏ các ký tự không hợp lệ
-        String baseSlug = normalized.toLowerCase()
-                .replaceAll("đ", "d") // Xử lý chữ 'đ'
-                .replaceAll("\\s+", "-")
-                .replaceAll("[^a-z0-9-]", "");
+        // 2. Thay thế các ký tự không phải chữ/số bằng dấu gạch ngang
+        String baseSlug = normalized.replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
 
+        // 3. Kiểm tra và đảm bảo slug là duy nhất
         String finalSlug = baseSlug;
         int counter = 2;
         while (danhMucRepository.findBySlug(finalSlug).isPresent()) {
-            finalSlug = baseSlug + "-" + counter;
-            counter++;
+            finalSlug = baseSlug + "-" + counter++;
         }
         return finalSlug;
     }

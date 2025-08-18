@@ -26,7 +26,7 @@ public class QuanLyKhachHangController {
             @RequestParam(required = false) String searchField,
             @RequestParam(required = false) String searchValue,
             @RequestParam(required = false) TrangThaiTaiKhoan trangThai, // Nếu không truyền, sẽ lấy tất cả
-            @PageableDefault(size = 20, sort = "maKhachHang") Pageable pageable) {
+            @PageableDefault(size = 30, sort = "maKhachHang") Pageable pageable) {
         return ResponseEntity.ok(quanLyKhachHangService.getDSKhachHang(searchField, searchValue, trangThai, pageable));
     }
 

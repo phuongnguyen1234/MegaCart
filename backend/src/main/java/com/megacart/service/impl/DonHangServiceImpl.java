@@ -2,32 +2,27 @@ package com.megacart.service.impl;
 
 import com.megacart.dto.request.HuyDonHangRequest;
 import com.megacart.dto.response.ChiTietDonHangResponse;
-import com.megacart.dto.request.DatHangRequest;
-import com.megacart.dto.response.DatHangResponse;
 
 import com.megacart.dto.response.LichSuDonHangResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.enumeration.TrangThaiDonHang;
 import com.megacart.enumeration.TrangThaiSanPham;
-import com.megacart.enumeration.TrangThaiThanhToan;
 import com.megacart.enumeration.TrangThaiTonKho;
-import com.megacart.enumeration.TrangThaiXuLi;
 import com.megacart.exception.ResourceNotFoundException;
 import com.megacart.model.*;
 import com.megacart.repository.*;
 import com.megacart.service.DonHangService;
-import com.megacart.utils.ImageUtils;
 import com.megacart.utils.ThoiGianGiaoHangUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,10 +32,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DonHangServiceImpl implements DonHangService {
 
-    private final SanPhamRepository sanPhamRepository;
     private final DonHangRepository donHangRepository;
-    private final ChiTietGioHangRepository chiTietGioHangRepository;
-    private final KhachHangRepository khachHangRepository;
+    private final ChiTietDonHangRepository chiTietDonHangRepository;
 
     
 
@@ -55,14 +48,28 @@ public class DonHangServiceImpl implements DonHangService {
         LocalDateTime startOfDay = (tuNgay != null) ? tuNgay.atStartOfDay() : null;
         LocalDateTime endOfDay = (denNgay != null) ? denNgay.atTime(LocalTime.MAX) : null;
 
-        // Gọi phương thức repository duy nhất, truyền tất cả các tham số (một số có thể là null)
+        // Bước 1: Lấy trang danh sách đơn hàng (không kèm chi tiết)
         Page<DonHang> donHangPage = donHangRepository.findByMaKhachHangAndTrangThaiDonHang(maKhachHang, trangThai, tuKhoa, startOfDay, endOfDay, pageable);
-        // 2. Chuyển đổi từ List<DonHang> sang List<LichSuDonHangResponse>
-        List<LichSuDonHangResponse> lichSuDonHangs = donHangPage.getContent().stream()
-                .map(this::mapToLichSuDonHangResponse)
+
+        List<DonHang> donHangsOnPage = donHangPage.getContent();
+        if (donHangsOnPage.isEmpty()) {
+            return new PagedResponse<>(Collections.emptyList(), donHangPage.getNumber(), donHangPage.getSize(), donHangPage.getTotalElements(), donHangPage.getTotalPages(), null);
+        }
+
+        // Bước 2: Lấy tất cả chi tiết đơn hàng cho các đơn hàng trên trang hiện tại trong 1 query
+        List<Integer> donHangIds = donHangsOnPage.stream().map(DonHang::getMaDonHang).toList();
+        List<ChiTietDonHang> allDetails = chiTietDonHangRepository.findByDonHang_MaDonHangIn(donHangIds);
+
+        // Nhóm các chi tiết theo mã đơn hàng
+        Map<Integer, List<ChiTietDonHang>> detailsByOrderId = allDetails.stream()
+                .collect(Collectors.groupingBy(ct -> ct.getDonHang().getMaDonHang()));
+
+        // Bước 3: Ánh xạ sang DTO, sử dụng danh sách chi tiết đã được nhóm
+        List<LichSuDonHangResponse> lichSuDonHangs = donHangsOnPage.stream()
+                .map(donHang -> mapToLichSuDonHangResponse(donHang, detailsByOrderId.getOrDefault(donHang.getMaDonHang(), Collections.emptyList())))
                 .collect(Collectors.toList());
 
-        // 3. Tạo và trả về PagedResponse
+        // Bước 4. Tạo và trả về PagedResponse
         return new PagedResponse<>(
                 lichSuDonHangs,
                 donHangPage.getNumber(),
@@ -78,9 +85,7 @@ public class DonHangServiceImpl implements DonHangService {
      * @param donHang Đối tượng DonHang entity.
      * @return Đối tượng LichSuDonHangResponse DTO.
      */
-    private LichSuDonHangResponse mapToLichSuDonHangResponse(DonHang donHang) {
-        List<ChiTietDonHang> chiTietDonHangs = donHang.getChiTietDonHangs();
-
+    private LichSuDonHangResponse mapToLichSuDonHangResponse(DonHang donHang, List<ChiTietDonHang> chiTietDonHangs) {
         if (chiTietDonHangs.isEmpty()) {
             // Trường hợp hiếm gặp: đơn hàng không có sản phẩm nào.
             // Trả về thông tin cơ bản của đơn hàng.
