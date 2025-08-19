@@ -337,6 +337,7 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
                 .danhMucCon(danhMucCon)
                 .donGia(sanPham.getDonGia())
                 .trangThai(sanPham.getTrangThai())
+                .nhan(sanPham.getNhan())
                 .anhMinhHoaChinh(anhChinhUrl)
                 .build();
     }

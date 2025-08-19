@@ -14,6 +14,7 @@ import com.megacart.dto.response.ChiTietKhoResponse;
 import com.megacart.enumeration.HinhThucCapNhatKho;
 import com.megacart.exception.ResourceNotFoundException;
 import jakarta.persistence.criteria.JoinType;
+import com.megacart.utils.ImageUtils;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -43,9 +44,11 @@ public class QuanLyKhoServiceImpl implements QuanLyKhoService {
             // Để tránh N+1, fetch sẵn các entity liên quan.
             // Từ Kho -> SanPham -> DanhMuc -> DanhMucCha
             if (Long.class != query.getResultType() && long.class != query.getResultType()) {
-                root.fetch("sanPham", JoinType.LEFT)
+                var sanPhamFetch = root.fetch("sanPham", JoinType.LEFT);
+                sanPhamFetch
                         .fetch("danhMuc", JoinType.LEFT)
                         .fetch("danhMucCha", JoinType.LEFT);
+                sanPhamFetch.fetch("anhMinhHoas", JoinType.LEFT);
             }
 
             List<Predicate> predicates = new ArrayList<>();
@@ -84,11 +87,15 @@ public class QuanLyKhoServiceImpl implements QuanLyKhoService {
         DanhMuc danhMucCon = sanPham.getDanhMuc();
         DanhMuc danhMucCha = (danhMucCon != null) ? danhMucCon.getDanhMucCha() : null;
 
+        // Lấy URL ảnh chính để hiển thị
+        String anhChinhUrl = ImageUtils.getAnhMinhHoaChinhUrl(sanPham.getAnhMinhHoas());
+
         return KhoResponse.builder()
                 .maSanPham(kho.getMaSanPham())
                 .tenSanPham(sanPham.getTenSanPham())
                 .danhMucCha(danhMucCha != null ? danhMucCha.getTenDanhMuc() : null)
                 .danhMucCon(danhMucCon != null ? danhMucCon.getTenDanhMuc() : null)
+                .anhMinhHoaChinh(anhChinhUrl)
                 .soLuong(kho.getSoLuong())
                 .noiDungCapNhat(kho.getNoiDungCapNhat())
                 .build();
