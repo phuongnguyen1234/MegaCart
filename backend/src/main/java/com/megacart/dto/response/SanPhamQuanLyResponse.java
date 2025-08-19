@@ -1,6 +1,7 @@
 package com.megacart.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.megacart.enumeration.NhanSanPham;
 import com.megacart.enumeration.TrangThaiSanPham;
 import lombok.Builder;
 import lombok.Data;
@@ -16,5 +17,6 @@ public class SanPhamQuanLyResponse {
     private String danhMucCon;
     private int donGia;
     private TrangThaiSanPham trangThai;
+    private NhanSanPham nhan;
     private String thongBao;
 }
