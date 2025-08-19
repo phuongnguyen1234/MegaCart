@@ -4,6 +4,7 @@ import com.megacart.enumeration.TrangThaiTaiKhoan;
 import com.megacart.enumeration.ViTri;
 import com.megacart.model.NhanVien;
 import com.megacart.model.TaiKhoan;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
@@ -18,16 +19,18 @@ public class TimKiemNhanVienSpecification {
 
     private static final String TAI_KHOAN = "taiKhoan";
 
-    public Specification<NhanVien> filterBy(String searchField, String searchValue, ViTri viTri, boolean hienThiTaiKhoanBiKhoa) {
+    public Specification<NhanVien> filterBy(String searchField, String searchValue, ViTri viTri, TrangThaiTaiKhoan trangThai) {
         return (root, query, criteriaBuilder) -> {
+            // Để tránh N+1 query, fetch sẵn tài khoản
+            if (Long.class != query.getResultType() && long.class != query.getResultType()) {
+                root.fetch(TAI_KHOAN, JoinType.LEFT);
+            }
+
             List<Predicate> predicates = new ArrayList<>();
             Join<NhanVien, TaiKhoan> taiKhoanJoin = root.join(TAI_KHOAN);
 
-            // Lọc theo trạng thái tài khoản
-            if (hienThiTaiKhoanBiKhoa) {
-                predicates.add(criteriaBuilder.equal(taiKhoanJoin.get("trangThaiTaiKhoan"), TrangThaiTaiKhoan.KHOA));
-            } else {
-                predicates.add(criteriaBuilder.equal(taiKhoanJoin.get("trangThaiTaiKhoan"), TrangThaiTaiKhoan.HOAT_DONG));
+            if (trangThai != null) {
+                predicates.add(criteriaBuilder.equal(taiKhoanJoin.get("trangThaiTaiKhoan"), trangThai));
             }
 
             // Lọc theo vị trí (nếu có)

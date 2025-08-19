@@ -2,8 +2,7 @@ package com.megacart.repository.specification;
 
 import com.megacart.enumeration.TrangThaiTaiKhoan;
 import com.megacart.model.KhachHang;
-import com.megacart.model.TaiKhoan;
-import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
@@ -15,49 +14,31 @@ import java.util.List;
 @Component
 public class TimKiemKhachHangSpecification {
 
-    private static final String TAI_KHOAN = "taiKhoan";
-
-    public Specification<KhachHang> filterBy(String searchField, String searchValue, boolean hienThiTaiKhoanBiKhoa) {
-        return (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            Join<KhachHang, TaiKhoan> taiKhoanJoin = root.join(TAI_KHOAN);
-
-            // Lọc theo trạng thái tài khoản một cách linh hoạt
-            if (hienThiTaiKhoanBiKhoa) {
-                // Nếu checkbox được chọn, chỉ hiển thị các tài khoản có trạng thái là KHOA
-                predicates.add(criteriaBuilder.equal(taiKhoanJoin.get("trangThaiTaiKhoan"), TrangThaiTaiKhoan.KHOA));
-            } else {
-                // Mặc định, chỉ lấy tài khoản HOAT_DONG
-                predicates.add(criteriaBuilder.equal(taiKhoanJoin.get("trangThaiTaiKhoan"), TrangThaiTaiKhoan.HOAT_DONG));
+    public Specification<KhachHang> filterBy(String searchField, String searchValue, TrangThaiTaiKhoan trangThai) {
+        return (root, query, cb) -> {
+            // Để tránh N+1 query, fetch sẵn tài khoản
+            if (Long.class != query.getResultType() && long.class != query.getResultType()) {
+                root.fetch("taiKhoan", JoinType.LEFT);
             }
 
+            List<Predicate> predicates = new ArrayList<>();
+
+            // Lọc theo trạng thái tài khoản. Nếu trangThai là null, không áp dụng bộ lọc này.
+            if (trangThai != null) {
+                predicates.add(cb.equal(root.get("taiKhoan").get("trangThaiTaiKhoan"), trangThai));
+            }
+
+            // Lọc theo trường tìm kiếm và giá trị tìm kiếm
             if (StringUtils.hasText(searchField) && StringUtils.hasText(searchValue)) {
-                switch (searchField) {
-                    case "maKhachHang":
-                        try {
-                            predicates.add(criteriaBuilder.equal(root.get("maKhachHang"), Integer.parseInt(searchValue)));
-                        } catch (NumberFormatException e) {
-                            // Nếu giá trị tìm kiếm không phải là số, không thể khớp với mã khách hàng.
-                            // Tạo một điều kiện luôn sai để không trả về kết quả nào.
-                            predicates.add(criteriaBuilder.disjunction());
-                        }
-                        break;
-                    case "tenKhachHang":
-                        predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("tenKhachHang")), "%" + searchValue.toLowerCase() + "%"));
-                        break;
-                    case "email":
-                        predicates.add(criteriaBuilder.like(criteriaBuilder.lower(taiKhoanJoin.get("email")), "%" + searchValue.toLowerCase() + "%"));
-                        break;
-                    case "diaChi":
-                        predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("diaChi")), "%" + searchValue.toLowerCase() + "%"));
-                        break;
-                    case "soDienThoai":
-                        predicates.add(criteriaBuilder.like(taiKhoanJoin.get("soDienThoai"), "%" + searchValue + "%"));
-                        break;
+                switch (searchField.toLowerCase()) {
+                    case "tenkhachhang" -> predicates.add(cb.like(cb.lower(root.get("tenKhachHang")), "%" + searchValue.toLowerCase() + "%"));
+                    case "email" -> predicates.add(cb.like(cb.lower(root.get("taiKhoan").get("email")), "%" + searchValue.toLowerCase() + "%"));
+                    case "sodienthoai" -> predicates.add(cb.like(root.get("taiKhoan").get("soDienThoai"), "%" + searchValue + "%"));
+                    // Có thể thêm các trường tìm kiếm khác ở đây
                 }
             }
 
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
 }

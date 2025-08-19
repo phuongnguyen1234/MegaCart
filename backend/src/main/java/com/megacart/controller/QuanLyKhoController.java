@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/quan-ly/kho")
 @RequiredArgsConstructor
-@PreAuthorize("hasAuthority('ADMIN')") // Chỉ Admin mới có quyền quản lý kho
+@PreAuthorize("hasAuthority('NHAN_VIEN_QUAN_LI_KHO') or hasAuthority('ADMIN')") // Nhân viên quản lý kho và admin mới được phép truy cập
 public class QuanLyKhoController {
 
     private final QuanLyKhoService quanLyKhoService;

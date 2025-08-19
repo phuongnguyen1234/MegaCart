@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -15,7 +16,16 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
+public interface DonHangRepository extends JpaRepository<DonHang, Integer>, JpaSpecificationExecutor<DonHang> {
+
+    /**
+     * Ghi đè phương thức findById để luôn fetch các quan hệ cần thiết cho trang chi tiết.
+     * @param maDonHang ID của đơn hàng.
+     * @return Optional chứa đơn hàng nếu tìm thấy.
+     */
+    @Override
+    @EntityGraph(attributePaths = {"khachHang", "chiTietDonHangs.sanPham.anhMinhHoas", "chiTietDonHangs.sanPham.kho"})
+    Optional<DonHang> findById(Integer maDonHang);
 
     @EntityGraph(attributePaths = {"chiTietDonHangs", "chiTietDonHangs.sanPham"})
     Optional<DonHang> findByMaDonHangAndKhachHang_MaKhachHang(Integer maDonHang, Integer maKhachHang);
@@ -31,7 +41,6 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
            "AND (:tuKhoa IS NULL OR CAST(d.maDonHang AS string) LIKE %:tuKhoa% OR EXISTS (SELECT 1 FROM ChiTietDonHang ctdh WHERE ctdh.donHang = d AND ctdh.tenSanPham LIKE %:tuKhoa%)) " +
            "AND (:tuNgay IS NULL OR d.thoiGianDatHang >= :tuNgay) " +
            "AND (:denNgay IS NULL OR d.thoiGianDatHang <= :denNgay)")
-    @EntityGraph(attributePaths = {"chiTietDonHangs", "chiTietDonHangs.sanPham"}) // Tối ưu query để lấy chi tiết đơn hàng
     Page<DonHang> findByMaKhachHangAndTrangThaiDonHang(
             @Param("maKhachHang") Integer maKhachHang,
             @Param("trangThai") TrangThaiDonHang trangThai,

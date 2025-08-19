@@ -9,7 +9,6 @@ import com.megacart.exception.ResourceNotFoundException;
 import com.megacart.model.KhachHang;
 import com.megacart.repository.DonHangRepository;
 import com.megacart.repository.KhachHangRepository;
-import com.megacart.repository.TaiKhoanRepository;
 import com.megacart.repository.specification.TimKiemKhachHangSpecification;
 import com.megacart.service.QuanLyKhachHangService;
 import lombok.RequiredArgsConstructor;
@@ -27,15 +26,14 @@ import java.util.stream.Collectors;
 public class QuanLyKhachHangServiceImpl implements QuanLyKhachHangService {
 
     private final KhachHangRepository khachHangRepository;
-    private final TaiKhoanRepository taiKhoanRepository; // Sẽ cần để cập nhật trạng thái
     private final DonHangRepository donHangRepository;
     private final TimKiemKhachHangSpecification timKiemKhachHangSpecification;
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<HienThiDanhSachKhachHangResponse> getDSKhachHang(String searchField, String searchValue, boolean hienThiTaiKhoanBiKhoa, Pageable pageable) {
+    public PagedResponse<HienThiDanhSachKhachHangResponse> getDSKhachHang(String searchField, String searchValue, TrangThaiTaiKhoan trangThai, Pageable pageable) {
         // 1. Tạo Specification để xây dựng câu lệnh WHERE động
-        Specification<KhachHang> spec = timKiemKhachHangSpecification.filterBy(searchField, searchValue, hienThiTaiKhoanBiKhoa);
+        Specification<KhachHang> spec = timKiemKhachHangSpecification.filterBy(searchField, searchValue, trangThai);
 
         // 2. Thực thi truy vấn với các điều kiện lọc và phân trang
         Page<KhachHang> khachHangPage = khachHangRepository.findAll(spec, pageable);

@@ -5,6 +5,7 @@ import com.megacart.dto.request.CapNhatNhanVienRequest;
 import com.megacart.dto.request.ThemNhanVienRequest;
 import com.megacart.dto.response.HienThiDanhSachNhanVienResponse;
 import com.megacart.dto.response.PagedResponse;
+import com.megacart.enumeration.TrangThaiTaiKhoan;
 import com.megacart.enumeration.ViTri;
 import org.springframework.data.domain.Pageable;
 
@@ -14,7 +15,7 @@ public interface QuanLyNhanVienService {
      * @param pageable Thông tin phân trang và sắp xếp.
      * @return Một trang chứa thông tin các nhân viên.
      */
-    PagedResponse<HienThiDanhSachNhanVienResponse> getDSNhanVien(String searchField, String searchValue, ViTri viTri, boolean hienThiTaiKhoanBiKhoa, Pageable pageable);
+    PagedResponse<HienThiDanhSachNhanVienResponse> getDSNhanVien(String searchField, String searchValue, ViTri viTri, TrangThaiTaiKhoan trangThai, Pageable pageable);
 
     /**
      * Tạo một tài khoản nhân viên mới.

@@ -5,6 +5,7 @@ import com.megacart.dto.request.CapNhatNhanVienRequest;
 import com.megacart.dto.request.ThemNhanVienRequest;
 import com.megacart.dto.response.HienThiDanhSachNhanVienResponse;
 import com.megacart.dto.response.PagedResponse;
+import com.megacart.enumeration.TrangThaiTaiKhoan;
 import com.megacart.enumeration.ViTri;
 import com.megacart.service.QuanLyNhanVienService;
 import jakarta.validation.Valid;
@@ -37,10 +38,10 @@ public class QuanLyNhanVienController {
             @RequestParam(required = false) String searchField,
             @RequestParam(required = false) String searchValue,
             @RequestParam(required = false) ViTri viTri,
-            @RequestParam(defaultValue = "false") boolean hienThiTaiKhoanBiKhoa,
+            @RequestParam(required = false) TrangThaiTaiKhoan trangThai,
             @PageableDefault(size = 30, sort = "hoTen", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        return ResponseEntity.ok(quanLyNhanVienService.getDSNhanVien(searchField, searchValue, viTri, hienThiTaiKhoanBiKhoa, pageable));
+        return ResponseEntity.ok(quanLyNhanVienService.getDSNhanVien(searchField, searchValue, viTri, trangThai, pageable));
     }
 
     /**
