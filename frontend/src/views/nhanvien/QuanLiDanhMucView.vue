@@ -112,6 +112,7 @@ import {
   TrangThaiDanhMucLabel,
 } from "@/types/danhmuc.types";
 import { useToast } from "@/composables/useToast";
+import { useDanhMucStore } from "@/store/danhmuc.store";
 
 // --- State ---
 const loaiTimKiem = ref("tenDanhMuc");
@@ -122,6 +123,7 @@ const isEditMode = ref(false);
 const selectedCategory = ref<ChiTietDanhMucQuanLyResponse | null>(null);
 const isLoading = ref(false);
 const { showToast } = useToast();
+const danhMucStore = useDanhMucStore();
 
 const allDanhMuc = ref<DanhMucQuanLyResponse[]>([]);
 
@@ -162,6 +164,7 @@ const closeModal = () => {
 
 const handleSuccess = () => {
   fetchDanhMuc();
+  danhMucStore.fetchMenuDanhMuc(true); // Ép store tải lại dữ liệu mới
 };
 
 // --- Phân trang ---

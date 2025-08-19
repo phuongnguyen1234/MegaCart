@@ -42,13 +42,18 @@
             Trạng thái tài khoản
           </label>
           <select
-            id="trang-thai-filter"
-            v-model="trangThaiFilter"
-            class="border border-gray-300 rounded-md bg-gray-50 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+            id="trang-thai"
+            v-model="selectedTrangThai"
+            class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
           >
-            <option value="all">Tất cả</option>
-            <option value="Hoạt động">Hoạt động</option>
-            <option value="Khóa">Khóa</option>
+            <option value="">Tất cả</option>
+            <option
+              v-for="(label, key) in TrangThaiTaiKhoanLabel"
+              :key="key"
+              :value="key"
+            >
+              {{ label }}
+            </option>
           </select>
         </div>
       </div>
@@ -114,7 +119,7 @@
       :visible="isModalVisible"
       :nhan-vien="selectedNhanVien"
       @close="closeModal"
-      @save="handleSave"
+      @success="handleSuccess"
     />
   </div>
 </template>
@@ -129,12 +134,15 @@ import {
   TrangThaiTaiKhoanKey,
   TrangThaiTaiKhoanLabel,
 } from "@/types/khachhang.types";
-import type { HienThiDanhSachNhanVienResponse } from "@/types/nhanvien.types";
+import type {
+  HienThiDanhSachNhanVienResponse,
+  GetNhanVienParams,
+} from "@/types/nhanvien.types";
 import { getDanhSachNhanVien } from "@/service/quanlinhanvien.service";
 
 // State cho bộ lọc, tìm kiếm
-const selectedViTri = ref<string | "">("");
-const trangThaiFilter = ref<string>("all");
+const selectedViTri = ref<ViTriKey | "">("");
+const selectedTrangThai = ref<TrangThaiTaiKhoanKey | "">("");
 const loaiTimKiem = ref<"hoTen" | "email" | "soDienThoai">("hoTen");
 const tuKhoa = ref("");
 const isLoading = ref(false);
@@ -156,18 +164,13 @@ const dsTieuChiTimKiem = [
 const fetchNhanVien = async () => {
   isLoading.value = true;
   try {
-    const params = {
+    const params: GetNhanVienParams = {
       page: trangHienTai.value,
       size: soLuongMoiTrang.value,
       searchField: tuKhoa.value ? loaiTimKiem.value : undefined,
       searchValue: tuKhoa.value || undefined,
-      viTri: selectedViTri.value ? selectedViTri.value : undefined,
-      trangThai:
-        trangThaiFilter.value === "all"
-          ? undefined
-          : trangThaiFilter.value === "Hoạt động"
-          ? TrangThaiTaiKhoanKey.HOAT_DONG
-          : TrangThaiTaiKhoanKey.KHOA,
+      viTri: selectedViTri.value || undefined,
+      trangThai: selectedTrangThai.value || undefined,
     };
     const response = await getDanhSachNhanVien(params);
     danhSachNhanVien.value = response.content;
@@ -181,10 +184,18 @@ const fetchNhanVien = async () => {
 };
 
 // Theo dõi thay đổi bộ lọc/tìm kiếm để tự động fetch lại
+watch([selectedViTri, selectedTrangThai, loaiTimKiem, tuKhoa], () => {
+  // Reset về trang đầu tiên khi người dùng thay đổi bộ lọc
+  trangHienTai.value = 0;
+});
+
+// Fetch lại dữ liệu khi trang hoặc các bộ lọc thay đổi
 watch(
-  [selectedViTri, trangThaiFilter, loaiTimKiem, tuKhoa, trangHienTai],
+  [trangHienTai, selectedViTri, selectedTrangThai, loaiTimKiem, tuKhoa],
   fetchNhanVien,
-  { immediate: true }
+  {
+    immediate: true,
+  }
 );
 
 // Hiển thị số lượng
@@ -253,6 +264,9 @@ const closeModal = () => {
   selectedNhanVien.value = null;
 };
 
-// handleSave sẽ để trống, xử lý sau
-const handleSave = () => {};
+// Hàm xử lý khi thêm/sửa thành công
+const handleSuccess = () => {
+  // Tải lại danh sách nhân viên để hiển thị dữ liệu mới nhất
+  fetchNhanVien();
+};
 </script>

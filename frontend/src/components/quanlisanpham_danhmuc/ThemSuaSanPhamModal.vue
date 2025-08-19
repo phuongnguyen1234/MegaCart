@@ -103,6 +103,25 @@
           />
         </div>
 
+        <!-- Nhãn -->
+        <div>
+          <label for="nhan">Nhãn sản phẩm</label>
+          <select
+            id="nhan"
+            v-model="formData.nhan"
+            class="input w-full mt-1"
+            required
+          >
+            <option
+              v-for="(label, key) in NhanSanPhamLabel"
+              :key="key"
+              :value="key"
+            >
+              {{ label }}
+            </option>
+          </select>
+        </div>
+
         <!-- Ghi chú chiếm 2 cột -->
         <div class="col-span-2">
           <label for="ghiChu">Ghi chú (Tùy chọn)</label>
@@ -158,7 +177,8 @@
             <div
               v-for="image in existingImages"
               :key="image.maAnh"
-              class="relative group"
+              class="relative group cursor-pointer"
+              @click="setPrimaryImage('existing', image.duongDan)"
             >
               <img
                 :src="image.duongDan"
@@ -166,11 +186,11 @@
                 class="w-full h-24 object-cover rounded-lg border"
                 :class="{
                   'ring-2 ring-offset-2 ring-blue-500':
-                    image.maAnh === primaryImageIdentifier,
+                    primaryImageIdentifier === image.duongDan,
                 }"
               />
               <button
-                @click="removeExistingImage(image)"
+                @click.stop="removeExistingImage(image)"
                 class="absolute top-1 right-1 bg-black/50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 ✕
@@ -180,15 +200,20 @@
             <div
               v-for="(preview, index) in newImagePreviews"
               :key="index"
-              class="relative group"
+              class="relative group cursor-pointer"
+              @click="setPrimaryImage('new', index)"
             >
               <img
                 :src="preview"
                 alt="Ảnh xem trước"
                 class="w-full h-24 object-cover rounded-lg border"
+                :class="{
+                  'ring-2 ring-offset-2 ring-blue-500':
+                    primaryImageIdentifier === newImageFiles[index]?.name,
+                }"
               />
               <button
-                @click="removeNewImage(index)"
+                @click.stop="removeNewImage(index)"
                 class="absolute top-1 right-1 bg-black/50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 ✕
@@ -234,7 +259,11 @@ import type {
   ChiTietSanPhamQuanLyResponse,
   AnhMinhHoa,
 } from "@/types/sanpham.types";
-import { TrangThaiSanPhamKey } from "@/types/sanpham.types";
+import {
+  TrangThaiSanPhamKey,
+  NhanSanPhamKey,
+  NhanSanPhamLabel,
+} from "@/types/sanpham.types";
 
 const props = defineProps<{
   visible: boolean;
@@ -264,10 +293,13 @@ const initialFormData: ThemSanPhamRequest = {
   maDanhMuc: 0,
   nhaSanXuat: "",
   trangThai: TrangThaiSanPhamKey.BAN,
+  nhan: NhanSanPhamKey.MOI,
+  anhChinhIndex: 0, // Mặc định ảnh đầu tiên là ảnh chính
 };
 
 const formData = ref<ThemSanPhamRequest>({ ...initialFormData });
 const initialEditData = ref<ThemSanPhamRequest | null>(null); // Lưu trạng thái ban đầu để so sánh
+const initialPrimaryImageIdentifier = ref<string | null>(null);
 const selectedDanhMucCha = ref<number | "">("");
 const isLoading = ref(false);
 
@@ -276,8 +308,8 @@ const fileInputRef = ref<HTMLInputElement | null>(null);
 const newImageFiles = ref<File[]>([]);
 const newImagePreviews = ref<string[]>([]);
 const existingImages = ref<AnhMinhHoa[]>([]);
-const imagesToDelete = ref<number[]>([]);
-const primaryImageIdentifier = ref<number | string | null>(null); // Lưu maAnh (number) hoặc preview URL (string)
+const urlsAnhXoaToDelete = ref<string[]>([]);
+const primaryImageIdentifier = ref<string | null>(null); // Lưu URL hoặc tên file của ảnh chính
 
 // --- Computed Properties ---
 const isFormDirty = computed(() => {
@@ -292,11 +324,16 @@ const isFormDirty = computed(() => {
   }
 
   // 2. Kiểm tra có ảnh cũ bị xóa không
-  if (imagesToDelete.value.length > 0) {
+  if (urlsAnhXoaToDelete.value.length > 0) {
     return true;
   }
 
-  // 3. So sánh dữ liệu form (dùng JSON.stringify để so sánh sâu)
+  // 3. Kiểm tra ảnh chính có thay đổi không
+  if (primaryImageIdentifier.value !== initialPrimaryImageIdentifier.value) {
+    return true;
+  }
+
+  // 4. So sánh dữ liệu form (dùng JSON.stringify để so sánh sâu)
   return (
     JSON.stringify(formData.value) !== JSON.stringify(initialEditData.value)
   );
@@ -359,8 +396,9 @@ const resetFormState = () => {
   newImageFiles.value = [];
   newImagePreviews.value = [];
   existingImages.value = [];
-  imagesToDelete.value = [];
+  urlsAnhXoaToDelete.value = [];
   primaryImageIdentifier.value = null;
+  initialPrimaryImageIdentifier.value = null;
 };
 
 const populateFormForEdit = async (sanPham: ChiTietSanPhamQuanLyResponse) => {
@@ -373,11 +411,21 @@ const populateFormForEdit = async (sanPham: ChiTietSanPhamQuanLyResponse) => {
     maDanhMuc: sanPham.maDanhMuc,
     nhaSanXuat: sanPham.nhaSanXuat,
     trangThai: sanPham.trangThai.value, // Lấy key từ object
+    nhan: sanPham.nhan.value, // Lấy key từ object
+    anhChinhIndex: 0, // Placeholder for edit mode to satisfy the type
   };
   // Điền dữ liệu vào form và lưu lại trạng thái ban đầu để so sánh
   formData.value = { ...populatedData };
   initialEditData.value = { ...populatedData };
   existingImages.value = [...sanPham.anhMinhHoas];
+
+  // Set ảnh chính ban đầu
+  const anhChinh = sanPham.anhMinhHoas.find((a) => a.laAnhChinh);
+  const initialPrimary = anhChinh
+    ? anhChinh.duongDan
+    : sanPham.anhMinhHoas[0]?.duongDan || null;
+  primaryImageIdentifier.value = initialPrimary;
+  initialPrimaryImageIdentifier.value = initialPrimary;
 
   // Tìm và set danh mục cha
   const parent = findParentCategoryByChildId(sanPham.maDanhMuc);
@@ -405,21 +453,49 @@ const handleFileChange = (event: Event) => {
   }
 };
 
+const setPrimaryImage = (
+  type: "existing" | "new",
+  identifier: string | number
+) => {
+  if (type === "existing") {
+    primaryImageIdentifier.value = identifier as string;
+  } else {
+    const file = newImageFiles.value[identifier as number];
+    if (file) {
+      primaryImageIdentifier.value = file.name;
+    }
+  }
+};
+
 const removeNewImage = (index: number) => {
+  const fileToRemove = newImageFiles.value[index];
   const urlToRemove = newImagePreviews.value[index];
+
+  // Nếu ảnh bị xóa là ảnh chính, reset lại
+  if (primaryImageIdentifier.value === fileToRemove.name) {
+    primaryImageIdentifier.value = null;
+  }
+
   URL.revokeObjectURL(urlToRemove); // Giải phóng bộ nhớ
   newImageFiles.value.splice(index, 1);
   newImagePreviews.value.splice(index, 1);
 };
 
 const removeExistingImage = (image: AnhMinhHoa) => {
-  if (image.maAnh) {
-    imagesToDelete.value.push(image.maAnh);
-    // Xóa khỏi danh sách hiển thị
-    existingImages.value = existingImages.value.filter(
-      (img) => img.maAnh !== image.maAnh
-    );
+  if (!image.duongDan) return;
+
+  // Nếu ảnh bị xóa là ảnh chính, reset lại
+  if (primaryImageIdentifier.value === image.duongDan) {
+    primaryImageIdentifier.value = null;
   }
+
+  // Thêm URL vào danh sách cần xóa
+  urlsAnhXoaToDelete.value.push(image.duongDan);
+
+  // Xóa khỏi danh sách hiển thị
+  existingImages.value = existingImages.value.filter(
+    (img) => img.duongDan !== image.duongDan
+  );
 };
 
 const handleSubmit = async () => {
@@ -437,10 +513,28 @@ const handleSubmit = async () => {
   try {
     if (props.isEditMode && props.sanPhamSua) {
       // --- Logic Cập nhật ---
+      if (!primaryImageIdentifier.value) {
+        showToast({
+          loai: "loi",
+          thongBao: "Vui lòng chọn một ảnh làm ảnh chính.",
+        });
+        isLoading.value = false;
+        return;
+      }
+
       const updateData: CapNhatSanPhamRequest = {
         ...formData.value,
-        maAnhCanXoa: imagesToDelete.value,
+        urlsAnhXoa:
+          urlsAnhXoaToDelete.value.length > 0
+            ? urlsAnhXoaToDelete.value
+            : undefined,
+        anhChinhIdentifier: primaryImageIdentifier.value,
       };
+
+      // Xóa các trường không cần thiết cho payload cập nhật
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (updateData as any).anhChinhIndex;
+
       await capNhatSanPham(
         props.sanPhamSua.maSanPham,
         updateData,
@@ -452,7 +546,23 @@ const handleSubmit = async () => {
       });
     } else {
       // --- Logic Thêm mới ---
-      await themSanPham(formData.value, newImageFiles.value);
+      // Xác định index của ảnh chính
+      let anhChinhIndex = 0; // Mặc định là ảnh đầu tiên
+      if (primaryImageIdentifier.value) {
+        const foundIndex = newImageFiles.value.findIndex(
+          (f) => f.name === primaryImageIdentifier.value
+        );
+        if (foundIndex !== -1) {
+          anhChinhIndex = foundIndex;
+        }
+      }
+
+      const payload: ThemSanPhamRequest = {
+        ...formData.value,
+        anhChinhIndex: anhChinhIndex,
+      };
+
+      await themSanPham(payload, newImageFiles.value);
       showToast({
         loai: "thanhCong",
         thongBao: "Thêm sản phẩm mới thành công!",

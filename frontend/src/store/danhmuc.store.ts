@@ -11,9 +11,9 @@ export const useDanhMucStore = defineStore("danhMuc", () => {
   const error = ref<string | null>(null);
 
   // --- Actions ---
-  async function fetchMenuDanhMuc() {
-    // Không tải lại nếu dữ liệu đã có sẵn
-    if (menuItems.value.length > 0) {
+  async function fetchMenuDanhMuc(force: boolean = false) {
+    // Không tải lại nếu dữ liệu đã có sẵn và không bị ép buộc
+    if (menuItems.value.length > 0 && !force) {
       return;
     }
 

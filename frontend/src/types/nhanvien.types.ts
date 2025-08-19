@@ -60,7 +60,6 @@ export interface ThemNhanVienRequest {
   hoTen: string;
   email: string;
   soDienThoai: string;
-  matKhau: string;
   viTri: ViTriKey;
 }
 
@@ -70,7 +69,7 @@ export interface ThemNhanVienRequest {
  * Tất cả các trường đều là tùy chọn.
  */
 export type CapNhatNhanVienRequest = Partial<
-  Pick<ThemNhanVienRequest, "hoTen" | "soDienThoai" | "viTri"> & {
+  Pick<ThemNhanVienRequest, "hoTen" | "email" | "soDienThoai" | "viTri"> & {
     trangThai: TrangThaiTaiKhoanKey;
   }
 >;

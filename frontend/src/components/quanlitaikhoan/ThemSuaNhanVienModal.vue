@@ -1,11 +1,13 @@
 <template>
   <BaseModal
     :visible="visible"
-    :title="isEditing ? 'Cập nhật nhân viên' : 'Thêm nhân viên'"
+    :title="isEditing ? 'Cập nhật thông tin nhân viên' : 'Thêm nhân viên mới'"
     @close="closeModal"
+    width-class="w-[600px]"
   >
     <form @submit.prevent="handleSubmit">
       <div class="space-y-4">
+        <!-- Tên nhân viên -->
         <div>
           <label for="ten" class="block text-sm font-medium text-gray-700"
             >Tên nhân viên</label
@@ -15,10 +17,12 @@
             v-model="formData.hoTen"
             type="text"
             required
+            :disabled="isLoading"
             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
           />
         </div>
 
+        <!-- Email -->
         <div>
           <label for="email" class="block text-sm font-medium text-gray-700"
             >Email</label
@@ -28,10 +32,12 @@
             v-model="formData.email"
             type="email"
             required
+            :disabled="isLoading"
             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
           />
         </div>
 
+        <!-- Số điện thoại -->
         <div>
           <label
             for="soDienThoai"
@@ -43,10 +49,12 @@
             v-model="formData.soDienThoai"
             type="text"
             required
+            :disabled="isLoading"
             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
           />
         </div>
 
+        <!-- Vị trí -->
         <div>
           <label for="viTri" class="block text-sm font-medium text-gray-700"
             >Vị trí</label
@@ -54,15 +62,18 @@
           <select
             id="viTri"
             v-model="formData.viTri"
+            required
+            :disabled="isLoading"
             class="mt-1 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
           >
-            <option value="Quản lí đơn">Quản lí đơn</option>
-            <option value="Giao hàng">Giao hàng</option>
-            <option value="Quản lí kho">Quản lí kho</option>
+            <option v-for="(label, key) in ViTriLabel" :key="key" :value="key">
+              {{ label }}
+            </option>
           </select>
         </div>
 
-        <div>
+        <!-- Trạng thái (chỉ khi sửa) -->
+        <div v-if="isEditing">
           <label class="block text-sm font-medium text-gray-700"
             >Trạng thái tài khoản</label
           >
@@ -75,6 +86,7 @@
                 type="checkbox"
                 v-model="isTrangThaiHoatDong"
                 id="trangThai"
+                :disabled="isLoading"
                 class="sr-only peer"
               />
               <div
@@ -88,19 +100,23 @@
         </div>
       </div>
 
-      <div class="mt-4 flex justify-end">
+      <!-- Footer: Nút bấm -->
+      <div class="mt-6 flex justify-end gap-3">
         <button
           type="button"
           @click="closeModal"
-          class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow transition duration-300 ease-in-out mr-2"
+          :disabled="isLoading"
+          class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
         >
           Hủy
         </button>
         <button
           type="submit"
-          class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-300 ease-in-out"
+          :disabled="isLoading || (isEditing && !hasChanged)"
+          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
-          {{ isEditing ? "Cập nhật" : "Thêm" }}
+          <span v-if="isLoading">Đang xử lý...</span>
+          <span v-else>{{ isEditing ? "Cập nhật" : "Thêm" }}</span>
         </button>
       </div>
     </form>
@@ -108,62 +124,126 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
-import BaseModal from "../base/modals/BaseModal.vue";
-import type { NhanVien } from "@/types/QuanLiNhanVien";
+import { ref, watch, computed, reactive } from "vue";
+import BaseModal from "@/components/base/modals/BaseModal.vue";
+import { useToast } from "@/composables/useToast";
+import {
+  themNhanVien,
+  capNhatNhanVien,
+} from "@/service/quanlinhanvien.service";
+import type {
+  HienThiDanhSachNhanVienResponse,
+  ThemNhanVienRequest,
+  CapNhatNhanVienRequest,
+} from "@/types/nhanvien.types";
+import { ViTriKey, ViTriLabel } from "@/types/nhanvien.types";
+import { TrangThaiTaiKhoanKey } from "@/types/khachhang.types";
 
 const props = defineProps<{
   visible: boolean;
-  nhanVien: NhanVien | null;
+  nhanVien: HienThiDanhSachNhanVienResponse | null;
 }>();
 
 const emit = defineEmits<{
   (e: "close"): void;
-  (e: "save", data: NhanVien): void;
+  (e: "success"): void;
 }>();
 
-const isEditing = ref(false);
-const formData = ref<NhanVien>({
-  maNhanVien: "",
+const { showToast } = useToast();
+const isLoading = ref(false);
+
+const isEditing = computed(() => !!props.nhanVien);
+
+const createDefaultFormData = () => ({
   hoTen: "",
   email: "",
   soDienThoai: "",
-  viTri: "Quản lí đơn",
-  trangThai: "Hoạt động",
+  matKhau: "",
+  viTri: ViTriKey.NHAN_VIEN_QUAN_LI_DON,
+  trangThai: TrangThaiTaiKhoanKey.HOAT_DONG,
 });
 
+const formData = reactive(createDefaultFormData());
+const initialFormData = ref<string>("");
+
 const isTrangThaiHoatDong = computed({
-  get: () => formData.value.trangThai === "Hoạt động",
+  get: () => formData.trangThai === TrangThaiTaiKhoanKey.HOAT_DONG,
   set: (value) => {
-    formData.value.trangThai = value ? "Hoạt động" : "Khóa";
+    formData.trangThai = value
+      ? TrangThaiTaiKhoanKey.HOAT_DONG
+      : TrangThaiTaiKhoanKey.KHOA;
   },
 });
 
+const hasChanged = computed(() => {
+  if (!isEditing.value) return true;
+  return JSON.stringify(formData) !== initialFormData.value;
+});
+
 watch(
-  () => props.nhanVien,
-  (newVal) => {
-    if (newVal) {
-      isEditing.value = true;
-      formData.value = { ...newVal };
+  () => props.visible,
+  (isVisible) => {
+    if (!isVisible) return;
+
+    if (props.nhanVien) {
+      // Chế độ sửa
+      formData.hoTen = props.nhanVien.tenNhanVien;
+      formData.email = props.nhanVien.email;
+      formData.soDienThoai = props.nhanVien.soDienThoai;
+      formData.viTri = props.nhanVien.viTri.value;
+      formData.trangThai = props.nhanVien.trangThaiTaiKhoan.value;
+      formData.matKhau = ""; // Không cần mật khẩu khi sửa
+
+      // Lưu trạng thái ban đầu để so sánh
+      initialFormData.value = JSON.stringify(formData);
     } else {
-      isEditing.value = false;
-      formData.value = {
-        maNhanVien: "",
-        hoTen: "",
-        email: "",
-        soDienThoai: "",
-        viTri: "Quản lí đơn",
-        trangThai: "Hoạt động",
-      };
+      // Chế độ thêm mới
+      Object.assign(formData, createDefaultFormData());
+      initialFormData.value = "";
     }
   }
 );
 
 const closeModal = () => {
+  if (isLoading.value) return;
   emit("close");
 };
 
-const handleSubmit = () => {
-  emit("save", formData.value);
+const handleSubmit = async () => {
+  if (isLoading.value) return;
+  isLoading.value = true;
+  let isSuccess = false;
+
+  try {
+    if (isEditing.value && props.nhanVien) {
+      const payload: CapNhatNhanVienRequest = {
+        hoTen: formData.hoTen,
+        email: formData.email,
+        soDienThoai: formData.soDienThoai,
+        viTri: formData.viTri,
+        trangThai: formData.trangThai,
+      };
+      await capNhatNhanVien(props.nhanVien.maNhanVien, payload);
+      showToast({
+        loai: "thanhCong",
+        thongBao: "Cập nhật nhân viên thành công.",
+      });
+    } else {
+      const payload: ThemNhanVienRequest = { ...formData };
+      await themNhanVien(payload);
+      showToast({ loai: "thanhCong", thongBao: "Thêm nhân viên thành công." });
+    }
+    isSuccess = true;
+  } catch (error: any) {
+    const message = error.response?.data?.message || "Có lỗi xảy ra.";
+    showToast({ loai: "loi", thongBao: message });
+  } finally {
+    isLoading.value = false;
+  }
+
+  if (isSuccess) {
+    emit("success");
+    closeModal();
+  }
 };
 </script>

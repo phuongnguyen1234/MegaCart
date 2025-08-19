@@ -76,7 +76,7 @@ export interface ChiTietDanhMucQuanLyResponse {
   maDanhMuc: number;
   tenDanhMuc: string;
   maDanhMucCha?: number;
-  trangThai: TrangThaiDanhMucKey;
+  trangThai: TrangThaiDanhMucObject;
 }
 
 /**

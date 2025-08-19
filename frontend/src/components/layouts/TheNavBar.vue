@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed } from "vue";
+import { computed } from "vue";
 import { useDanhMucStore } from "@/store/danhmuc.store";
 import { storeToRefs } from "pinia";
 
@@ -91,9 +91,4 @@ const { menuItems, isLoading, error } = storeToRefs(danhMucStore);
 
 // Lấy 4 danh mục đầu tiên để hiển thị nổi bật
 const featuredMenuItems = computed(() => menuItems.value.slice(0, 4));
-
-onMounted(() => {
-  // Gọi action từ store để tải dữ liệu
-  danhMucStore.fetchMenuDanhMuc();
-});
 </script>

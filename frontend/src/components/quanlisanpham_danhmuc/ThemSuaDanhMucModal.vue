@@ -46,7 +46,7 @@
           >
             <option :value="undefined">-- Chọn danh mục cha --</option>
             <option
-              v-for="dmc in danhMucChaOptions"
+              v-for="dmc in filteredDanhMucChaOptions"
               :key="dmc.maDanhMuc"
               :value="dmc.maDanhMuc"
             >
@@ -87,7 +87,7 @@
           type="submit"
           class="btn btn-primary"
           @click="handleSubmit"
-          :disabled="isLoading"
+          :disabled="isLoading || (isEditMode && !hasChanged)"
         >
           {{ isEditMode ? "Cập nhật danh mục" : "Thêm danh mục" }}
         </button>
@@ -97,17 +97,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch } from "vue";
+import { useDanhMucStore } from "@/store/danhmuc.store";
 import BaseModal from "@/components/base/modals/BaseModal.vue";
-import {
-  themDanhMuc,
-  capNhatDanhMuc,
-  getDanhMucOptionsForFilter,
-} from "@/service/danhmuc.service";
+import { themDanhMuc, capNhatDanhMuc } from "@/service/danhmuc.service";
 import type {
   LuuDanhMucRequest,
   ChiTietDanhMucQuanLyResponse,
-  DanhMucOptionResponse,
 } from "@/types/danhmuc.types";
 import { TrangThaiDanhMucKey } from "@/types/danhmuc.types";
 import { useToast } from "@/composables/useToast";
@@ -127,9 +123,9 @@ const emit = defineEmits<{
 
 // --- State ---
 const { showToast } = useToast();
+const danhMucStore = useDanhMucStore();
 const isLoading = ref(false);
 const isDanhMucCha = ref(false);
-const danhMucChaOptions = ref<DanhMucOptionResponse[]>([]);
 
 const initialFormData: LuuDanhMucRequest = {
   tenDanhMuc: "",
@@ -137,6 +133,7 @@ const initialFormData: LuuDanhMucRequest = {
   trangThai: TrangThaiDanhMucKey.HOAT_DONG,
 };
 const formData = ref<LuuDanhMucRequest>({ ...initialFormData });
+const initialEditData = ref<string>(""); // Lưu trạng thái ban đầu để so sánh
 
 // --- Computed Properties ---
 const isTrangThaiHoatDong = computed({
@@ -148,27 +145,32 @@ const isTrangThaiHoatDong = computed({
   },
 });
 
+const filteredDanhMucChaOptions = computed(() => {
+  const options = danhMucStore.menuItems;
+  if (!props.isEditMode || !props.danhMucSua) {
+    return options;
+  }
+  // Khi sửa, loại bỏ chính danh mục đang sửa khỏi danh sách tùy chọn cha
+  return options.filter((opt) => opt.maDanhMuc !== props.danhMucSua!.maDanhMuc);
+});
+
+const hasChanged = computed(() => {
+  if (!props.isEditMode) {
+    return true; // Ở chế độ "Thêm", nút luôn được bật
+  }
+  return JSON.stringify(formData.value) !== initialEditData.value;
+});
+
 // --- Methods ---
 const resetFormState = () => {
   formData.value = { ...initialFormData };
   isDanhMucCha.value = false;
-};
-
-const fetchDanhMucChaOptions = async () => {
-  try {
-    danhMucChaOptions.value = await getDanhMucOptionsForFilter();
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách danh mục cha:", error);
-    showToast({
-      loai: "loi",
-      thongBao: "Không thể tải danh sách danh mục cha.",
-    });
-  }
+  initialEditData.value = "";
 };
 
 const populateFormForEdit = (danhMuc: ChiTietDanhMucQuanLyResponse) => {
   formData.value.tenDanhMuc = danhMuc.tenDanhMuc;
-  formData.value.trangThai = danhMuc.trangThai;
+  formData.value.trangThai = danhMuc.trangThai.value;
 
   if (danhMuc.maDanhMucCha) {
     isDanhMucCha.value = false;
@@ -177,6 +179,9 @@ const populateFormForEdit = (danhMuc: ChiTietDanhMucQuanLyResponse) => {
     isDanhMucCha.value = true;
     formData.value.maDanhMucCha = undefined;
   }
+
+  // Lưu trạng thái ban đầu để so sánh
+  initialEditData.value = JSON.stringify(formData.value);
 };
 
 const handleSubmit = async () => {
@@ -237,10 +242,6 @@ watch(isDanhMucCha, (isCha) => {
     formData.value.maDanhMucCha = undefined;
   }
 });
-
-onMounted(() => {
-  fetchDanhMucChaOptions();
-});
 </script>
 
 <style scoped>
@@ -251,7 +252,7 @@ onMounted(() => {
 @reference "../../assets/styles/main.css";
 
 .input {
-  @apply border border-gray-300 rounded px-3 py-2;
+  @apply border border-gray-300 rounded px-3 py-2 bg-white;
 }
 .input:focus {
   @apply outline-none ring-2 ring-blue-500;

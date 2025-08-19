@@ -162,6 +162,7 @@ export interface SanPhamQuanLyResponse {
   danhMucCha?: string; // Có thể null
   danhMucCon?: string; // Có thể null
   donGia: number;
+  nhan: NhanSanPhamObject;
   trangThai: TrangThaiSanPhamObject;
 }
 
@@ -178,6 +179,7 @@ export interface ChiTietSanPhamQuanLyResponse {
   donGia: number;
   donVi: string;
   ghiChu: string;
+  nhan: NhanSanPhamObject; // Backend trả về object đầy đủ
   trangThai: TrangThaiSanPhamObject; // Backend trả về object đầy đủ
   anhMinhHoas: AnhMinhHoa[];
 }
@@ -196,17 +198,24 @@ export interface ThemSanPhamRequest {
   maDanhMuc: number;
   nhaSanXuat: string; // Backend xử lý việc tìm hoặc tạo mới từ tên
   trangThai: TrangThaiSanPhamKey;
+  nhan: NhanSanPhamKey;
+  anhChinhIndex: number;
 }
 
 /**
  * Dữ liệu gửi lên khi cập nhật một sản phẩm.
  * Đây là phần JSON của request multipart/form-data.
  * Tương ứng với `CapNhatSanPhamRequest.java`.
+ * Các trường thông tin cơ bản là tùy chọn (Partial).
  */
-export interface CapNhatSanPhamRequest extends ThemSanPhamRequest {
-  // Danh sách ID của các ảnh đã có mà người dùng muốn xóa
-  maAnhCanXoa?: number[];
-}
+export type CapNhatSanPhamRequest = Partial<
+  Omit<ThemSanPhamRequest, "anhChinhIndex">
+> & {
+  // Danh sách URL của các ảnh đã có mà người dùng muốn xóa
+  urlsAnhXoa?: string[];
+  // URL của ảnh cũ hoặc tên file của ảnh mới sẽ làm ảnh chính
+  anhChinhIdentifier?: string;
+};
 
 /**
  * Các tham số để lấy dữ liệu cho bộ lọc.
