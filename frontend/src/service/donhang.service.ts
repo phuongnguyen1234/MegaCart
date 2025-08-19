@@ -1,11 +1,21 @@
 import apiClient from "./apiClient";
 import type { PageableParams, PagedResponse } from "@/types/api.types";
 import type {
+  CapNhatDonHangRequest,
   ChiTietDonHang,
+  ChiTietDonHangQuanLyResponse,
+  DonHangQuanLyResponse,
+  GetDonHangQuanLyParams,
   HuyDonHangRequest,
   LichSuDonHang,
   TrangThaiDonHangFilter,
 } from "@/types/donhang.types";
+
+/**
+ * =================================================================
+ * FOR CUSTOMER-FACING UI
+ * =================================================================
+ */
 
 /**
  * Defines the parameters for fetching the order history.
@@ -60,4 +70,48 @@ export const huyDonHang = (
  */
 export const giaoPhanConLai = (maDonHang: number): Promise<ChiTietDonHang> => {
   return apiClient.post(`/don-hang/${maDonHang}/giao-phan-con-lai`);
+};
+
+/**
+ * =================================================================
+ * FOR ADMIN PANEL
+ * =================================================================
+ */
+
+/**
+ * Fetches a paginated list of orders for the admin panel.
+ * Corresponds to `GET /api/admin/don-hang`.
+ * @param params - Filtering and pagination parameters.
+ * @returns A paged response of admin order data.
+ */
+export const getDanhSachDonHangQuanLy = (
+  params: GetDonHangQuanLyParams
+): Promise<PagedResponse<DonHangQuanLyResponse>> => {
+  return apiClient.get("/admin/don-hang", { params });
+};
+
+/**
+ * Fetches the detailed information of a specific order for the admin panel.
+ * Corresponds to `GET /api/admin/don-hang/{maDonHang}`.
+ * @param maDonHang - The ID of the order.
+ * @returns The detailed order information for admin.
+ */
+export const getChiTietDonHangQuanLy = (
+  maDonHang: number
+): Promise<ChiTietDonHangQuanLyResponse> => {
+  return apiClient.get(`/admin/don-hang/${maDonHang}`);
+};
+
+/**
+ * Updates an order from the admin panel.
+ * Corresponds to `PATCH /api/admin/don-hang/{maDonHang}`.
+ * @param maDonHang - The ID of the order to update.
+ * @param data - The updated order data.
+ * @returns The updated detailed order information.
+ */
+export const capNhatDonHang = (
+  maDonHang: number,
+  data: CapNhatDonHangRequest
+): Promise<ChiTietDonHangQuanLyResponse> => {
+  return apiClient.patch(`/admin/don-hang/${maDonHang}`, data);
 };

@@ -66,7 +66,8 @@
       <div class="flex justify-end">
         <button
           @click="luuThayDoi"
-          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          :disabled="!hasChanged"
+          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           Lưu thay đổi
         </button>
@@ -109,6 +110,9 @@ const formData = ref({
   trangThaiTaiKhoan: TrangThaiTaiKhoanKey.HOAT_DONG,
 });
 
+// This ref will hold the state of the customer when the modal was opened.
+const initialTrangThai = ref<TrangThaiTaiKhoanKey | null>(null);
+
 const tieuDeModal = computed(
   () => `Cập nhật thông tin - ${props.khachHang?.tenKhachHang ?? "Khách hàng"}`
 );
@@ -127,10 +131,18 @@ const trangThaiLabel = computed(() => {
   return TrangThaiTaiKhoanLabel[formData.value.trangThaiTaiKhoan];
 });
 
+const hasChanged = computed(() => {
+  if (!props.khachHang) {
+    return false;
+  }
+  // Compare the current form status with the initial status
+  return formData.value.trangThaiTaiKhoan !== initialTrangThai.value;
+});
+
 const dongModal = () => emit("close");
 
 const luuThayDoi = () => {
-  if (!props.khachHang) return;
+  if (!props.khachHang || !hasChanged.value) return;
   const data: CapNhatTrangThaiTaiKhoanRequest = {
     trangThai: formData.value.trangThaiTaiKhoan,
   };
@@ -142,12 +154,16 @@ watch(
   () => props.visible,
   (isVisible) => {
     if (isVisible && props.khachHang) {
+      // Populate form with current customer data
       formData.value.tenKhachHang = props.khachHang.tenKhachHang;
       formData.value.email = props.khachHang.email;
       formData.value.diaChi = props.khachHang.diaChi;
       formData.value.soDienThoai = props.khachHang.soDienThoai;
       formData.value.trangThaiTaiKhoan =
         props.khachHang.trangThaiTaiKhoan.value;
+
+      // Store the initial state for comparison
+      initialTrangThai.value = props.khachHang.trangThaiTaiKhoan.value;
     }
   }
 );

@@ -1,65 +1,60 @@
 <template>
-  <div class="p-4 sm:p-6 min-h-screen bg-gray-50">
-    <!-- Header + Đăng xuất -->
-    <div
-      class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4"
-    >
-      <h1 class="text-2xl font-bold text-gray-800">Giao hàng</h1>
-      <button
-        class="mt-2 sm:mt-0 px-4 py-2 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg transition"
-        @click="dangXuat"
-      >
-        Đăng xuất
-      </button>
-    </div>
+  <div class="flex min-h-screen bg-gray-50">
+    <!-- Side Menu (chế độ tối giản, chỉ hiển thị nút đăng xuất) -->
+    <TheSideMenu variant="minimal" />
 
-    <!-- Bộ lọc -->
-    <div class="flex flex-col sm:flex-row sm:items-end sm:gap-4 gap-2 mb-4">
-      <ThanhTimKiem
-        class="w-full sm:w-auto"
-        :ds-tieu-chi="[
-          { value: 'maDonHang', label: 'Mã đơn hàng' },
-          { value: 'tenKhachHang', label: 'Tên khách hàng' },
-        ]"
-        v-model:modelValueLoai="loaiTimKiem"
-        v-model:modelValueTuKhoa="tuKhoa"
-      />
-    </div>
+    <!-- Nội dung chính -->
+    <main class="flex-1 p-4 sm:p-6 ml-[250px]">
+      <h1 class="text-2xl font-bold text-gray-800 mb-4">Giao hàng</h1>
 
-    <!-- Số lượng đơn -->
-    <p class="mb-4 text-sm text-gray-600">{{ thongTinHienThi }}</p>
-
-    <!-- Danh sách đơn hàng -->
-    <div class="space-y-4">
-      <div
-        v-if="donHangHienThi.length === 0"
-        class="text-center py-10 text-gray-500"
-      >
-        Không có đơn hàng nào phù hợp.
+      <!-- Bộ lọc -->
+      <div class="flex flex-col sm:flex-row sm:items-end sm:gap-4 gap-2 mb-4">
+        <ThanhTimKiem
+          class="w-full sm:w-auto"
+          :ds-tieu-chi="[
+            { value: 'maDonHang', label: 'Mã đơn hàng' },
+            { value: 'tenKhachHang', label: 'Tên khách hàng' },
+          ]"
+          v-model:modelValueLoai="loaiTimKiem"
+          v-model:modelValueTuKhoa="tuKhoa"
+        />
       </div>
-      <CardGiaoHang
-        v-for="donHang in donHangHienThi"
-        :key="donHang.maDonHang"
-        :don-hang="donHang"
-        @xem-chi-tiet="openXemChiTietModal"
-      />
-    </div>
 
-    <!-- Phân trang -->
-    <div class="mt-6 flex justify-center">
-      <PhanTrang
-        v-model:trangHienTai="trangHienTai"
-        :tong-so-trang="tongSoTrang"
-      />
-    </div>
+      <!-- Số lượng đơn -->
+      <p class="mb-4 text-sm text-gray-600">{{ thongTinHienThi }}</p>
 
-    <!-- Modal xem chi tiết và cập nhật -->
-    <CapNhatGiaoHangModal
-      :visible="isXemChiTietModalVisible"
-      :don-hang="donHangDangChon"
-      @close="closeXemChiTietModal"
-      @xacNhan="handleCapNhatTrangThai"
-    />
+      <!-- Danh sách đơn hàng -->
+      <div class="space-y-4">
+        <div
+          v-if="donHangHienThi.length === 0"
+          class="text-center py-10 text-gray-500"
+        >
+          Không có đơn hàng nào phù hợp.
+        </div>
+        <CardGiaoHang
+          v-for="donHang in donHangHienThi"
+          :key="donHang.maDonHang"
+          :don-hang="donHang"
+          @xem-chi-tiet="openXemChiTietModal"
+        />
+      </div>
+
+      <!-- Phân trang -->
+      <div class="mt-6 flex justify-center">
+        <PhanTrang
+          v-model:trangHienTai="trangHienTai"
+          :tong-so-trang="tongSoTrang"
+        />
+      </div>
+
+      <!-- Modal xem chi tiết và cập nhật -->
+      <CapNhatGiaoHangModal
+        :visible="isXemChiTietModalVisible"
+        :don-hang="donHangDangChon"
+        @close="closeXemChiTietModal"
+        @xacNhan="handleCapNhatTrangThai"
+      />
+    </main>
   </div>
 </template>
 
@@ -69,6 +64,7 @@ import CardGiaoHang from "@/components/giaohang/CardGiaoHang.vue";
 import CapNhatGiaoHangModal from "@/components/giaohang/CapNhatGiaoHangModal.vue";
 import PhanTrang from "@/components/base/PhanTrang.vue";
 import ThanhTimKiem from "@/components/base/ThanhTimKiem.vue";
+import TheSideMenu from "@/components/layouts/TheSideMenu.vue";
 import type { DonHang } from "@/types/DonHang";
 
 // --- State ---
@@ -196,11 +192,4 @@ const handleCapNhatTrangThai = (
 watch([tuKhoa, loaiTimKiem], () => {
   trangHienTai.value = 0;
 });
-
-//--- Đăng xuất ---
-const dangXuat = () => {
-  // Chuyển hướng về trang đăng nhập hoặc xóa token
-  console.log("Đăng xuất");
-  // Ví dụ: window.location.href = "/dang-nhap";
-};
 </script>

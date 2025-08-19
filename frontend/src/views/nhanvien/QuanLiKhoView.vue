@@ -7,50 +7,10 @@
     <div
       class="flex flex-wrap items-end gap-4 mb-4 bg-white p-4 rounded-lg shadow"
     >
-      <!-- Lọc theo danh mục cha -->
-      <div>
-        <label
-          for="danh-muc-cha"
-          class="block text-sm font-medium text-gray-700"
-        >
-          Danh mục cha
-        </label>
-        <select
-          id="danh-muc-cha"
-          v-model="selectedDanhMucCha"
-          class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
-        >
-          <option value="">Tất cả</option>
-          <option v-for="dmc in danhMucCha" :key="dmc.id" :value="dmc.id">
-            {{ dmc.ten }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Lọc theo danh mục con -->
-      <div>
-        <label
-          for="danh-muc-con"
-          class="block text-sm font-medium text-gray-700"
-        >
-          Danh mục con
-        </label>
-        <select
-          id="danh-muc-con"
-          v-model="selectedDanhMucCon"
-          :disabled="!selectedDanhMucCha"
-          class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2 disabled:bg-gray-100"
-        >
-          <option value="">Tất cả</option>
-          <option
-            v-for="dmc in danhMucConFiltered"
-            :key="dmc.id"
-            :value="dmc.id"
-          >
-            {{ dmc.ten }}
-          </option>
-        </select>
-      </div>
+      <BoLocDanhMuc
+        v-model:parent="selectedDanhMucCha"
+        v-model:child="selectedDanhMucCon"
+      />
 
       <!-- Thanh tìm kiếm -->
       <ThanhTimKiem
@@ -112,20 +72,10 @@ import { ref, computed, watch } from "vue";
 import DataTable from "@/components/base/DataTable.vue";
 import PhanTrang from "@/components/base/PhanTrang.vue";
 import ThanhTimKiem from "@/components/base/ThanhTimKiem.vue";
+import BoLocDanhMuc from "@/components/base/BoLocDanhMuc.vue";
 import CapNhatTonKhoModal from "@/components/quanlikho/CapNhatTonKhoModal.vue";
 import type { SanPhamTonKho, DuLieuCapNhat } from "@/types/khohang.types";
 
-// --- Dữ liệu giả lập ---
-const danhMucCha = ref([
-  { id: 1, ten: "Điện tử" },
-  { id: 2, ten: "Quần áo" },
-]);
-const danhMucCon = ref([
-  { id: 101, idCha: 1, ten: "Điện thoại" },
-  { id: 102, idCha: 1, ten: "Laptop" },
-  { id: 201, idCha: 2, ten: "Áo nam" },
-  { id: 202, idCha: 2, ten: "Quần nam" },
-]);
 const allTonKho = ref<SanPhamTonKho[]>(
   Array.from({ length: 125 }, (_, i) => {
     const dmc = i % 2 === 0 ? danhMucCha.value[0] : danhMucCha.value[1];
@@ -160,16 +110,6 @@ const activeFilters = ref({
   danhMucCon: "" as number | "",
   loaiTimKiem: "ten",
   tuKhoa: "",
-});
-
-const danhMucConFiltered = computed(() =>
-  !selectedDanhMucCha.value
-    ? []
-    : danhMucCon.value.filter((dmc) => dmc.idCha === selectedDanhMucCha.value)
-);
-
-watch(selectedDanhMucCha, () => {
-  selectedDanhMucCon.value = "";
 });
 
 const apDungBoLoc = () => {

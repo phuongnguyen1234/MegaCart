@@ -1,4 +1,4 @@
-import type { EnumObject } from "./api.types";
+import type { EnumObject, PageableParams } from "./api.types";
 import type {
   TrangThaiSanPhamObject,
   TrangThaiTonKhoObject,
@@ -16,6 +16,77 @@ export enum TrangThaiDonHangKey {
   DA_GIAO = "DA_GIAO",
   DA_HUY = "DA_HUY",
 }
+
+/**
+ * Represents the display labels for order statuses.
+ */
+export const TrangThaiDonHangLabel: Record<TrangThaiDonHangKey, string> = {
+  [TrangThaiDonHangKey.CHO_XAC_NHAN]: "Chờ xác nhận",
+  [TrangThaiDonHangKey.CHO_XU_LY]: "Chờ xử lý",
+  [TrangThaiDonHangKey.DANG_GIAO]: "Đang giao",
+  [TrangThaiDonHangKey.DA_GIAO]: "Đã giao",
+  [TrangThaiDonHangKey.DA_HUY]: "Đã hủy",
+};
+
+/**
+ * =================================================================
+ * FOR ADMIN PANEL (QUAN LY DON HANG)
+ * =================================================================
+ */
+
+/**
+ * Defines the parameters for fetching the admin order list.
+ * Corresponds to the @RequestParam in `QuanLyDonHangController.getDSDonHang`.
+ */
+export interface GetDonHangQuanLyParams extends PageableParams {
+  searchField?: "maDonHang" | "tenKhachHang";
+  searchValue?: string;
+  trangThai?: TrangThaiDonHangKey;
+  ngayDat?: string; // ISO Date string, e.g., "YYYY-MM-DD"
+}
+
+/**
+ * Represents an order summary in the admin list view.
+ * Corresponds to `DonHangQuanLyResponse` in the backend.
+ */
+export interface DonHangQuanLyResponse {
+  maDonHang: number;
+  tenKhachHang: string;
+  thoiGianDatHang: string; // ISO DateTime string
+  trangThai: TrangThaiDonHangObject;
+  tongTien: number;
+}
+
+/**
+ * Represents the detailed information of a single order for the admin panel.
+ * Corresponds to `ChiTietDonHangQuanLyResponse` in the backend.
+ */
+export interface ChiTietDonHangQuanLyResponse {
+  maDonHang: number;
+  tenNguoiNhan: string;
+  sdtNhanHang: string;
+  diaChiNhanHang: string;
+  thoiGianDatHang: string; // ISO DateTime string
+  trangThai: TrangThaiDonHangObject;
+  hinhThucGiaoHang: HinhThucGiaoHangObject;
+  hinhThucThanhToan: HinhThucThanhToanObject;
+  trangThaiThanhToan: TrangThaiThanhToanObject;
+  tongTien: number;
+  duKienGiaoHang?: string; // ISO DateTime string, optional
+  ghiChu?: string; // Optional
+  items: ChiTietDonHangItem[];
+}
+
+/**
+ * Represents the request payload for updating an order from the admin panel.
+ * Corresponds to `CapNhatDonHangRequest` in the backend.
+ */
+export type CapNhatDonHangRequest = Partial<
+  Pick<ChiTietDonHangQuanLyResponse, "ghiChu" | "duKienGiaoHang"> & {
+    trangThai: TrangThaiDonHangKey;
+    trangThaiThanhToan: TrangThaiThanhToanKey;
+  }
+>;
 
 /**
  * Represents the structure of an order status object returned from the API.
@@ -56,6 +127,14 @@ export enum TrangThaiThanhToanKey {
 }
 
 /**
+ * Represents the display labels for payment statuses.
+ */
+export const TrangThaiThanhToanLabel: Record<TrangThaiThanhToanKey, string> = {
+  [TrangThaiThanhToanKey.CHUA_THANH_TOAN]: "Chưa thanh toán",
+  [TrangThaiThanhToanKey.DA_THANH_TOAN]: "Đã thanh toán",
+};
+
+/**
  * Represents a payment status object from the API.
  */
 export type TrangThaiThanhToanObject = EnumObject<TrangThaiThanhToanKey>;
@@ -67,7 +146,7 @@ export type TrangThaiThanhToanObject = EnumObject<TrangThaiThanhToanKey>;
 export interface ChiTietDonHangItem {
   maSanPham: number;
   tenSanPham: string;
-  anhMinhHoa: string;
+  anhMinhHoaChinh: string;
   donGia: number;
   soLuong: number;
   /**

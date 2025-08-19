@@ -5,7 +5,8 @@ import type {
   DanhMucQuanLyResponse,
   LuuDanhMucRequest,
   ChiTietDanhMucQuanLyResponse,
-  TrangThaiDanhMuc,
+  TrangThaiDanhMucKey,
+  GetDanhMucParams,
   DanhMucOptionResponse,
 } from "@/types/danhmuc.types";
 
@@ -21,14 +22,6 @@ export const getMenuDanhMuc = (): Promise<DanhMucMenuItem[]> => {
 };
 
 // --- For Admin Panel ---
-
-/**
- * Defines the parameters for fetching the admin category list.
- */
-export interface GetDanhMucParams extends PageableParams {
-  tuKhoa?: string;
-  trangThai?: TrangThaiDanhMuc;
-}
 
 /**
  * Fetches a paginated list of categories for the admin panel.
@@ -48,7 +41,9 @@ export const getDanhSachDanhMuc = (
  * Corresponds to `GET /api/admin/danh-muc/filter-options`.
  * @returns A promise that resolves to an array of category options.
  */
-export const getDanhMucOptionsForFilter = (): Promise<DanhMucOptionResponse[]> => {
+export const getDanhMucOptionsForFilter = (): Promise<
+  DanhMucOptionResponse[]
+> => {
   return apiClient.get("/admin/danh-muc/filter-options");
 };
 

@@ -1,109 +1,110 @@
 import apiClient from "./apiClient";
-
-// --- Interfaces for Type Safety ---
-
-// Dữ liệu cần thiết để đăng nhập
-export interface LoginCredentials {
-  email: string;
-  matKhau: string;
-}
-
-// Dữ liệu cần thiết để đăng ký
-export interface RegisterCredentials {
-  email: string;
-  matKhau: string;
-}
-
-// Thông tin người dùng trả về từ API
-export interface User {
-  tenKhachHang: string;
-  email: string;
-  diaChi: string;
-  soDienThoai: string;
-}
-
-// Phản hồi từ API đăng nhập hoặc các hành động xác thực khác
-export interface AuthResponse {
-  token: string;
-}
-
-/**
- * @deprecated Sử dụng AuthResponse để nhất quán hơn.
- */
-export type LoginResponse = AuthResponse;
-
-// Phản hồi từ API cập nhật hồ sơ
-export interface CapNhatHoSoResponse {
-  message: string;
-  emailChangeInitiated: boolean;
-}
+import type {
+  AuthResponse,
+  CapNhatHoSoResponse,
+  CapNhatTaiKhoanRequest,
+  DatLaiMatKhauRequest,
+  GuiEmailQuenMatKhauRequest,
+  LoginRequest,
+  RegisterRequest,
+  ThongTinTaiKhoanKhachHang,
+  XacNhanDoiEmailRequest,
+  XacThucOtpRequest,
+} from "@/types/taikhoan.types";
 
 // --- Service Functions ---
 
 /**
  * Gửi yêu cầu đăng nhập đến API.
- * @param credentials - Thông tin email và mật khẩu của người dùng.
+ * @param data - Thông tin email và mật khẩu của người dùng.
  * @returns Promise chứa JWT.
  */
-export const login = (credentials: LoginCredentials): Promise<AuthResponse> => {
+export const login = (data: LoginRequest): Promise<AuthResponse> => {
   // Kiểm tra đầu vào ở phía client trước khi gửi request
   // để tránh các lỗi validation không cần thiết từ server.
-  if (!credentials.email || !credentials.matKhau) {
+  if (!data.email || !data.matKhau) {
     return Promise.reject(new Error("Email và mật khẩu không được để trống."));
   }
   // Giả định endpoint của backend là /api/auth/dang-nhap
-  return apiClient.post("/auth/dang-nhap", credentials);
+  return apiClient.post("/auth/dang-nhap", data);
 };
 
 /**
  * Gửi yêu cầu đăng ký đến API.
- * @param credentials - Thông tin đăng ký của người dùng (email, mật khẩu).
+ * @param data - Thông tin đăng ký của người dùng (email, mật khẩu).
  * @returns Promise<void>
  */
-export const register = (credentials: RegisterCredentials): Promise<void> => {
-  if (!credentials.email || !credentials.matKhau) {
+export const register = (data: RegisterRequest): Promise<void> => {
+  if (!data.email || !data.matKhau) {
     return Promise.reject(new Error("Email và mật khẩu không được để trống."));
   }
   // Giả định endpoint của backend là /api/auth/dang-ky
-  return apiClient.post("/auth/dang-ky", credentials);
+  return apiClient.post("/auth/dang-ky", data);
 };
 
-export const logout = async () => {
-  await apiClient.post("/auth/dang-xuat");
+/**
+ * Gửi yêu cầu đăng xuất đến API.
+ * @returns Promise<void>
+ */
+export const logout = (): Promise<void> => {
+  return apiClient.post("/auth/dang-xuat");
 };
 
-// Gửi email quên mật khẩu
-export const guiEmailQuenMatKhau = (email: string) => {
-  return apiClient.post("/auth/quen-mat-khau", { email });
+/**
+ * Gửi email yêu cầu đặt lại mật khẩu.
+ * @param data - Dữ liệu chứa email của người dùng.
+ * @returns Promise<void>
+ */
+export const guiEmailQuenMatKhau = (
+  data: GuiEmailQuenMatKhauRequest
+): Promise<void> => {
+  return apiClient.post("/auth/quen-mat-khau", data);
 };
 
-// xac thuc otp
-export const xacThucOtp = (email: string, otp: string) => {
-  return apiClient.post("/auth/xac-thuc-otp", { email, otp });
+/**
+ * Xác thực mã OTP.
+ * @param data - Dữ liệu chứa email và mã OTP.
+ * @returns Promise<void>
+ */
+export const xacThucOtp = (data: XacThucOtpRequest): Promise<void> => {
+  return apiClient.post("/auth/xac-thuc-otp", data);
 };
 
-// Đặt lại mật khẩu
-export const datLaiMatKhau = (
-  email: string,
-  otp: string,
-  matKhauMoi: string
-) => {
-  return apiClient.post("/auth/dat-lai-mat-khau", { email, otp, matKhauMoi });
+/**
+ * Đặt lại mật khẩu mới sau khi đã xác thực OTP.
+ * @param data - Dữ liệu chứa email, OTP và mật khẩu mới.
+ * @returns Promise<void>
+ */
+export const datLaiMatKhau = (data: DatLaiMatKhauRequest): Promise<void> => {
+  return apiClient.post("/auth/dat-lai-mat-khau", data);
 };
 
-//lay thong tin tai khoan khach hang
-export const layThongTinTaiKhoan = (): Promise<User> => {
+/**
+ * Lấy thông tin tài khoản của khách hàng đang đăng nhập.
+ * @returns Promise chứa thông tin chi tiết của tài khoản.
+ */
+export const layThongTinTaiKhoan = (): Promise<ThongTinTaiKhoanKhachHang> => {
   return apiClient.get("/khach-hang/thong-tin");
 };
 
-//cap nhat tai khoan
+/**
+ * Cập nhật thông tin tài khoản của khách hàng.
+ * @param data - Dữ liệu cần cập nhật (tên, địa chỉ, sđt).
+ * @returns Promise chứa thông báo và trạng thái thay đổi email.
+ */
 export const capNhatTaiKhoan = (
-  data: Partial<User>
+  data: CapNhatTaiKhoanRequest
 ): Promise<CapNhatHoSoResponse> => {
   return apiClient.patch("/khach-hang/cap-nhat-thong-tin", data);
 };
 
-// Xác nhận thay đổi email bằng OTP
-export const xacNhanDoiEmail = (otp: string): Promise<AuthResponse> => {
-  return apiClient.post("/khach-hang/email/xac-nhan", { otp });
+/**
+ * Xác nhận thay đổi email bằng OTP.
+ * @param data - Dữ liệu chứa mã OTP.
+ * @returns Promise chứa token mới nếu email được cập nhật thành công.
+ */
+export const xacNhanDoiEmail = (
+  data: XacNhanDoiEmailRequest
+): Promise<AuthResponse> => {
+  return apiClient.post("/khach-hang/email/xac-nhan", data);
 };

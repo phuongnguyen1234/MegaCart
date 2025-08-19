@@ -77,24 +77,37 @@
             <td class="px-6 py-4 font-medium text-gray-900">
               #{{ donHang.maDonHang }}
             </td>
-            <td class="px-6 py-4">{{ donHang.tenNguoiNhan }}</td>
+            <td class="px-6 py-4">{{ donHang.tenKhachHang }}</td>
             <td class="px-6 py-4">
               {{ formatDateTime(donHang.thoiGianDatHang) }}
             </td>
-            <td class="px-6 py-4">{{ donHang.trangThai }}</td>
+            <td class="px-6 py-4">
+              <span
+                :class="[
+                  'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                  getTrangThaiClass(donHang.trangThai.value),
+                ]"
+              >
+                {{ donHang.trangThai.label }}
+              </span>
+            </td>
             <td class="px-6 py-4">{{ formatCurrency(donHang.tongTien) }}</td>
             <td class="px-6 py-4 text-right">
               <button
                 @click="openModal(donHang)"
                 class="text-gray-500 hover:text-blue-600 transition-colors duration-200"
                 :title="
-                  donHang.trangThai === 'Đang giao'
+                  donHang.trangThai.value === TrangThaiDonHangKey.CHO_XU_LY ||
+                  donHang.trangThai.value === TrangThaiDonHangKey.DANG_GIAO
                     ? 'Sửa đơn hàng'
                     : 'Xem chi tiết'
                 "
               >
                 <i
-                  v-if="donHang.trangThai === 'Đang giao'"
+                  v-if="
+                    donHang.trangThai.value === TrangThaiDonHangKey.CHO_XU_LY ||
+                    donHang.trangThai.value === TrangThaiDonHangKey.DANG_GIAO
+                  "
                   class="fi fi-rr-pencil text-lg align-middle"
                 ></i>
                 <i v-else class="fi fi-rr-eye text-lg align-middle"></i>
@@ -130,132 +143,93 @@
 import PhanTrang from "@/components/base/PhanTrang.vue";
 import ChiTietDonHangQLyModal from "@/components/quanlidonhang/ChiTietDonHangQLyModal.vue";
 import ThanhTimKiem from "@/components/base/ThanhTimKiem.vue";
-import type { DonHang } from "@/types/DonHang";
 import { ref, computed, watch } from "vue";
+import {
+  DonHangQuanLyResponse,
+  ChiTietDonHangQuanLyResponse,
+  GetDonHangQuanLyParams,
+  TrangThaiDonHangKey,
+  CapNhatDonHangRequest,
+  type ChiTietDonHangItem,
+} from "@/types/donhang.types";
+import {
+  getDanhSachDonHangQuanLy,
+  getChiTietDonHangQuanLy,
+  capNhatDonHang,
+} from "@/service/donhang.service";
+import { useToast } from "@/composables/useToast";
+
+// Helper function to get today's date in YYYY-MM-DD format
+const getTodayISOString = (): string => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 // --- Bộ lọc ---
-const ngayDat = ref("2025-06-25");
-const loaiTimKiem = ref("maDonHang"); // 'maDonHang' hoặc 'tenKhachHang'
+const ngayDat = ref(getTodayISOString()); // Mặc định là ngày hôm nay
+const loaiTimKiem = ref<"maDonHang" | "tenKhachHang">("maDonHang");
 const tuKhoa = ref("");
-const trangThai = ref("Đang giao");
-
-const placeholderTimKiem = computed(() => {
-  if (loaiTimKiem.value === "maDonHang") {
-    return "Tìm kiếm mã đơn hàng...";
-  }
-  return "Tìm kiếm tên khách hàng...";
-});
+const trangThai = ref(""); // TrangThaiDonHangKey hoặc ""
+const trangHienTai = ref(0);
+const soLuongMoiTrang = ref(20);
+const { showToast } = useToast();
 
 const dsTrangThai = [
   { value: "", text: "Tất cả" },
-  { value: "Chờ xác nhận", text: "Chờ xác nhận" },
-  { value: "Chờ xử lí", text: "Chờ xử lí" },
-  { value: "Đang giao", text: "Đang giao" },
-  { value: "Đã giao", text: "Đã giao" },
-  { value: "Đã hủy", text: "Đã hủy" },
+  { value: TrangThaiDonHangKey.CHO_XAC_NHAN, text: "Chờ xác nhận" },
+  { value: TrangThaiDonHangKey.CHO_XU_LY, text: "Chờ xử lí" },
+  { value: TrangThaiDonHangKey.DANG_GIAO, text: "Đang giao" },
+  { value: TrangThaiDonHangKey.DA_GIAO, text: "Đã giao" },
+  { value: TrangThaiDonHangKey.DA_HUY, text: "Đã hủy" },
 ];
 
-// --- Trạng thái và xử lý Modal ---
-const isModalVisible = ref(false);
-const selectedDonHang = ref<DonHang | null>(null);
-const isEditMode = ref(false);
+// --- Danh sách đơn hàng ---
+const danhSachDonHang = ref<DonHangQuanLyResponse[]>([]);
+const tongSoTrang = ref(1);
+const totalElements = ref(0);
+const isLoading = ref(false);
 
-const openModal = (donHang: DonHang) => {
-  selectedDonHang.value = donHang;
-  isEditMode.value = donHang.trangThai === "Đang giao";
-  isModalVisible.value = true;
-};
-
-const closeModal = () => {
-  isModalVisible.value = false;
-};
-
-const handleLuuThayDoi = (formData: Partial<DonHang>) => {
-  if (selectedDonHang.value) {
-    const index = allDonHang.value.findIndex(
-      (d) => d.maDonHang === selectedDonHang.value!.maDonHang
-    );
-    if (index !== -1) {
-      Object.assign(allDonHang.value[index], formData);
-    }
+// --- Fetch đơn hàng từ API ---
+const fetchDonHang = async () => {
+  isLoading.value = true;
+  try {
+    const params: GetDonHangQuanLyParams = {
+      page: trangHienTai.value,
+      size: soLuongMoiTrang.value,
+      searchField: tuKhoa.value ? loaiTimKiem.value : undefined,
+      searchValue: tuKhoa.value || undefined,
+      trangThai: trangThai.value
+        ? (trangThai.value as TrangThaiDonHangKey)
+        : undefined,
+      ngayDat: ngayDat.value || undefined,
+    };
+    const res = await getDanhSachDonHangQuanLy(params);
+    danhSachDonHang.value = res?.content ?? [];
+    tongSoTrang.value = res?.totalPages ?? 1;
+    totalElements.value = res?.totalElements ?? 0;
+  } catch {
+    danhSachDonHang.value = [];
+    tongSoTrang.value = 1;
+    totalElements.value = 0;
+  } finally {
+    isLoading.value = false;
   }
-  closeModal();
 };
 
-const sanPhamForModal = computed(() => {
-  if (!selectedDonHang.value || !selectedDonHang.value.chiTietDonHang)
-    return [];
-  return selectedDonHang.value.chiTietDonHang.map((item) => ({
-    id: item.maChiTietDonHang,
-    ten: item.tenSanPham,
-    donGia: item.donGia,
-    soLuong: item.soLuong,
-    hinhAnh: item.anhMinhHoa,
-  }));
+// --- Theo dõi thay đổi bộ lọc/tìm kiếm ---
+watch([ngayDat, loaiTimKiem, tuKhoa, trangThai, trangHienTai], fetchDonHang, {
+  immediate: true,
 });
 
-// --- Danh sách đơn hàng mẫu ---
-const allDonHang = ref<DonHang[]>(
-  Array.from({ length: 150 }, (_, i) => {
-    const id = 1000 - i;
-    const statusList = [
-      "Chờ xác nhận",
-      "Chờ xử lí",
-      "Đang giao",
-      "Đã giao",
-      "Đã hủy",
-    ] as const;
-    const status = statusList[i % statusList.length];
-    const date = new Date(
-      "2025-06-25T10:" + String(i % 60).padStart(2, "0") + ":00"
-    );
-    const chiTiet = [
-      {
-        maDonHang: id,
-        maChiTietDonHang: 101 + i,
-        tenSanPham: "Sản phẩm Mẫu " + (i % 5),
-        donGia: 50000 * ((i % 5) + 1),
-        soLuong: (i % 3) + 1,
-        anhMinhHoa: "https://via.placeholder.com/100",
-        nhaSanXuat: "Nhà sản xuất A",
-        donVi: "Cái",
-      },
-      {
-        maDonHang: id,
-        maChiTietDonHang: 201 + i,
-        tenSanPham: "Phụ kiện " + ((i % 2) + 1),
-        donGia: 25000,
-        soLuong: 1,
-        anhMinhHoa: "https://via.placeholder.com/100",
-        nhaSanXuat: "Nhà sản xuất B",
-        donVi: "Bộ",
-      },
-    ];
+// Reset về trang đầu tiên khi người dùng thay đổi bộ lọc
+watch([ngayDat, tuKhoa, trangThai], () => {
+  trangHienTai.value = 0;
+});
 
-    return {
-      maDonHang: id,
-      tenNguoiNhan: `Nguyễn Văn ${String.fromCharCode(65 + (i % 26))}`,
-      thoiGianDatHang: date,
-      trangThai: status,
-      diaChiNhanHang: `${i + 1} Đường ABC, Phường XYZ, Quận 1, TP. HCM`,
-      sdtNhanHang: `0909123${String(i).padStart(3, "0")}`,
-      hinhThucNhanHang: "Giao hàng tận nơi",
-      hinhThucThanhToan: "Thanh toán khi nhận hàng",
-      trangThaiThanhToan: "Chưa thanh toán",
-      thoiGianThanhToan: date,
-      duKienGiaoHang: new Date(date.getTime() + 3 * 24 * 60 * 60 * 1000),
-      trangThaiXuLi: "Chưa xử lí", // Thêm thuộc tính còn thiếu để khớp với type DonHang
-      ghiChu: i % 10 === 0 ? `Ghi chú đặc biệt cho đơn hàng #${id}` : "",
-      chiTietDonHang: chiTiet,
-      tongTien: chiTiet.reduce(
-        (sum, item) => sum + item.donGia * item.soLuong,
-        0
-      ),
-    };
-  })
-);
-
-// --- Header và hàng ---
+// --- Header bảng ---
 const headers = [
   "Mã đơn hàng",
   "Khách hàng",
@@ -264,41 +238,28 @@ const headers = [
   "Tổng tiền",
 ];
 
-const donHangDaLoc = computed(() =>
-  allDonHang.value.filter((d) => {
-    const thoiGian = d.thoiGianDatHang;
-    const matchNgay =
-      !ngayDat.value ||
-      (thoiGian instanceof Date &&
-        !isNaN(thoiGian.getTime()) &&
-        thoiGian.toISOString().split("T")[0] === ngayDat.value);
-
-    const matchTuKhoa = (() => {
-      if (!tuKhoa.value.trim()) return true;
-      const keyword = tuKhoa.value.toLowerCase();
-      if (loaiTimKiem.value === "maDonHang") {
-        return String(d.maDonHang).toLowerCase().includes(keyword);
-      }
-      // Mặc định tìm theo tên khách hàng
-      return d.tenNguoiNhan.toLowerCase().includes(keyword);
-    })();
-
-    const matchTrangThai = !trangThai.value || d.trangThai === trangThai.value;
-
-    return matchNgay && matchTuKhoa && matchTrangThai;
-  })
-);
-
-// --- Phân trang ---
-const trangHienTai = ref(0);
-const soLuongMoiTrang = 50;
-const tongSoTrang = computed(() =>
-  Math.ceil(donHangDaLoc.value.length / soLuongMoiTrang)
-);
-
 // --- Định dạng dữ liệu ---
-const formatDateTime = (date: Date): string => {
-  return date.toLocaleString("vi-VN", {
+const getTrangThaiClass = (trangThaiKey: TrangThaiDonHangKey): string => {
+  switch (trangThaiKey) {
+    case TrangThaiDonHangKey.CHO_XAC_NHAN:
+      return "bg-yellow-100 text-yellow-800";
+    case TrangThaiDonHangKey.CHO_XU_LY:
+      return "bg-blue-100 text-blue-800";
+    case TrangThaiDonHangKey.DANG_GIAO:
+      return "bg-indigo-100 text-indigo-800";
+    case TrangThaiDonHangKey.DA_GIAO:
+      return "bg-green-100 text-green-800";
+    case TrangThaiDonHangKey.DA_HUY:
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+const formatDateTime = (iso: string): string => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return d.toLocaleString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -314,25 +275,64 @@ const formatCurrency = (value: number): string => {
   }).format(value);
 };
 
-const donHangHienThi = computed(() => {
-  const batDau = trangHienTai.value * soLuongMoiTrang;
-  return donHangDaLoc.value.slice(batDau, batDau + soLuongMoiTrang);
-});
-
+// --- Hiển thị số lượng ---
 const thongTinHienThi = computed(() => {
-  const tongSo = donHangDaLoc.value.length;
-  if (tongSo === 0) {
-    return "Không tìm thấy đơn hàng nào.";
+  const total = totalElements.value;
+  if (total === 0) return "Không tìm thấy đơn hàng nào.";
+  const batDau = trangHienTai.value * soLuongMoiTrang.value + 1;
+  const ketThuc = batDau + danhSachDonHang.value.length - 1;
+  return `Hiển thị từ ${batDau} đến ${ketThuc} trên tổng số ${total} đơn hàng.`;
+});
+
+// --- Dữ liệu hiển thị bảng ---
+const donHangHienThi = computed(() => danhSachDonHang.value ?? []);
+
+// --- Modal hiển thị chi tiết đơn hàng ---
+const isModalVisible = ref(false);
+const selectedDonHang = ref<ChiTietDonHangQuanLyResponse | null>(null);
+const isEditMode = ref(false);
+const sanPhamForModal = ref<ChiTietDonHangItem[]>([]); // Danh sách sản phẩm cho modal
+
+const openModal = async (donHang: DonHangQuanLyResponse) => {
+  isModalVisible.value = true;
+  // Cho phép sửa khi đơn hàng đang ở trạng thái "Chờ xử lý" hoặc "Đang giao"
+  isEditMode.value =
+    donHang.trangThai.value === TrangThaiDonHangKey.CHO_XU_LY ||
+    donHang.trangThai.value === TrangThaiDonHangKey.DANG_GIAO;
+  try {
+    const chiTiet = await getChiTietDonHangQuanLy(donHang.maDonHang);
+    selectedDonHang.value = chiTiet;
+    sanPhamForModal.value = chiTiet.items;
+  } catch (error) {
+    console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
+    showToast({ loai: "loi", thongBao: "Không thể tải chi tiết đơn hàng." });
+    selectedDonHang.value = null;
+    sanPhamForModal.value = [];
+    closeModal();
   }
+};
 
-  const batDau = trangHienTai.value * soLuongMoiTrang + 1;
-  const ketThuc = batDau + donHangHienThi.value.length - 1;
+const closeModal = () => {
+  isModalVisible.value = false;
+  selectedDonHang.value = null;
+  sanPhamForModal.value = [];
+};
 
-  return `Hiển thị từ ${batDau} đến ${ketThuc} trên tổng số ${tongSo} đơn hàng.`;
-});
-
-// --- Reset về trang đầu nếu bộ lọc thay đổi ---
-watch(donHangDaLoc, () => {
-  trangHienTai.value = 0;
-});
+const handleLuuThayDoi = async (data: CapNhatDonHangRequest) => {
+  if (!selectedDonHang.value) return;
+  try {
+    // Ở đây bạn có thể thêm một loading state cho modal
+    await capNhatDonHang(selectedDonHang.value.maDonHang, data);
+    // Cập nhật lại danh sách hoặc chỉ item đã thay đổi
+    fetchDonHang();
+    closeModal();
+    showToast({ loai: "thanhCong", thongBao: "Cập nhật thành công!" });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật đơn hàng:", error);
+    showToast({
+      loai: "loi",
+      thongBao: "Có lỗi xảy ra khi cập nhật đơn hàng.",
+    });
+  }
+};
 </script>

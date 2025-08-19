@@ -33,21 +33,29 @@ export interface DanhMucMenuItem {
  * =================================================================
  */
 
+import type { EnumObject, PageableParams } from "./api.types";
+
 /**
  * Represents the status of a category, matching the backend enum `TrangThaiDanhMuc`.
+ * The keys must match the enum constant names in `TrangThaiDanhMuc.java`.
  */
-export enum TrangThaiDanhMuc {
-  DANG_HOAT_DONG = "DANG_HOAT_DONG",
-  NGUNG_HOAT_DONG = "NGUNG_HOAT_DONG",
+export enum TrangThaiDanhMucKey {
+  HOAT_DONG = "HOAT_DONG",
+  KHONG_HOAT_DONG = "KHONG_HOAT_DONG",
 }
 
 /**
  * Represents the display labels for category statuses.
  */
-export enum TrangThaiDanhMucLabel {
-  DANG_HOAT_DONG = "Đang hoạt động",
-  NGUNG_HOAT_DONG = "Ngừng hoạt động",
-}
+export const TrangThaiDanhMucLabel: Record<TrangThaiDanhMucKey, string> = {
+  [TrangThaiDanhMucKey.HOAT_DONG]: "Hoạt động",
+  [TrangThaiDanhMucKey.KHONG_HOAT_DONG]: "Không hoạt động",
+};
+
+/**
+ * Represents the structure of a category status object returned from the API.
+ */
+export type TrangThaiDanhMucObject = EnumObject<TrangThaiDanhMucKey>;
 
 /**
  * Represents a category in the admin list view.
@@ -57,7 +65,7 @@ export interface DanhMucQuanLyResponse {
   maDanhMuc: number;
   tenDanhMuc: string;
   tenDanhMucCha?: string; // Optional because a parent category won't have one
-  trangThai: TrangThaiDanhMucLabel;
+  trangThai: TrangThaiDanhMucObject;
 }
 
 /**
@@ -68,7 +76,7 @@ export interface ChiTietDanhMucQuanLyResponse {
   maDanhMuc: number;
   tenDanhMuc: string;
   maDanhMucCha?: number;
-  trangThai: TrangThaiDanhMuc;
+  trangThai: TrangThaiDanhMucKey;
 }
 
 /**
@@ -78,7 +86,7 @@ export interface ChiTietDanhMucQuanLyResponse {
 export interface LuuDanhMucRequest {
   tenDanhMuc: string;
   maDanhMucCha?: number;
-  trangThai?: TrangThaiDanhMuc;
+  trangThai: TrangThaiDanhMucKey;
 }
 
 /**
@@ -86,6 +94,15 @@ export interface LuuDanhMucRequest {
  * Corresponds to `DanhMucOptionResponse` in the backend.
  */
 export interface DanhMucOptionResponse {
-  id: number;
-  ten: string;
+  maDanhMuc: number;
+  tenDanhMuc: string;
+}
+
+/**
+ * Defines the parameters for fetching the admin category list.
+ * Corresponds to the @RequestParam in `QuanLyDanhMucController.getDSDanhMuc`.
+ */
+export interface GetDanhMucParams extends PageableParams {
+  tuKhoa?: string;
+  trangThai?: TrangThaiDanhMucKey;
 }

@@ -1,13 +1,19 @@
 <template>
   <aside
-    class="w-[250px] h-screen bg-gray-800 text-white flex flex-col fixed top-0 left-0"
+    class="w-[250px] h-screen bg-gray-800 text-white flex flex-col fixed top-0 left-0 z-40"
   >
-    <nav class="flex-grow overflow-y-auto">
+    <!-- Logo hoặc Tiêu đề -->
+    <div class="p-4 border-b border-gray-700 text-center">
+      <h1 class="text-xl font-bold text-white">MegaCart</h1>
+    </div>
+
+    <!-- Các liên kết điều hướng (hiển thị có điều kiện) -->
+    <nav v-if="variant === 'full'" class="flex-grow overflow-y-auto">
       <ul class="space-y-1 p-2">
         <!-- Dashboard -->
-        <li>
+        <li v-if="permissions.canViewDashboard">
           <router-link
-            to="/admin/dashboard"
+            to="/quan-ly/dashboard"
             class="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-gray-700 transition-colors duration-300"
             active-class="bg-sky-600 font-bold text-white"
             exact
@@ -18,9 +24,9 @@
         </li>
 
         <!-- Đơn hàng -->
-        <li>
+        <li v-if="permissions.canManageOrders">
           <router-link
-            to="/admin/don-hang"
+            to="/quan-ly/don-hang"
             class="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-gray-700 transition-colors duration-300"
             active-class="bg-sky-600 font-bold text-white"
             exact
@@ -31,9 +37,9 @@
         </li>
 
         <!-- Giao hàng -->
-        <li>
+        <li v-if="permissions.canManageShipping">
           <router-link
-            to="/admin/giao-hang"
+            to="/quan-ly/giao-hang"
             class="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-gray-700 transition-colors duration-300"
             active-class="bg-sky-600 font-bold text-white"
             exact
@@ -44,9 +50,9 @@
         </li>
 
         <!-- Kho hàng -->
-        <li>
+        <li v-if="permissions.canManageWarehouse">
           <router-link
-            to="/admin/kho-hang"
+            to="/quan-ly/kho-hang"
             class="flex items-center gap-3 px-4 py-2.5 rounded-md hover:bg-gray-700 transition-colors duration-300"
             active-class="bg-sky-600 font-bold text-white"
             exact
@@ -57,7 +63,7 @@
         </li>
 
         <!-- Sản phẩm - Danh mục (Accordion) -->
-        <li>
+        <li v-if="permissions.canManageProducts">
           <div
             @click="toggleSubMenu('products')"
             class="flex justify-between items-center px-4 py-2.5 rounded-md cursor-pointer hover:bg-gray-700 transition-colors duration-300"
@@ -84,7 +90,7 @@
             <ul v-if="subMenu.products" class="pl-4 mt-1 space-y-1">
               <li>
                 <router-link
-                  to="/admin/san-pham"
+                  to="/quan-ly/san-pham"
                   class="block px-4 py-2 rounded-md hover:bg-gray-600 transition-colors duration-300"
                   active-class="text-sky-400 font-bold"
                   exact
@@ -94,7 +100,7 @@
               </li>
               <li>
                 <router-link
-                  to="/admin/danh-muc"
+                  to="/quan-ly/danh-muc"
                   class="block px-4 py-2 rounded-md hover:bg-gray-600 transition-colors duration-300"
                   active-class="text-sky-400 font-bold"
                   exact
@@ -107,7 +113,7 @@
         </li>
 
         <!-- Tài khoản (Accordion) -->
-        <li>
+        <li v-if="permissions.canManageAccounts">
           <div
             @click="toggleSubMenu('accounts')"
             class="flex justify-between items-center px-4 py-2.5 rounded-md cursor-pointer hover:bg-gray-700 transition-colors duration-300"
@@ -134,7 +140,7 @@
             <ul v-if="subMenu.accounts" class="pl-4 mt-1 space-y-1">
               <li>
                 <router-link
-                  to="/admin/khach-hang"
+                  to="/quan-ly/khach-hang"
                   class="block px-4 py-2 rounded-md hover:bg-gray-600 transition-colors duration-300"
                   active-class="text-sky-400 font-bold"
                   exact
@@ -144,7 +150,7 @@
               </li>
               <li>
                 <router-link
-                  to="/admin/nhan-vien"
+                  to="/quan-ly/nhan-vien"
                   class="block px-4 py-2 rounded-md hover:bg-gray-600 transition-colors duration-300"
                   active-class="text-sky-400 font-bold"
                   exact
@@ -183,12 +189,22 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive, ref, computed, withDefaults } from "vue";
 import { Icon } from "@iconify/vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/store/auth.store";
 import ConfirmModal from "@/components/base/modals/ConfirmModal.vue";
 import Loading from "@/components/base/Loading.vue";
+import { VaiTroKey, ViTriNhanVienKey } from "@/types/taikhoan.types";
+import type { JwtPayload, NhanVienJwtPayload } from "@/types/api.types";
+
+interface Props {
+  variant?: "full" | "minimal";
+}
+
+const { variant } = withDefaults(defineProps<Props>(), {
+  variant: "full",
+});
 
 const router = useRouter();
 
@@ -200,6 +216,44 @@ const subMenu = reactive({
 const authStore = useAuthStore();
 const isLogoutModalVisible = ref(false);
 const isLoading = ref(false);
+
+/**
+ * Lấy payload của nhân viên từ auth store.
+ * Giả định rằng authStore có một state/getter là `payload` chứa thông tin giải mã từ JWT.
+ */
+const userPayload = computed(() => authStore.payload as JwtPayload | null);
+
+/**
+ * Tạo một đối tượng quyền dựa trên vị trí (`viTri`) của nhân viên.
+ * Cách tiếp cận này giúp template gọn gàng và logic tập trung ở một nơi.
+ */
+const permissions = computed(() => {
+  const payload = userPayload.value;
+
+  if (!payload) {
+    // Nếu không có payload, ẩn tất cả các mục menu để đảm bảo an toàn.
+    return { canViewDashboard: false };
+  }
+
+  // Admin có vai trò riêng và có thể thấy tất cả mọi thứ.
+  const isAdmin = payload.role === VaiTroKey.ADMIN;
+
+  // Nếu không phải admin, kiểm tra xem có phải nhân viên không và lấy vị trí.
+  const viTri =
+    payload.role === VaiTroKey.NHAN_VIEN
+      ? (payload as NhanVienJwtPayload).viTri
+      : null;
+
+  return {
+    canViewDashboard: isAdmin, // Chỉ admin mới có thể xem dashboard.
+    canManageOrders: isAdmin || viTri === ViTriNhanVienKey.NHAN_VIEN_BAN_HANG,
+    canManageShipping: isAdmin, // Chỉ admin mới có thể quản lý giao hàng từ đây
+    canManageWarehouse:
+      isAdmin || viTri === ViTriNhanVienKey.NHAN_VIEN_QUAN_LI_KHO,
+    canManageProducts: isAdmin, // Chỉ admin mới được quản lý sản phẩm/danh mục.
+    canManageAccounts: isAdmin, // Chỉ admin mới được quản lý tài khoản.
+  };
+});
 
 const toggleSubMenu = (menu: keyof typeof subMenu) => {
   subMenu[menu] = !subMenu[menu];

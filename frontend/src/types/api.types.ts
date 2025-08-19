@@ -1,3 +1,5 @@
+import type { VaiTroKey, ViTriNhanVienKey } from "./taikhoan.types";
+
 /**
  * Dữ liệu phân trang gửi lên API.
  */
@@ -35,12 +37,54 @@ export interface EnumObject<T extends string> {
   label: string;
 }
 
-// --- Types ---
-// Định nghĩa cấu trúc của JWT payload để đảm bảo an toàn kiểu dữ liệu.
-export interface JwtPayload {
-  sub: string; // User's email
-  name: string; // User's full name
-  role: string; // User's single role
+// --- JWT Payload Types ---
+
+/**
+ * Base structure for all JWT payloads in the system.
+ */
+interface BaseJwtPayload {
+  /** Subject (usually the user's email) */
+  sub: string;
+  /** User's unique identifier */
+  userId: number;
+  /** User's full name */
+  fullName: string;
+  /** Issued at (Unix timestamp) */
   iat: number;
+  /** Expiration time (Unix timestamp) */
   exp: number;
 }
+
+/**
+ * JWT payload for a customer.
+ */
+interface KhachHangJwtPayload extends BaseJwtPayload {
+  role: VaiTroKey.KHACH_HANG;
+}
+
+/**
+ * JWT payload for an employee.
+ */
+export interface NhanVienJwtPayload extends BaseJwtPayload {
+  role: VaiTroKey.NHAN_VIEN;
+  /** The specific position/role of the employee */
+  viTri: ViTriNhanVienKey;
+}
+
+/**
+ * JWT payload for an admin.
+ * Admins have a distinct role and do not have a 'viTri' (position).
+ */
+interface AdminJwtPayload extends BaseJwtPayload {
+  role: VaiTroKey.ADMIN;
+}
+
+/**
+ * Represents the decoded JWT payload, which can vary based on the user's role.
+ * Using a discriminated union on the `role` property allows for type-safe
+ * access to role-specific fields like `viTri` for employees.
+ */
+export type JwtPayload =
+  | KhachHangJwtPayload
+  | NhanVienJwtPayload
+  | AdminJwtPayload;

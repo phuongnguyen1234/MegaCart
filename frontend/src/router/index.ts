@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { decodeJwtPayload } from "@/utils/jwt";
-import { JwtPayload } from "@/types/api.types";
+import type { JwtPayload, NhanVienJwtPayload } from "@/types/api.types";
+import { VaiTroKey, ViTriNhanVienKey } from "@/types/taikhoan.types";
 // --- General & Customer Views ---
 import DangNhapView from "@/views/DangNhapView.vue";
 import TrangChuView from "@/views/khachhang/TrangChuView.vue";
@@ -56,19 +57,19 @@ const router = createRouter({
       path: "/tai-khoan",
       name: "TaiKhoan",
       component: CapNhatTaiKhoanView,
-      meta: { requiresAuth: true, roles: ["KHACH_HANG"] }, // Chỉ cho phép KHACH_HANG
+      meta: { requiresAuth: true, roles: [VaiTroKey.KHACH_HANG] },
     },
     {
       path: "/gio-hang",
       name: "GioHang",
       component: GioHangView,
-      meta: { requiresAuth: true, roles: ["KHACH_HANG"] }, // Chỉ cho phép KHACH_HANG
+      meta: { requiresAuth: true, roles: [VaiTroKey.KHACH_HANG] },
     },
     {
       path: "/lich-su-mua-hang",
       name: "LichSuMuaHang",
       component: LichSuMuaHangView,
-      meta: { requiresAuth: true, roles: ["KHACH_HANG"] }, // Chỉ cho phép KHACH_HANG
+      meta: { requiresAuth: true, roles: [VaiTroKey.KHACH_HANG] },
     },
     {
       path: "/dat-lai-mat-khau",
@@ -96,14 +97,57 @@ const router = createRouter({
       component: XemDanhSachSanPhamView,
       meta: { customerOnly: true },
     },
-    // === ADMIN ROUTES ===
+    // === MANAGEMENT ROUTES ===
     {
-      path: "/admin",
+      path: "/quan-ly",
       component: AdminLayout,
-      meta: { requiresAuth: true, roles: ["ADMIN", "NHAN_VIEN"] }, // Chỉ cho phép ADMIN và NHAN_VIEN
+      // Chỉ cho phép người dùng có vai trò NHAN_VIEN (bao gồm cả ADMIN và các vị trí khác)
+      // truy cập vào các route trong layout này.
+      meta: {
+        requiresAuth: true,
+        roles: [VaiTroKey.NHAN_VIEN, VaiTroKey.ADMIN],
+      },
       children: [
-        { path: "", redirect: "/admin/dashboard" }, // Redirect /admin to /admin/dashboard
-        { path: "dashboard", name: "ThongKe", component: ThongKeView },
+        {
+          path: "",
+          redirect: () => {
+            // Điều hướng động dựa trên vai trò và vị trí của nhân viên
+            const token = localStorage.getItem("access_token");
+            const payload = token
+              ? (decodeJwtPayload(token) as JwtPayload | null)
+              : null;
+
+            if (payload?.role === VaiTroKey.ADMIN) {
+              return { path: "/quan-ly/dashboard" };
+            }
+
+            if (payload?.role === VaiTroKey.NHAN_VIEN) {
+              const nhanVienPayload = payload as NhanVienJwtPayload;
+              switch (nhanVienPayload.viTri) {
+                case ViTriNhanVienKey.NHAN_VIEN_QUAN_LI_KHO:
+                  return { path: "/quan-ly/kho-hang" };
+                case ViTriNhanVienKey.NHAN_VIEN_BAN_HANG:
+                  return { path: "/quan-ly/don-hang" };
+                // Nhân viên giao hàng đã được xử lý ở beforeEach, không nên vào /quan-ly.
+                // Đây là một fallback an toàn.
+                case ViTriNhanVienKey.NHAN_VIEN_GIAO_HANG:
+                  return { name: "GiaoHang" };
+                default:
+                  // Fallback cho các vị trí nhân viên khác (nếu có)
+                  return { path: "/quan-ly/don-hang" };
+              }
+            }
+
+            // Fallback cuối cùng nếu không xác định được vai trò -> về trang đăng nhập
+            return { name: "DangNhap" };
+          },
+        },
+        {
+          path: "dashboard",
+          name: "ThongKe",
+          component: ThongKeView,
+          meta: { roles: [VaiTroKey.ADMIN] }, // Chỉ Admin mới được xem Thống kê
+        },
         { path: "don-hang", name: "DonHang", component: QuanLiDonHangView },
         {
           path: "giao-hang",
@@ -129,7 +173,12 @@ const router = createRouter({
       path: "/giao-hang",
       name: "GiaoHang",
       component: GiaoHangView,
-      meta: { requiresAuth: true, roles: ["ADMIN", "NHAN_VIEN"] },
+      meta: {
+        requiresAuth: true,
+        roles: [VaiTroKey.NHAN_VIEN], // Chỉ cho phép nhân viên
+        // Yêu cầu vị trí cụ thể là nhân viên giao hàng
+        requiredPosition: [ViTriNhanVienKey.NHAN_VIEN_GIAO_HANG],
+      },
     },
     // --- DYNAMIC ROUTES (PRODUCT/CATEGORY) ---
     // Phải được đặt ở cuối để không ghi đè các route tĩnh ở trên.
@@ -155,30 +204,32 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem("access_token");
   const payload = token ? (decodeJwtPayload(token) as JwtPayload | null) : null;
   if (payload) {
-    // Log payload đã được giải mã để kiểm tra
-    console.log("Decoded JWT Payload in Router Guard:", payload);
+    // console.log("Decoded JWT Payload in Router Guard:", payload); // Bật khi cần debug
   }
-  // Lỗi: JWT payload chứa một mảng các vai trò (roles), không phải một vai trò (role) đơn lẻ.
-  // Sửa lại để đọc mảng roles.
-  const userRole = payload?.role || "";
+  const userRole = payload?.role;
 
   const isGuestRoute = to.matched.some((record) => record.meta.guest);
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
   const requiredRoles = to.matched.flatMap(
     (record) => record.meta.roles || []
-  ) as string[];
+  ) as VaiTroKey[];
+  const requiredPositions = to.matched.flatMap(
+    (record) => (record.meta.requiredPosition as ViTriNhanVienKey[]) || []
+  );
   const isCustomerOnlyRoute = to.matched.some(
     (record) => record.meta.customerOnly
   );
 
   // Tạo biến cờ để code dễ đọc hơn
-  const isStaff = userRole === "ADMIN" || userRole === "NHAN_VIEN";
+  // "Staff" bao gồm cả Nhân viên và Admin.
+  const isStaff =
+    userRole === VaiTroKey.NHAN_VIEN || userRole === VaiTroKey.ADMIN;
 
   // Luồng 1: Đã đăng nhập nhưng vào trang guest (vd: /dang-nhap)
   // Chuyển hướng về trang chủ/dashboard tương ứng.
   if (token && isGuestRoute) {
     if (isStaff) {
-      return next({ path: "/admin/dashboard" });
+      return next({ path: "/quan-ly" }); // Để /admin tự điều hướng
     }
     return next({ name: "TrangChu" });
   }
@@ -186,7 +237,7 @@ router.beforeEach((to, from, next) => {
   // Luồng 1.5 (Mới): Admin/Nhân viên đã đăng nhập và cố gắng truy cập trang chỉ dành cho khách hàng.
   // Chuyển hướng họ về trang dashboard.
   if (token && isStaff && isCustomerOnlyRoute) {
-    return next({ path: "/admin/dashboard" });
+    return next({ path: "/quan-ly" }); // Để /admin tự điều hướng
   }
 
   // Luồng 2: Chưa đăng nhập nhưng vào trang cần xác thực
@@ -195,23 +246,60 @@ router.beforeEach((to, from, next) => {
     return next({ name: "DangNhap", query: { redirect: to.fullPath } });
   }
 
-  // Luồng 3: Đã đăng nhập, kiểm tra vai trò cho các trang yêu cầu vai trò cụ thể
-  if (token && requiredRoles.length > 0) {
-    // Kiểm tra xem vai trò của người dùng có nằm trong danh sách vai trò được yêu cầu không
-    const hasRequiredRole = requiredRoles.includes(userRole);
-    if (!hasRequiredRole) {
-      // Không có quyền -> chuyển hướng về trang phù hợp với vai trò
+  // Luồng 3: Đã đăng nhập, kiểm tra quyền truy cập (vai trò và vị trí)
+  if (token && requiresAuth) {
+    // A. Kiểm tra vai trò (Role Check)
+    // Người dùng phải có vai trò được phép cho MỌI cấp route (từ cha đến con).
+    // Sử dụng .every() để đảm bảo tất cả các điều kiện đều đúng.
+    const isRoleAuthorized = to.matched.every((record) => {
+      const roles = record.meta.roles as VaiTroKey[] | undefined;
+      // Nếu route không định nghĩa vai trò, cho qua ở cấp này
+      if (!roles || roles.length === 0) {
+        return true;
+      }
+      // Nếu có định nghĩa, vai trò người dùng phải nằm trong danh sách
+      return userRole ? roles.includes(userRole) : false;
+    });
+
+    if (!isRoleAuthorized) {
+      // Không có quyền truy cập dựa trên vai trò
       console.warn(
         `Truy cập bị từ chối: Route ${
           to.path
-        } yêu cầu vai trò ${requiredRoles.join(
-          ", "
-        )}, nhưng người dùng có vai trò ${userRole || "không xác định"}.`
+        } yêu cầu quyền mà người dùng (vai trò: ${
+          userRole || "không xác định"
+        }) không có.`
       );
+      // Chuyển hướng về trang an toàn
       if (isStaff) {
-        return next({ path: "/admin/dashboard" });
+        return next({ path: "/admin" }); // Để /admin tự điều hướng
       }
       return next({ name: "TrangChu" });
+    }
+
+    // B. Vai trò đã hợp lệ, kiểm tra các điều kiện phụ (Vị trí, etc.)
+    const userPosition = (payload as NhanVienJwtPayload)?.viTri;
+
+    // LUỒNG 3.1: Xử lý trường hợp đặc biệt cho nhân viên giao hàng.
+    // Họ không được phép truy cập vào bất kỳ trang nào trong khu vực /admin.
+    if (
+      userPosition === ViTriNhanVienKey.NHAN_VIEN_GIAO_HANG &&
+      to.path.startsWith("/admin")
+    ) {
+      return next({ name: "GiaoHang" });
+    }
+
+    // LUỒNG 3.2: Kiểm tra vị trí cụ thể nếu route yêu cầu.
+    // Áp dụng cho các route như /giao-hang.
+    if (requiredPositions.length > 0 && userRole === VaiTroKey.NHAN_VIEN) {
+      const hasRequiredPosition = userPosition
+        ? requiredPositions.includes(userPosition)
+        : false;
+
+      if (!hasRequiredPosition) {
+        // Có vai trò Nhân viên nhưng không đúng vị trí -> về trang an toàn
+        return next({ path: "/quan-ly" }); // Để /quan-ly tự điều hướng
+      }
     }
   }
 

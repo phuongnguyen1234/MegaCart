@@ -206,7 +206,7 @@ const handleLogin = async () => {
 
     // Chuyển hướng dựa trên vai trò
     if (userRole === "ADMIN" || userRole === "NHAN_VIEN") {
-      router.push({ path: "/admin/dashboard" });
+      router.push({ path: "/quan-ly/dashboard" });
     } else {
       router.push({ name: "TrangChu" });
     }

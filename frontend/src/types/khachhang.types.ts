@@ -51,5 +51,5 @@ export interface CapNhatTrangThaiTaiKhoanRequest {
 export interface GetKhachHangParams extends PageableParams {
   searchField?: "tenKhachHang" | "email" | "soDienThoai";
   searchValue?: string;
-  hienThiTaiKhoanBiKhoa?: boolean;
+  trangThai?: TrangThaiTaiKhoanKey;
 }

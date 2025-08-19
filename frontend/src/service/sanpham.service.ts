@@ -152,6 +152,26 @@ export const getChiTietSanPhamQuanLy = (
 };
 
 /**
+ * Helper function to create FormData for product creation/update.
+ * This encapsulates the logic for combining JSON data and files into a single payload.
+ * @private
+ * @param data - The product data object (ThemSanPhamRequest or CapNhatSanPhamRequest).
+ * @param files - An optional array of files to upload.
+ * @returns A FormData object ready to be sent.
+ */
+function createSanPhamFormData(data: object, files?: File[]): FormData {
+  const formData = new FormData();
+  // Append the JSON part as a Blob to ensure correct Content-Type
+  formData.append(
+    "sanPham",
+    new Blob([JSON.stringify(data)], { type: "application/json" })
+  );
+  if (files) {
+    files.forEach((file) => formData.append("files", file));
+  }
+  return formData;
+}
+/**
  * Tạo một sản phẩm mới.
  * Gửi request multipart/form-data.
  * Tương ứng với `POST /api/admin/san-pham`.
@@ -163,17 +183,8 @@ export const themSanPham = (
   data: ThemSanPhamRequest,
   files: File[]
 ): Promise<SanPhamQuanLyResponse> => {
-  const formData = new FormData();
-  formData.append(
-    "sanPham",
-    new Blob([JSON.stringify(data)], { type: "application/json" })
-  );
-  files.forEach((file) => {
-    formData.append("files", file);
-  });
-
-  // Axios tự động set Content-Type là multipart/form-data khi data là FormData
-  return apiClient.post("/admin/san-pham", formData);
+  const formData = createSanPhamFormData(data, files);
+  return apiClient.post("/admin/san-pham", formData); // Axios handles multipart header automatically
 };
 
 /**
@@ -190,16 +201,6 @@ export const capNhatSanPham = (
   data: CapNhatSanPhamRequest,
   files?: File[]
 ): Promise<ChiTietSanPhamQuanLyResponse> => {
-  const formData = new FormData();
-  formData.append(
-    "sanPham",
-    new Blob([JSON.stringify(data)], { type: "application/json" })
-  );
-  if (files && files.length > 0) {
-    files.forEach((file) => {
-      formData.append("files", file);
-    });
-  }
-
-  return apiClient.patch(`/admin/san-pham/${maSanPham}`, formData);
+  const formData = createSanPhamFormData(data, files);
+  return apiClient.patch(`/admin/san-pham/${maSanPham}`, formData); // Axios handles multipart header automatically
 };

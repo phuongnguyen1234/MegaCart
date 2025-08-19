@@ -1,293 +1,281 @@
 <template>
-  <Overlay :visible="visible" z-index="z-[1002]" @close="$emit('close')">
-    <div
-      v-if="donHang"
-      class="bg-white w-[450px] max-h-[90vh] rounded-lg shadow-xl relative p-4 flex flex-col"
-    >
-      <!-- Nút đóng -->
-      <button
-        class="cursor-pointer absolute top-2 right-2 text-2xl"
-        @click="$emit('close')"
-      >
-        ×
-      </button>
-
-      <!-- Tiêu đề -->
-      <h2 class="text-center text-lg font-semibold mb-2">
-        {{ modalTitle }}
-      </h2>
-
+  <BaseModal
+    :visible="visible"
+    :title="modalTitle"
+    width-class="w-[600px]"
+    @close="$emit('close')"
+  >
+    <div v-if="donHang" class="flex flex-col gap-6">
       <!-- Danh sách sản phẩm -->
-      <div class="flex-1 overflow-y-auto mb-4 px-2 py-1 space-y-2">
+      <div
+        class="max-h-[30vh] overflow-y-auto space-y-2 pr-2 -mr-2 custom-scrollbar"
+      >
         <CardSanPhamDonHang
           v-for="sp in danhSachSanPham"
-          :key="sp.id"
+          :key="sp.maSanPham"
           :sanPham="sp"
+          :is-management-mode="true"
         />
       </div>
 
       <!-- Tổng tiền -->
-      <div class="text-right font-semibold mb-4">
-        Tổng tiền: {{ tongTien.toLocaleString() }} VND
+      <div class="text-right font-semibold border-t pt-3">
+        Tổng tiền: {{ formatCurrency(tongTien) }}
       </div>
 
-      <!-- THÔNG TIN CỐ ĐỊNH (luôn hiển thị) -->
-      <div class="text-sm space-y-2 mb-4 border-b pb-4">
-        <div
-          v-for="item in thongTinCoDinh"
-          :key="item.key"
-          class="flex items-start gap-2"
-        >
-          <i :class="`fi ${item.icon} mt-1`"></i>
+      <!-- Thông tin cố định -->
+      <div class="text-sm space-y-3 border-t pt-4">
+        <div class="flex items-start gap-2">
+          <i class="fi fi-rr-user mt-1 text-gray-600"></i>
+          <span><strong>Người nhận:</strong> {{ donHang.tenNguoiNhan }}</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <i class="fi fi-rr-phone-call mt-1 text-gray-600"></i>
+          <span><strong>SĐT:</strong> {{ donHang.sdtNhanHang }}</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <i class="fi fi-rr-marker mt-1 text-gray-600"></i>
+          <span><strong>Địa chỉ:</strong> {{ donHang.diaChiNhanHang }}</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <i class="fi fi-rr-calendar-clock mt-1 text-gray-600"></i>
           <span
-            ><strong>{{ item.label }}:</strong> {{ item.value }}</span
+            ><strong>Thời gian đặt:</strong>
+            {{ formatDateTime(donHang.thoiGianDatHang) }}</span
+          >
+        </div>
+        <div class="flex items-start gap-2">
+          <i class="fi fi-rr-truck mt-1 text-gray-600"></i>
+          <span
+            ><strong>Hình thức giao hàng:</strong>
+            {{ donHang.hinhThucGiaoHang?.label }}</span
+          >
+        </div>
+        <div class="flex items-start gap-2">
+          <i class="fi fi-rr-money-bill mt-1 text-gray-600"></i>
+          <span
+            ><strong>Hình thức thanh toán:</strong>
+            {{ donHang.hinhThucThanhToan?.label }}</span
           >
         </div>
       </div>
 
-      <!-- THÔNG TIN CÓ THỂ SỬA -->
-      <!-- Chế độ xem -->
-      <div v-if="!laCheDoChinhSua" class="text-sm space-y-2 mb-4">
-        <div
-          v-for="item in thongTinXem"
-          :key="item.key"
-          class="flex items-start gap-2"
-        >
-          <i :class="`fi ${item.icon} mt-1`"></i>
-          <span
-            ><strong>{{ item.label }}:</strong> {{ item.value }}</span
-          >
-        </div>
-      </div>
-
-      <!-- FORM CHỈNH SỬA -->
-      <div v-if="laCheDoChinhSua" class="text-sm space-y-3">
+      <!-- Form chỉnh sửa (hiển thị có điều kiện) -->
+      <form v-if="laCheDoChinhSua" class="text-sm space-y-4 border-t pt-4">
+        <!-- Trạng thái đơn hàng -->
         <div>
-          <label class="block text-sm font-medium">Trạng thái:</label>
+          <label for="trang-thai-don-hang" class="font-semibold"
+            >Trạng thái đơn hàng</label
+          >
           <select
-            v-model="donHangForm.trangThai"
-            class="w-full border rounded px-2 py-1"
+            id="trang-thai-don-hang"
+            v-model="formData.trangThai"
+            class="input w-full mt-1"
           >
             <option
-              v-for="tt in MANG_TRANG_THAI_DON_HANG"
-              :key="tt"
-              :value="tt"
+              v-for="(label, key) in TrangThaiDonHangLabel"
+              :key="key"
+              :value="key"
             >
-              {{ tt }}
+              {{ label }}
             </option>
           </select>
         </div>
+
+        <!-- Trạng thái thanh toán -->
         <div>
-          <label class="block font-medium">Trạng thái thanh toán:</label>
+          <label for="trang-thai-thanh-toan" class="font-semibold"
+            >Trạng thái thanh toán</label
+          >
           <select
-            v-model="donHangForm.trangThaiThanhToan"
-            class="w-full border border-gray-300 rounded px-2 py-1 mt-1"
+            id="trang-thai-thanh-toan"
+            v-model="formData.trangThaiThanhToan"
+            class="input w-full mt-1"
           >
             <option
-              v-for="tt in MANG_TRANG_THAI_THANH_TOAN"
-              :key="tt"
-              :value="tt"
+              v-for="(label, key) in TrangThaiThanhToanLabel"
+              :key="key"
+              :value="key"
             >
-              {{ tt }}
+              {{ label }}
             </option>
           </select>
         </div>
+
+        <!-- Ngày dự kiến giao -->
         <div>
-          <label class="block font-medium">Dự kiến giao hàng:</label>
+          <label for="du-kien-giao" class="font-semibold"
+            >Ngày dự kiến giao</label
+          >
           <input
             type="datetime-local"
-            v-model="donHangForm.duKienGiaoHang"
-            class="w-full border border-gray-300 rounded px-2 py-1 mt-1"
+            id="du-kien-giao"
+            v-model="formData.duKienGiaoHang"
+            class="input w-full mt-1"
           />
         </div>
+
+        <!-- Ghi chú -->
         <div>
-          <label class="block font-medium">Ghi chú:</label>
+          <label for="ghi-chu" class="font-semibold">Ghi chú</label>
           <textarea
-            v-model="donHangForm.ghiChu"
-            class="w-full border border-gray-300 rounded px-2 py-1 mt-1 resize-none"
-            rows="3"
+            id="ghi-chu"
+            v-model="formData.ghiChu"
+            rows="2"
+            class="input w-full mt-1 resize-none"
           ></textarea>
         </div>
+      </form>
 
-        <!-- Nút lưu -->
+      <!-- Thông tin chỉ xem (khi không ở chế độ sửa) -->
+      <div v-else class="text-sm space-y-3 border-t pt-4">
+        <div class="flex items-start gap-2">
+          <i class="fi fi-rr-badge-check mt-1 text-gray-600"></i>
+          <span
+            ><strong>Trạng thái:</strong> {{ donHang.trangThai.label }}</span
+          >
+        </div>
+        <div class="flex items-start gap-2">
+          <i class="fi fi-rr-credit-card mt-1 text-gray-600"></i>
+          <span
+            ><strong>Thanh toán:</strong>
+            {{ donHang.trangThaiThanhToan.label }}</span
+          >
+        </div>
+        <div class="flex items-start gap-2">
+          <i class="fi fi-rr-shipping-fast mt-1 text-gray-600"></i>
+          <span
+            ><strong>Dự kiến giao:</strong>
+            {{
+              donHang.duKienGiaoHang
+                ? formatDateTime(donHang.duKienGiaoHang)
+                : "Chưa có"
+            }}
+          </span>
+        </div>
+        <div class="flex items-start gap-2" v-if="donHang.ghiChu">
+          <i class="fi fi-rr-comment mt-1 text-gray-600"></i>
+          <span><strong>Ghi chú:</strong> {{ donHang.ghiChu }}</span>
+        </div>
+      </div>
+    </div>
+    <div v-else class="text-center py-8 text-gray-500">
+      Đang tải thông tin đơn hàng...
+    </div>
+
+    <template #footer>
+      <div class="flex justify-end gap-4">
+        <button class="btn" @click="$emit('close')">
+          {{ laCheDoChinhSua ? "Hủy" : "Đóng" }}
+        </button>
         <button
-          class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
-          @click="luuThayDoi"
+          v-if="laCheDoChinhSua"
+          class="btn btn-primary"
+          @click="handleSave"
         >
           Lưu thay đổi
         </button>
       </div>
-    </div>
-  </Overlay>
+    </template>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
-import Overlay from "../base/Overlay.vue";
+import BaseModal from "../base/modals/BaseModal.vue";
 import CardSanPhamDonHang from "@/components/base/card/CardSanPhamDonHang.vue";
-import { ref, watch, computed } from "vue";
-import type { DonHang } from "@/types/DonHang";
+import { ref, computed, watch } from "vue";
+import type {
+  ChiTietDonHangQuanLyResponse,
+  CapNhatDonHangRequest,
+  ChiTietDonHangItem,
+} from "@/types/donhang.types";
+import {
+  TrangThaiDonHangLabel,
+  TrangThaiThanhToanLabel,
+} from "@/types/donhang.types";
 
 const props = defineProps<{
   visible: boolean;
-  danhSachSanPham: {
-    id: number;
-    ten: string;
-    donGia: number;
-    soLuong: number;
-    hinhAnh: string;
-  }[];
-  tongTien: number;
   laCheDoChinhSua: boolean;
-  donHang: DonHang | null;
+  danhSachSanPham: ChiTietDonHangItem[];
+  tongTien: number;
+  donHang: ChiTietDonHangQuanLyResponse | null;
 }>();
 
 const emit = defineEmits<{
   (e: "close"): void;
-  (e: "luu", form: Partial<DonHang>): void;
+  (e: "luu", data: CapNhatDonHangRequest): void;
 }>();
 
-interface DonHangForm {
-  trangThai?: string;
-  trangThaiThanhToan?: string;
-  duKienGiaoHang?: string; // Dùng string cho input type="datetime-local"
-  ghiChu?: string;
-}
-
-const donHangForm = ref<DonHangForm>({});
-
-const MANG_TRANG_THAI_DON_HANG = [
-  "Chờ xác nhận",
-  "Chờ xử lí",
-  "Đang giao",
-  "Đã giao",
-  "Đã hủy",
-];
-
-const MANG_TRANG_THAI_THANH_TOAN = ["Chưa thanh toán", "Đã thanh toán"];
+// --- Form State for Editing ---
+const formData = ref<CapNhatDonHangRequest>({});
 
 const modalTitle = computed(() => {
   if (!props.donHang) return "";
-  return props.laCheDoChinhSua
-    ? `Chỉnh sửa đơn hàng #${props.donHang.maDonHang}`
-    : `Chi tiết đơn hàng #${props.donHang.maDonHang}`;
+  const prefix = props.laCheDoChinhSua ? "Cập nhật" : "Chi tiết";
+  return `${prefix} đơn hàng #${props.donHang.maDonHang}`;
 });
 
-const thongTinCoDinh = computed(() => {
-  if (!props.donHang) return [];
-  const details = [
-    {
-      key: "tenNguoiNhan",
-      label: "Tên người nhận",
-      value: props.donHang.tenNguoiNhan,
-      icon: "fi-rr-user",
-    },
-    {
-      key: "soDienThoai",
-      label: "Số điện thoại",
-      value: props.donHang.sdtNhanHang,
-      icon: "fi-rr-phone-call",
-    },
-    {
-      key: "diaChi",
-      label: "Địa chỉ",
-      value: props.donHang.diaChiNhanHang,
-      icon: "fi-rr-marker",
-    },
-    {
-      key: "thoiGianDat",
-      label: "Thời gian đặt",
-      value: new Date(props.donHang.thoiGianDatHang).toLocaleString("vi-VN"),
-      icon: "fi-rr-calendar-clock",
-    },
-    {
-      key: "hinhThucGiaoHang",
-      label: "Hình thức giao hàng",
-      value: props.donHang.hinhThucNhanHang,
-      icon: "fi-rr-truck",
-    },
-    {
-      key: "hinhThucThanhToan",
-      label: "Hình thức thanh toán",
-      value: props.donHang.hinhThucThanhToan,
-      icon: "fi-rr-money-bill",
-    },
-  ];
-  return details.filter((item) => item.value);
-});
-
-const thongTinXem = computed(() => {
-  if (!props.donHang) return [];
-  const details = [
-    {
-      key: "trangThai",
-      label: "Trạng thái",
-      value: props.donHang.trangThai,
-      icon: "fi-rr-badge-check",
-    },
-    {
-      key: "trangThaiThanhToan",
-      label: "Trạng thái thanh toán",
-      value: props.donHang.trangThaiThanhToan,
-      icon: "fi-rr-credit-card",
-    },
-    {
-      key: "duKienGiaoHang",
-      label: "Dự kiến giao",
-      value: props.donHang.duKienGiaoHang
-        ? new Date(props.donHang.duKienGiaoHang).toLocaleString("vi-VN")
-        : "Chưa có",
-      icon: "fi-rr-shipping-fast",
-    },
-    {
-      key: "ghiChu",
-      label: "Ghi chú",
-      value: props.donHang.ghiChu,
-      icon: "fi-rr-comment",
-    },
-  ];
-
-  // Lọc ra những mục có giá trị (đặc biệt hữu ích cho các trường tùy chọn như ghi chú)
-  return details.filter((item) => item.value);
-});
-
-const formatDateForInput = (date: Date | string | undefined | null): string => {
-  if (!date) return "";
-  const d = new Date(date);
-  if (isNaN(d.getTime())) return "";
-
-  // Lấy thông tin ngày tháng năm giờ phút theo múi giờ địa phương
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-};
-
+// --- Watchers ---
 watch(
   () => props.donHang,
   (newDonHang) => {
-    if (newDonHang) {
-      donHangForm.value = {
-        trangThai: newDonHang.trangThai,
-        trangThaiThanhToan: newDonHang.trangThaiThanhToan,
-        duKienGiaoHang: formatDateForInput(newDonHang.duKienGiaoHang),
-        ghiChu: newDonHang.ghiChu || "",
+    if (newDonHang && props.laCheDoChinhSua) {
+      // Populate form data when the order details are available
+      formData.value = {
+        trangThai: newDonHang.trangThai.value,
+        trangThaiThanhToan: newDonHang.trangThaiThanhToan.value,
+        duKienGiaoHang: newDonHang.duKienGiaoHang
+          ? newDonHang.duKienGiaoHang.slice(0, 16)
+          : undefined, // Format for datetime-local
+        ghiChu: newDonHang.ghiChu,
       };
+    } else {
+      // Reset form data if not in edit mode or no order
+      formData.value = {};
     }
   },
   { immediate: true }
 );
 
-const luuThayDoi = () => {
-  // Chuyển đổi lại duKienGiaoHang từ string sang Date trước khi emit
-  const payload: Partial<DonHang> = {
-    ...donHangForm.value,
-    duKienGiaoHang: donHangForm.value.duKienGiaoHang
-      ? new Date(donHangForm.value.duKienGiaoHang)
-      : undefined,
-  };
-  emit("luu", payload);
+// --- Methods ---
+const handleSave = () => {
+  // Convert datetime-local string back to ISO string if it exists
+  const dataToEmit = { ...formData.value };
+  if (dataToEmit.duKienGiaoHang) {
+    dataToEmit.duKienGiaoHang = new Date(
+      dataToEmit.duKienGiaoHang
+    ).toISOString();
+  }
+  emit("luu", dataToEmit);
+};
+
+const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(value);
+};
+
+const formatDateTime = (iso: string): string => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return d.toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 </script>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #d1d5db; /* gray-400 */
+  border-radius: 10px;
+}
+</style>

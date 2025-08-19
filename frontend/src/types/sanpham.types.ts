@@ -58,16 +58,16 @@ export const TrangThaiTonKho = TrangThaiTonKhoKey;
  * Giá trị của enum này phải TRÙNG KHỚP với tên của enum constant trong `TrangThaiSanPham.java` ở backend.
  */
 export enum TrangThaiSanPhamKey {
-  DANG_BAN = "BAN", // Lưu ý: Backend đang dùng "BAN"
-  NGUNG_BAN = "KHONG_BAN", // Lưu ý: Backend đang dùng "KHONG_BAN"
+  BAN = "BAN", // Lưu ý: Backend đang dùng "BAN"
+  KHONG_BAN = "KHONG_BAN", // Lưu ý: Backend đang dùng "KHONG_BAN"
 }
 
 /**
  * Ánh xạ từ key của trạng thái kinh doanh sang tên hiển thị (label).
  */
 export const TrangThaiSanPhamLabel: Record<TrangThaiSanPhamKey, string> = {
-  [TrangThaiSanPhamKey.DANG_BAN]: "Đang bán",
-  [TrangThaiSanPhamKey.NGUNG_BAN]: "Ngừng bán",
+  [TrangThaiSanPhamKey.BAN]: "Bán",
+  [TrangThaiSanPhamKey.KHONG_BAN]: "Không bán",
 };
 
 /**
@@ -157,9 +157,10 @@ export interface GetSanPhamQuanLyParams extends PageableParams {
  */
 export interface SanPhamQuanLyResponse {
   maSanPham: number;
-  anhMinhHoaChinh: string;
   tenSanPham: string;
-  tenDanhMuc: string;
+  anhMinhHoaChinh: string;
+  danhMucCha?: string; // Có thể null
+  danhMucCon?: string; // Có thể null
   donGia: number;
   trangThai: TrangThaiSanPhamObject;
 }
@@ -171,15 +172,13 @@ export interface SanPhamQuanLyResponse {
 export interface ChiTietSanPhamQuanLyResponse {
   maSanPham: number;
   tenSanPham: string;
+  maDanhMuc: number; //day la ma danh muc con
   moTa: string;
-  ghiChu: string;
+  nhaSanXuat: string;
   donGia: number;
   donVi: string;
-  maDanhMuc: number;
-  tenDanhMuc: string;
-  maNhaSanXuat: number;
-  tenNhaSanXuat: string;
-  trangThai: TrangThaiSanPhamKey; // Dùng key để dễ bind vào form
+  ghiChu: string;
+  trangThai: TrangThaiSanPhamObject; // Backend trả về object đầy đủ
   anhMinhHoas: AnhMinhHoa[];
 }
 
@@ -195,7 +194,7 @@ export interface ThemSanPhamRequest {
   donGia: number;
   donVi: string;
   maDanhMuc: number;
-  maNhaSanXuat: number;
+  nhaSanXuat: string; // Backend xử lý việc tìm hoặc tạo mới từ tên
   trangThai: TrangThaiSanPhamKey;
 }
 
@@ -204,8 +203,7 @@ export interface ThemSanPhamRequest {
  * Đây là phần JSON của request multipart/form-data.
  * Tương ứng với `CapNhatSanPhamRequest.java`.
  */
-export interface CapNhatSanPhamRequest
-  extends Omit<ThemSanPhamRequest, "soLuongBanDau"> {
+export interface CapNhatSanPhamRequest extends ThemSanPhamRequest {
   // Danh sách ID của các ảnh đã có mà người dùng muốn xóa
   maAnhCanXoa?: number[];
 }

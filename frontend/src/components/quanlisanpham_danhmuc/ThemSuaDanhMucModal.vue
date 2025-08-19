@@ -2,6 +2,7 @@
   <BaseModal
     :visible="visible"
     :title="title"
+    :is-loading="isLoading"
     :width-class="widthClass"
     @close="$emit('close')"
   >
@@ -13,8 +14,10 @@
           <input
             id="tenDanhMuc"
             type="text"
+            v-model="formData.tenDanhMuc"
             class="input w-full mt-1"
             placeholder="Nhập tên danh mục"
+            required
           />
         </div>
 
@@ -36,11 +39,19 @@
           <label for="danhMucCha">Danh mục cha</label>
           <select
             id="danhMucCha"
+            v-model="formData.maDanhMucCha"
             class="input w-full mt-1"
             :disabled="isDanhMucCha"
+            :required="!isDanhMucCha"
           >
-            <option>Chọn danh mục cha</option>
-            <!-- Thêm các option khác từ props hoặc API call -->
+            <option :value="undefined">-- Chọn danh mục cha --</option>
+            <option
+              v-for="dmc in danhMucChaOptions"
+              :key="dmc.maDanhMuc"
+              :value="dmc.maDanhMuc"
+            >
+              {{ dmc.tenDanhMuc }}
+            </option>
           </select>
         </div>
 
@@ -54,7 +65,7 @@
             >
               <input
                 type="checkbox"
-                v-model="trangThaiHoatDong"
+                v-model="isTrangThaiHoatDong"
                 id="trangThai"
                 class="sr-only peer"
               />
@@ -62,7 +73,7 @@
                 class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"
               ></div>
               <span class="ms-3 text-sm font-medium">{{
-                trangThaiHoatDong ? "Đang hoạt động" : "Ngừng hoạt động"
+                isTrangThaiHoatDong ? "Hoạt động" : "Không hoạt động"
               }}</span>
             </label>
           </div>
@@ -72,7 +83,12 @@
     <template #footer>
       <div class="flex justify-end gap-4">
         <button class="btn" @click="$emit('close')">Hủy</button>
-        <button type="submit" class="btn btn-primary" @click="handleSubmit">
+        <button
+          type="submit"
+          class="btn btn-primary"
+          @click="handleSubmit"
+          :disabled="isLoading"
+        >
           {{ isEditMode ? "Cập nhật danh mục" : "Thêm danh mục" }}
         </button>
       </div>
@@ -81,27 +97,150 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import BaseModal from "@/components/base/modals/BaseModal.vue";
+import {
+  themDanhMuc,
+  capNhatDanhMuc,
+  getDanhMucOptionsForFilter,
+} from "@/service/danhmuc.service";
+import type {
+  LuuDanhMucRequest,
+  ChiTietDanhMucQuanLyResponse,
+  DanhMucOptionResponse,
+} from "@/types/danhmuc.types";
+import { TrangThaiDanhMucKey } from "@/types/danhmuc.types";
+import { useToast } from "@/composables/useToast";
 
-defineProps<{
+const props = defineProps<{
   visible: boolean;
   title?: string;
   widthClass?: string;
   isEditMode?: boolean;
+  danhMucSua?: ChiTietDanhMucQuanLyResponse | null;
 }>();
+
 const emit = defineEmits<{
   (e: "close"): void;
+  (e: "success"): void;
 }>();
 
+// --- State ---
+const { showToast } = useToast();
+const isLoading = ref(false);
 const isDanhMucCha = ref(false);
-const trangThaiHoatDong = ref(true);
+const danhMucChaOptions = ref<DanhMucOptionResponse[]>([]);
 
-const handleSubmit = () => {
-  // TODO: Thêm logic xử lý submit form
-  // Ví dụ: emit('submit', formData);
-  emit("close"); // Tạm thời chỉ đóng modal
+const initialFormData: LuuDanhMucRequest = {
+  tenDanhMuc: "",
+  maDanhMucCha: undefined,
+  trangThai: TrangThaiDanhMucKey.HOAT_DONG,
 };
+const formData = ref<LuuDanhMucRequest>({ ...initialFormData });
+
+// --- Computed Properties ---
+const isTrangThaiHoatDong = computed({
+  get: () => formData.value.trangThai === TrangThaiDanhMucKey.HOAT_DONG,
+  set: (value) => {
+    formData.value.trangThai = value
+      ? TrangThaiDanhMucKey.HOAT_DONG
+      : TrangThaiDanhMucKey.KHONG_HOAT_DONG;
+  },
+});
+
+// --- Methods ---
+const resetFormState = () => {
+  formData.value = { ...initialFormData };
+  isDanhMucCha.value = false;
+};
+
+const fetchDanhMucChaOptions = async () => {
+  try {
+    danhMucChaOptions.value = await getDanhMucOptionsForFilter();
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách danh mục cha:", error);
+    showToast({
+      loai: "loi",
+      thongBao: "Không thể tải danh sách danh mục cha.",
+    });
+  }
+};
+
+const populateFormForEdit = (danhMuc: ChiTietDanhMucQuanLyResponse) => {
+  formData.value.tenDanhMuc = danhMuc.tenDanhMuc;
+  formData.value.trangThai = danhMuc.trangThai;
+
+  if (danhMuc.maDanhMucCha) {
+    isDanhMucCha.value = false;
+    formData.value.maDanhMucCha = danhMuc.maDanhMucCha;
+  } else {
+    isDanhMucCha.value = true;
+    formData.value.maDanhMucCha = undefined;
+  }
+};
+
+const handleSubmit = async () => {
+  if (!formData.value.tenDanhMuc.trim()) {
+    showToast({ loai: "loi", thongBao: "Tên danh mục không được để trống." });
+    return;
+  }
+  if (!isDanhMucCha.value && !formData.value.maDanhMucCha) {
+    showToast({ loai: "loi", thongBao: "Vui lòng chọn danh mục cha." });
+    return;
+  }
+
+  isLoading.value = true;
+  try {
+    const payload = { ...formData.value };
+    if (isDanhMucCha.value) {
+      payload.maDanhMucCha = undefined;
+    }
+
+    if (props.isEditMode && props.danhMucSua) {
+      await capNhatDanhMuc(props.danhMucSua.maDanhMuc, payload);
+      showToast({
+        loai: "thanhCong",
+        thongBao: "Cập nhật danh mục thành công!",
+      });
+    } else {
+      await themDanhMuc(payload);
+      showToast({
+        loai: "thanhCong",
+        thongBao: "Thêm danh mục mới thành công!",
+      });
+    }
+    emit("success");
+    emit("close");
+  } catch (error) {
+    console.error("Lỗi khi lưu danh mục:", error);
+    showToast({ loai: "loi", thongBao: "Đã có lỗi xảy ra." });
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// --- Watchers & Lifecycle ---
+watch(
+  () => props.visible,
+  (isVisible) => {
+    if (isVisible) {
+      resetFormState();
+      if (props.isEditMode && props.danhMucSua) {
+        populateFormForEdit(props.danhMucSua);
+      }
+    }
+  }
+);
+
+watch(isDanhMucCha, (isCha) => {
+  if (isCha) {
+    formData.value.maDanhMucCha = undefined;
+  }
+});
+
+onMounted(() => {
+  fetchDanhMucChaOptions();
+});
 </script>
 
 <style scoped>
