@@ -2,6 +2,7 @@ package com.megacart.service.impl;
 
 import com.megacart.dto.response.BreadcrumbItem;
 import com.megacart.enumeration.NhanSanPham;
+import com.megacart.enumeration.TrangThaiDanhMuc;
 import com.megacart.enumeration.TrangThaiSanPham;
 import com.megacart.enumeration.TrangThaiTonKho;
 import com.megacart.exception.ResourceNotFoundException;
@@ -71,12 +72,16 @@ public class SanPhamServiceImpl implements SanPhamService {
             if (query.getResultType() != Long.class && query.getResultType() != long.class) {
                 root.fetch("anhMinhHoas", jakarta.persistence.criteria.JoinType.LEFT);
                 root.fetch("kho", jakarta.persistence.criteria.JoinType.LEFT);
+                // Fetch luôn danh mục để kiểm tra trạng thái
+                root.fetch("danhMuc", jakarta.persistence.criteria.JoinType.INNER);
             }
 
             List<Predicate> predicates = new ArrayList<>();
 
             // Luôn lọc các sản phẩm đang được bán
             predicates.add(cb.equal(root.get("trangThai"), TrangThaiSanPham.BAN));
+            // Và danh mục của sản phẩm đó cũng phải đang hoạt động
+            predicates.add(cb.equal(root.get("danhMuc").get("trangThai"), TrangThaiDanhMuc.HOAT_DONG));
 
             // Lọc theo từ khóa
             if (StringUtils.hasText(tuKhoa)) {
@@ -142,9 +147,11 @@ public class SanPhamServiceImpl implements SanPhamService {
         SanPham sanPham = sanPhamRepository.findById(maSanPham)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + maSanPham));
 
-        // Chỉ cho phép xem chi tiết các sản phẩm đang được bán.
-        // Nếu sản phẩm không còn bán, trả về lỗi 404 để thân thiện với người dùng và SEO.
-        if (sanPham.getTrangThai() != TrangThaiSanPham.BAN) {
+        // Chỉ cho phép xem chi tiết các sản phẩm đang được bán và thuộc danh mục đang hoạt động.
+        // Nếu không, trả về lỗi 404 để thân thiện với người dùng và SEO.
+        if (sanPham.getTrangThai() != TrangThaiSanPham.BAN ||
+            sanPham.getDanhMuc() == null ||
+            sanPham.getDanhMuc().getTrangThai() != TrangThaiDanhMuc.KHONG_HOAT_DONG) {
             throw new ResourceNotFoundException("Sản phẩm này không tồn tại hoặc đã ngừng kinh doanh.");
         }
 

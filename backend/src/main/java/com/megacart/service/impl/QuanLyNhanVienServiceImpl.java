@@ -4,6 +4,7 @@ import com.megacart.dto.request.CapNhatTrangThaiTaiKhoanRequest;
 import com.megacart.dto.request.CapNhatNhanVienRequest;
 import com.megacart.dto.request.ThemNhanVienRequest;
 import com.megacart.dto.response.HienThiDanhSachNhanVienResponse;
+import com.megacart.dto.response.NhanVienOptionResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.enumeration.QuyenTruyCap;
 import com.megacart.enumeration.TrangThaiTaiKhoan;
@@ -185,6 +186,15 @@ public class QuanLyNhanVienServiceImpl implements QuanLyNhanVienService {
                 .trangThaiTaiKhoan(nhanVien.getTaiKhoan().getTrangThaiTaiKhoan())
                 .viTri(nhanVien.getViTri())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<NhanVienOptionResponse> getDSNhanVienGiaoHang() {
+        List<NhanVien> nhanViens = nhanVienRepository.findByViTriAndTaiKhoan_TrangThaiTaiKhoan(ViTri.NHAN_VIEN_GIAO_HANG, TrangThaiTaiKhoan.HOAT_DONG);
+        return nhanViens.stream()
+                .map(nv -> new NhanVienOptionResponse(nv.getMaNhanVien(), nv.getHoTen()))
+                .collect(Collectors.toList());
     }
 
 }

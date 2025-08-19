@@ -2,12 +2,15 @@ package com.megacart.service.impl;
 
 import com.megacart.dto.request.DatHangRequest;
 import com.megacart.dto.response.DatHangResponse;
+import com.megacart.enumeration.TrangThaiTaiKhoan;
+import com.megacart.enumeration.ViTri;
 import com.megacart.enumeration.TrangThaiSanPham;
 import com.megacart.enumeration.TrangThaiDonHang;
 import com.megacart.enumeration.TrangThaiThanhToan;
 import com.megacart.enumeration.TrangThaiXuLi;
 import com.megacart.exception.ResourceNotFoundException;
 import com.megacart.model.*;
+import com.megacart.repository.NhanVienRepository;
 import com.megacart.repository.ChiTietGioHangRepository;
 import com.megacart.repository.DonHangRepository;
 import com.megacart.repository.GioHangRepository;
@@ -20,6 +23,7 @@ import com.megacart.utils.ThoiGianGiaoHangUtils;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -37,6 +41,7 @@ public class DatHangServiceImpl implements DatHangService {
     private final KhachHangRepository khachHangRepository;
     private final SanPhamRepository sanPhamRepository;
     private final ChiTietGioHangRepository chiTietGioHangRepository;
+    private final NhanVienRepository nhanVienRepository;
 
     @Override
     @Transactional
@@ -73,19 +78,34 @@ public class DatHangServiceImpl implements DatHangService {
         boolean isSufficientStock = (outOfStockCount == 0);
         boolean isCompletelyOutOfStock = (outOfStockCount == requestedItems.size());
 
+        NhanVien nhanVienGiaoHang = null;
+
         if (isCompletelyOutOfStock) {
             // Trường hợp tất cả sản phẩm đều hết hàng -> Tự động hủy
             trangThaiDonHang = TrangThaiDonHang.DA_HUY;
             thongBao = "Đặt hàng không thành công. Tất cả sản phẩm trong đơn đã hết hàng.";
             ghiChuHeThong = "Hệ thống tự động hủy do tất cả sản phẩm đã hết hàng tại thời điểm đặt.";
         } else if (!isSufficientStock) {
-            // Trường hợp một vài sản phẩm hết hàng -> Chờ xác nhận
+            // Trường hợp một vài sản phẩm hết hàng -> Chờ xác nhận, không gán shipper
             trangThaiDonHang = TrangThaiDonHang.CHO_XAC_NHAN;
             thongBao = "Một hoặc nhiều sản phẩm không đủ số lượng. Đơn hàng của bạn đang chờ nhân viên xác nhận.";
         } else {
-            // Trường hợp tất cả sản phẩm đều đủ hàng -> Đang giao
-            trangThaiDonHang = TrangThaiDonHang.DANG_GIAO;
-            thongBao = "Đặt hàng thành công! Đơn hàng của bạn đang được giao.";
+            // Trường hợp tất cả sản phẩm đều đủ hàng -> Tìm và gán shipper
+            List<NhanVien> availableShippers = nhanVienRepository.findNhanVienGiaoHangItViecNhat(
+                    ViTri.NHAN_VIEN_GIAO_HANG,
+                    TrangThaiTaiKhoan.HOAT_DONG,
+                    TrangThaiDonHang.DANG_GIAO,
+                    PageRequest.of(0, 1));
+
+            if (availableShippers.isEmpty()) {
+                // Nếu không có shipper nào, chuyển sang chờ xử lý để admin gán tay
+                trangThaiDonHang = TrangThaiDonHang.CHO_XU_LY;
+                thongBao = "Đặt hàng thành công! Đơn hàng của bạn sẽ được xử lý và giao đi sớm nhất.";
+            } else {
+                nhanVienGiaoHang = availableShippers.get(0);
+                trangThaiDonHang = TrangThaiDonHang.DANG_GIAO;
+                thongBao = "Đặt hàng thành công! Đơn hàng của bạn đang được giao.";
+            }
         }
 
         // 4. Tạo đối tượng DonHang
@@ -99,6 +119,7 @@ public class DatHangServiceImpl implements DatHangService {
                 .hinhThucThanhToan(request.getHinhThucThanhToan())
                 .thoiGianDatHang(thoiGianDatHang)
                 .trangThai(trangThaiDonHang)
+                .nhanVienGiaoHang(nhanVienGiaoHang) // Gán nhân viên giao hàng vào đây
                 .ghiChu(ghiChuHeThong) // Thêm ghi chú nếu có
                 .trangThaiXuLi(TrangThaiXuLi.CHO_XU_LY)
                 .trangThaiThanhToan(TrangThaiThanhToan.CHUA_THANH_TOAN); // Mặc định là chưa thanh toán

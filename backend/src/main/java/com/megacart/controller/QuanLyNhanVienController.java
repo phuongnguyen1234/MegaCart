@@ -4,12 +4,16 @@ import com.megacart.dto.request.CapNhatTrangThaiTaiKhoanRequest;
 import com.megacart.dto.request.CapNhatNhanVienRequest;
 import com.megacart.dto.request.ThemNhanVienRequest;
 import com.megacart.dto.response.HienThiDanhSachNhanVienResponse;
+import com.megacart.dto.response.NhanVienOptionResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.enumeration.TrangThaiTaiKhoan;
 import com.megacart.enumeration.ViTri;
 import com.megacart.service.QuanLyNhanVienService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -77,5 +81,10 @@ public class QuanLyNhanVienController {
             @Valid @RequestBody CapNhatNhanVienRequest request) {
         HienThiDanhSachNhanVienResponse response = quanLyNhanVienService.capNhatNhanVien(maNhanVien, request);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/giao-hang")
+    public ResponseEntity<List<NhanVienOptionResponse>> getDSNhanVienGiaoHang() {
+        return ResponseEntity.ok(quanLyNhanVienService.getDSNhanVienGiaoHang());
     }
 }

@@ -1,8 +1,12 @@
 package com.megacart.controller;
 
 import com.megacart.dto.request.CapNhatDonHangRequest;
+import com.megacart.dto.request.GanGiaoHangRequest;
+import com.megacart.dto.response.ChiTietGiaoHangQuanLyResponse;
+import com.megacart.dto.response.DonHangDangGiaoQuanLyResponse;
 import com.megacart.dto.response.ChiTietDonHangQuanLyResponse;
 import com.megacart.dto.response.DonHangQuanLyResponse;
+import com.megacart.dto.response.MessageResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.enumeration.TrangThaiDonHang;
 import com.megacart.service.QuanLyDonHangService;
@@ -35,6 +39,14 @@ public class QuanLyDonHangController {
             @PageableDefault(size = 30, sort = "thoiGianDatHang", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(quanLyDonHangService.getDSDonHang(searchField, searchValue, trangThai, ngayDat, pageable));
     }
+
+    @GetMapping("/dang-giao")
+    public ResponseEntity<PagedResponse<DonHangDangGiaoQuanLyResponse>> getDSDonHangDangGiao(
+            @RequestParam(required = false) String searchField,
+            @RequestParam(required = false) String searchValue,
+            @PageableDefault(size = 30, sort = "thoiGianDatHang", direction = Sort.Direction.ASC) Pageable pageable) {
+        return ResponseEntity.ok(quanLyDonHangService.getDSDonHangDangGiao(searchField, searchValue, pageable));
+    }
     
     @GetMapping("/{maDonHang}")
     public ResponseEntity<ChiTietDonHangQuanLyResponse> getChiTietDonHang(@PathVariable Integer maDonHang) {
@@ -47,5 +59,16 @@ public class QuanLyDonHangController {
             @Valid @RequestBody CapNhatDonHangRequest request) {
         return ResponseEntity.ok(quanLyDonHangService.capNhatDonHang(maDonHang, request));
     }
-}
 
+    @GetMapping("/{maDonHang}/chi-tiet-giao-hang")
+    public ResponseEntity<ChiTietGiaoHangQuanLyResponse> getChiTietGiaoHangQuanLy(@PathVariable Integer maDonHang) {
+        return ResponseEntity.ok(quanLyDonHangService.getChiTietGiaoHangQuanLy(maDonHang));
+    }
+
+    @PatchMapping("/{maDonHang}/gan-giao-hang")
+    public ResponseEntity<MessageResponse> ganNhanVienGiaoHang(
+            @PathVariable Integer maDonHang,
+            @Valid @RequestBody GanGiaoHangRequest request) {
+        return ResponseEntity.ok(quanLyDonHangService.ganNhanVienGiaoHang(maDonHang, request));
+    }
+}
