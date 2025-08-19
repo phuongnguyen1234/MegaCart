@@ -1,12 +1,15 @@
 package com.megacart.service;
 
-import com.megacart.dto.request.CapNhatTrangThaiTaiKhoanRequest;
 import com.megacart.dto.request.CapNhatNhanVienRequest;
 import com.megacart.dto.request.ThemNhanVienRequest;
 import com.megacart.dto.response.HienThiDanhSachNhanVienResponse;
+import com.megacart.dto.response.NhanVienOptionResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.enumeration.TrangThaiTaiKhoan;
 import com.megacart.enumeration.ViTri;
+
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 
 public interface QuanLyNhanVienService {
@@ -38,4 +41,7 @@ public interface QuanLyNhanVienService {
      * @return Thông tin chi tiết của nhân viên sau khi đã cập nhật.
      */
     HienThiDanhSachNhanVienResponse capNhatNhanVien(Integer maNhanVien, CapNhatNhanVienRequest request);
+
+    
+    List<NhanVienOptionResponse> getDSNhanVienGiaoHang();
 }

@@ -4,8 +4,11 @@ import com.megacart.dto.request.ThemSanPhamRequest;
 import com.megacart.dto.response.AnhMinhHoaResponse;
 import com.megacart.dto.request.CapNhatSanPhamRequest;
 import com.megacart.dto.response.ChiTietSanPhamQuanLyResponse;
+import com.megacart.dto.response.MessageResponse;
+import com.megacart.dto.response.ThemSanPhamAsyncResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.dto.response.SanPhamQuanLyResponse;
+import com.megacart.enumeration.TrangThaiDanhMuc;
 import com.megacart.enumeration.TrangThaiSanPham;
 import com.megacart.exception.ResourceNotFoundException;
 import com.megacart.model.AnhMinhHoa;
@@ -26,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -35,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -96,7 +101,7 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
 
     @Override
     @Transactional
-    public SanPhamQuanLyResponse themSanPham(ThemSanPhamRequest request, List<MultipartFile> files) {
+    public ThemSanPhamAsyncResponse themSanPham(ThemSanPhamRequest request, List<MultipartFile> files) {
         // 1. Validate input
         if (files == null || files.isEmpty()) {
             throw new IllegalArgumentException("Cần ít nhất một ảnh minh họa.");
@@ -110,6 +115,9 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục với mã: " + request.getMaDanhMuc()));
         if (danhMuc.getDanhMucCha() == null) {
             throw new IllegalArgumentException("Không thể thêm sản phẩm vào danh mục cha. Vui lòng chọn một danh mục con.");
+        }
+        if (danhMuc.getTrangThai() == TrangThaiDanhMuc.KHONG_HOAT_DONG) {
+            throw new IllegalArgumentException("Không thể thêm sản phẩm vào một danh mục đang không hoạt động.");
         }
 
         // 3. Tạo và lưu đối tượng SanPham trước để có ID
@@ -127,38 +135,51 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
                 .build();
         SanPham savedSanPham = sanPhamRepository.save(sanPhamMoi);
 
-        // 4. Lưu ảnh và tạo đối tượng AnhMinhHoa
-        List<AnhMinhHoa> anhMinhHoas = new ArrayList<>();
-        for (int i = 0; i < files.size(); i++) {
-            MultipartFile file = files.get(i);
-            // Tạo thư mục con cho mỗi sản phẩm để dễ quản lý
-            String subDir = "sanpham/" + savedSanPham.getMaSanPham();
-            String filePath = fileStorageService.storeFile(file, subDir);
-
-            AnhMinhHoa anhMinhHoa = AnhMinhHoa.builder()
-                    .duongDan(filePath)
-                    .sanPham(savedSanPham)
-                    .soThuTu(i) // Gán số thứ tự dựa trên vị trí trong danh sách tải lên
-                    .laAnhChinh(i == request.getAnhChinhIndex())
-                    .build();
-            anhMinhHoas.add(anhMinhHoa);
-        }
-        // Lưu tất cả ảnh vào CSDL
-        anhMinhHoaRepository.saveAll(anhMinhHoas);
-        savedSanPham.setAnhMinhHoas(anhMinhHoas); // Cập nhật lại list ảnh cho entity
-
-        // 5. Tạo kho hàng cho sản phẩm mới với số lượng ban đầu là 0
+        // 4. Tạo kho hàng cho sản phẩm mới với số lượng ban đầu là 0
         Kho kho = Kho.builder()
                 .sanPham(savedSanPham)
                 .soLuong(0) // Mặc định số lượng là 0, sẽ được cập nhật khi nhập kho
                 .build();
         khoRepository.save(kho);
-        savedSanPham.setKho(kho); // Cập nhật lại kho cho entity
 
-        // 6. Trả về response
-        SanPhamQuanLyResponse response = mapToSanPhamQuanLyResponse(savedSanPham);
-        response.setThongBao("Thêm sản phẩm thành công.");
-        return response;
+        // 5. Xử lý tải ảnh bất đồng bộ
+        xuLyTaiAnhBatDongBo(savedSanPham, files, request.getAnhChinhIndex());
+
+        // 6. Trả về response ngay lập tức cho người dùng
+        return ThemSanPhamAsyncResponse.builder()
+                .maSanPham(savedSanPham.getMaSanPham())
+                .thongBao("Thêm sản phẩm thành công. Ảnh đang được xử lý và sẽ sớm được cập nhật.")
+                .build();
+    }
+
+    @Async // Chạy toàn bộ logic này trên một luồng khác
+    @Transactional // Tạo một transaction mới cho việc lưu ảnh
+    public void xuLyTaiAnhBatDongBo(SanPham sanPham, List<MultipartFile> files, int anhChinhIndex) {
+        String subDir = "sanpham/" + sanPham.getMaSanPham();
+
+        // Tạo một danh sách các tác vụ tải ảnh lên
+        List<CompletableFuture<AnhMinhHoa>> uploadTasks = new ArrayList<>();
+        for (int i = 0; i < files.size(); i++) {
+            final int index = i;
+            MultipartFile file = files.get(i);
+
+            CompletableFuture<AnhMinhHoa> task = fileStorageService.storeFileAsync(file, subDir)
+                    .thenApply(filePath -> AnhMinhHoa.builder()
+                            .duongDan(filePath)
+                            .sanPham(sanPham)
+                            .soThuTu(index)
+                            .laAnhChinh(index == anhChinhIndex)
+                            .build());
+            uploadTasks.add(task);
+        }
+
+        // Chờ tất cả các tác vụ tải lên hoàn thành
+        List<AnhMinhHoa> anhMinhHoas = uploadTasks.stream()
+                .map(CompletableFuture::join) // Lấy kết quả từ mỗi CompletableFuture
+                .collect(Collectors.toList());
+
+        // Lưu tất cả các đối tượng AnhMinhHoa vào CSDL trong một lần
+        anhMinhHoaRepository.saveAll(anhMinhHoas);
     }
 
     @Override
@@ -198,91 +219,90 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
 
     @Override
     @Transactional
-    public ChiTietSanPhamQuanLyResponse capNhatSanPham(Integer maSanPham, CapNhatSanPhamRequest request, List<MultipartFile> files) {
+    public MessageResponse capNhatSanPham(Integer maSanPham, CapNhatSanPhamRequest request, List<MultipartFile> files) {
         SanPham sanPham = sanPhamRepository.findById(maSanPham)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với mã: " + maSanPham));
 
-        // 1. Cập nhật các trường thông tin cơ bản
+        // 1. Cập nhật các trường thông tin cơ bản (đồng bộ)
         updateSanPhamFields(sanPham, request);
 
-        // 2. Xử lý xóa ảnh cũ
+        // 2. Xử lý xóa ảnh cũ (đồng bộ)
         if (request.getUrlsAnhXoa() != null && !request.getUrlsAnhXoa().isEmpty()) {
             List<AnhMinhHoa> anhCanXoa = sanPham.getAnhMinhHoas().stream()
                     .filter(anh -> request.getUrlsAnhXoa().contains(anh.getDuongDan()))
                     .toList();
 
             if (!anhCanXoa.isEmpty()) {
+                // Xóa khỏi quan hệ
                 sanPham.getAnhMinhHoas().removeAll(anhCanXoa);
+                // Xóa khỏi DB
                 anhMinhHoaRepository.deleteAll(anhCanXoa);
+                // Xóa khỏi Cloud Storage (có thể làm bất đồng bộ nếu muốn)
                 anhCanXoa.forEach(anh -> fileStorageService.deleteFile(anh.getDuongDan()));
             }
         }
 
-        // 3. Xử lý thêm ảnh mới (tạo object trong bộ nhớ, chưa lưu vào DB)
+        // 3. Xử lý thêm ảnh mới và cập nhật ảnh chính (bất đồng bộ)
+        xuLyCapNhatAnhBatDongBo(maSanPham, files, request.getAnhChinhIdentifier());
+
+        // 4. Trả về response ngay lập tức
+        return new MessageResponse("Yêu cầu cập nhật sản phẩm đã được tiếp nhận. Các thay đổi sẽ sớm được áp dụng.");
+    }
+
+    @Async
+    @Transactional
+    public void xuLyCapNhatAnhBatDongBo(Integer maSanPham, List<MultipartFile> files, String anhChinhIdentifier) {
+        // Bắt buộc phải lấy lại entity trong transaction mới này
+        SanPham sanPham = sanPhamRepository.findById(maSanPham)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với mã: " + maSanPham + " trong tác vụ bất đồng bộ."));
+
         List<AnhMinhHoa> anhMoiList = new ArrayList<>();
+
+        // 1. Xử lý tải lên các file ảnh mới
         if (files != null && !files.isEmpty()) {
-            for (MultipartFile file : files) {
-                String subDir = "sanpham/" + sanPham.getMaSanPham();
-                String filePath = fileStorageService.storeFile(file, subDir);
-                AnhMinhHoa anhMinhHoaMoi = AnhMinhHoa.builder()
-                        .sanPham(sanPham)
-                        .duongDan(filePath)
-                        // soThuTu sẽ được gán lại ở bước sau
-                        .laAnhChinh(false) // Tạm thời đặt là false, sẽ xử lý ở bước sau
-                        .build();
-                anhMoiList.add(anhMinhHoaMoi);
+            String subDir = "sanpham/" + sanPham.getMaSanPham();
+
+            List<CompletableFuture<AnhMinhHoa>> uploadTasks = files.stream()
+                    .map(file -> fileStorageService.storeFileAsync(file, subDir)
+                            .thenApply(filePath -> AnhMinhHoa.builder()
+                                    .duongDan(filePath)
+                                    .sanPham(sanPham)
+                                    .laAnhChinh(false) // Mặc định là false
+                                    .originalFileName(file.getOriginalFilename()) // Lưu tên file gốc để định danh
+                                    .build()))
+                    .toList();
+
+            // Chờ tất cả các tác vụ hoàn thành và thu thập kết quả
+            anhMoiList = uploadTasks.stream()
+                    .map(CompletableFuture::join)
+                    .collect(Collectors.toList());
+
+            // Lưu các ảnh mới vào CSDL và thêm vào danh sách của sản phẩm
+            if (!anhMoiList.isEmpty()) {
+                anhMinhHoaRepository.saveAll(anhMoiList);
+                sanPham.getAnhMinhHoas().addAll(anhMoiList);
             }
         }
 
-        // 4. Xử lý thay đổi ảnh chính
-        if (StringUtils.hasText(request.getAnhChinhIdentifier())) {
-            String identifier = request.getAnhChinhIdentifier();
-
-            // Bỏ đánh dấu ảnh chính hiện tại (nếu có)
+        // 2. Xử lý thay đổi ảnh chính
+        if (StringUtils.hasText(anhChinhIdentifier)) {
+            // Bỏ đánh dấu ảnh chính hiện tại
             sanPham.getAnhMinhHoas().stream()
                     .filter(AnhMinhHoa::isLaAnhChinh)
                     .findFirst()
                     .ifPresent(currentMain -> currentMain.setLaAnhChinh(false));
 
-            // Thử tìm ảnh chính mới trong số các ảnh đã có (dựa vào URL)
-            Optional<AnhMinhHoa> newMainFromExisting = sanPham.getAnhMinhHoas().stream()
-                    .filter(anh -> identifier.equals(anh.getDuongDan()))
-                    .findFirst();
-
-            if (newMainFromExisting.isPresent()) {
-                newMainFromExisting.get().setLaAnhChinh(true);
-            } else {
-                // Nếu không, thử tìm trong số các ảnh mới tải lên (dựa vào tên file gốc)
-                boolean foundInNewFiles = false;
-                if (files != null) {
-                    for (int i = 0; i < files.size(); i++) {
-                        if (identifier.equals(files.get(i).getOriginalFilename())) {
-                            anhMoiList.get(i).setLaAnhChinh(true);
-                            foundInNewFiles = true;
-                            break;
-                        }
-                    }
-                }
-                if (!foundInNewFiles) {
-                    throw new IllegalArgumentException("Không tìm thấy ảnh chính được chỉ định: " + identifier);
-                }
-            }
+            // Tìm ảnh chính mới trong số các ảnh đã có (dựa vào URL) hoặc ảnh mới (dựa vào tên file)
+            sanPham.getAnhMinhHoas().stream()
+                    .filter(anh -> anhChinhIdentifier.equals(anh.getDuongDan()) || anhChinhIdentifier.equals(anh.getOriginalFileName()))
+                    .findFirst()
+                    .ifPresent(newMain -> newMain.setLaAnhChinh(true));
         }
 
-        // 5. Lưu các ảnh mới vào DB và cập nhật quan hệ
-        if (!anhMoiList.isEmpty()) {
-            anhMinhHoaRepository.saveAll(anhMoiList);
-            sanPham.getAnhMinhHoas().addAll(anhMoiList);
-        }
-
-        // 6. Chuẩn hóa lại số thứ tự của tất cả ảnh
+        // 3. Sắp xếp lại thứ tự của tất cả các ảnh
         reorderImages(sanPham);
 
-        // 7. Lưu lại sản phẩm và trả về response
-        SanPham updatedSanPham = sanPhamRepository.save(sanPham);
-        ChiTietSanPhamQuanLyResponse response = mapToChiTietSanPhamQuanLyResponse(updatedSanPham);
-        response.setThongBao("Cập nhật sản phẩm thành công.");
-        return response;
+        // Transaction sẽ tự động commit các thay đổi trên các entity đã được quản lý.
     }
 
     private void reorderImages(SanPham sanPham) {
@@ -301,15 +321,28 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
         if (request.getDonVi() != null) sanPham.setDonVi(request.getDonVi());
         if (request.getNhan() != null) sanPham.setNhan(request.getNhan());
         if (request.getGhiChu() != null) sanPham.setGhiChu(request.getGhiChu());
-        if (request.getTrangThai() != null) sanPham.setTrangThai(request.getTrangThai());
 
+        // Xử lý thay đổi danh mục
         if (request.getMaDanhMuc() != null && !request.getMaDanhMuc().equals(sanPham.getDanhMuc().getMaDanhMuc())) {
-            DanhMuc danhMuc = danhMucRepository.findById(request.getMaDanhMuc())
+            DanhMuc danhMucMoi = danhMucRepository.findById(request.getMaDanhMuc())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục với mã: " + request.getMaDanhMuc()));
-            if (danhMuc.getDanhMucCha() == null) {
+            if (danhMucMoi.getDanhMucCha() == null) {
                 throw new IllegalArgumentException("Không thể gán sản phẩm vào danh mục cha.");
             }
-            sanPham.setDanhMuc(danhMuc);
+            // Ràng buộc: Không cho phép chuyển sản phẩm vào danh mục không hoạt động.
+            if (danhMucMoi.getTrangThai() == TrangThaiDanhMuc.KHONG_HOAT_DONG) {
+                throw new IllegalArgumentException("Không thể di chuyển sản phẩm vào một danh mục đang không hoạt động.");
+            }
+            sanPham.setDanhMuc(danhMucMoi);
+        }
+
+        // Xử lý thay đổi trạng thái sản phẩm
+        if (request.getTrangThai() != null) {
+            // Ràng buộc: Không cho phép đặt trạng thái "Bán" nếu danh mục của nó không hoạt động.
+            if (request.getTrangThai() == TrangThaiSanPham.BAN && sanPham.getDanhMuc().getTrangThai() == TrangThaiDanhMuc.KHONG_HOAT_DONG) {
+                throw new IllegalArgumentException("Không thể bán sản phẩm thuộc danh mục đang không hoạt động.");
+            }
+            sanPham.setTrangThai(request.getTrangThai());
         }
     }
 

@@ -3,6 +3,8 @@ package com.megacart.service;
 import com.megacart.dto.request.CapNhatSanPhamRequest;
 import com.megacart.dto.request.ThemSanPhamRequest;
 import com.megacart.dto.response.ChiTietSanPhamQuanLyResponse;
+import com.megacart.dto.response.MessageResponse;
+import com.megacart.dto.response.ThemSanPhamAsyncResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.dto.response.SanPhamQuanLyResponse;
 import com.megacart.enumeration.TrangThaiSanPham;
@@ -19,9 +21,9 @@ public interface QuanLySanPhamService {
         Pageable pageable
     );
 
-    SanPhamQuanLyResponse themSanPham(ThemSanPhamRequest request, List<MultipartFile> files);
+    ThemSanPhamAsyncResponse themSanPham(ThemSanPhamRequest request, List<MultipartFile> files);
 
     ChiTietSanPhamQuanLyResponse getChiTietSanPham(Integer maSanPham);
 
-    ChiTietSanPhamQuanLyResponse capNhatSanPham(Integer maSanPham, CapNhatSanPhamRequest request, List<MultipartFile> files);
+    MessageResponse capNhatSanPham(Integer maSanPham, CapNhatSanPhamRequest request, List<MultipartFile> files);
 }

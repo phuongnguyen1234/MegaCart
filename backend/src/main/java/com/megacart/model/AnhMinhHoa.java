@@ -31,4 +31,7 @@ public class AnhMinhHoa {
 
     @Column(name = "SoThuTu")
     private Integer soThuTu;
+
+    @Transient // Không lưu vào CSDL, chỉ dùng tạm thời để định danh ảnh mới tải lên
+    private String originalFileName;
 }

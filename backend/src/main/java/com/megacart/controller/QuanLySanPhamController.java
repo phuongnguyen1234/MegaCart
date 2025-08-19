@@ -3,6 +3,8 @@ package com.megacart.controller;
 import com.megacart.dto.request.ThemSanPhamRequest;
 import com.megacart.dto.request.CapNhatSanPhamRequest;
 import com.megacart.dto.response.ChiTietSanPhamQuanLyResponse;
+import com.megacart.dto.response.MessageResponse;
+import com.megacart.dto.response.ThemSanPhamAsyncResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.dto.response.SanPhamQuanLyResponse;
 import com.megacart.enumeration.TrangThaiSanPham;
@@ -48,11 +50,11 @@ public class QuanLySanPhamController {
     }
 
     @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<SanPhamQuanLyResponse> themSanPham(
+    public ResponseEntity<ThemSanPhamAsyncResponse> themSanPham(
             @Valid @RequestPart("sanPham") ThemSanPhamRequest request,
             @RequestPart("files") List<MultipartFile> files
     ) {
-        SanPhamQuanLyResponse response = quanLySanPhamService.themSanPham(request, files);
+        ThemSanPhamAsyncResponse response = quanLySanPhamService.themSanPham(request, files);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -63,12 +65,12 @@ public class QuanLySanPhamController {
     }
 
     @PatchMapping(value = "/{maSanPham}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<ChiTietSanPhamQuanLyResponse> capNhatSanPham(
+    public ResponseEntity<MessageResponse> capNhatSanPham(
             @PathVariable Integer maSanPham,
             @Valid @RequestPart("sanPham") CapNhatSanPhamRequest request,
             @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
-        ChiTietSanPhamQuanLyResponse response = quanLySanPhamService.capNhatSanPham(maSanPham, request, files);
+        MessageResponse response = quanLySanPhamService.capNhatSanPham(maSanPham, request, files);
         return ResponseEntity.ok(response);
     }
 }

@@ -15,7 +15,6 @@ public class ThemSanPhamRequest {
     @NotNull(message = "Danh mục không được để trống")
     private Integer maDanhMuc;
 
-    @NotBlank(message = "Mô tả không được để trống")
     private String moTa;
 
     @NotBlank(message = "Nhà sản xuất không được để trống")
@@ -28,11 +27,11 @@ public class ThemSanPhamRequest {
     @NotBlank(message = "Đơn vị không được để trống")
     private String donVi;
 
-    @NotNull(message = "Nhãn sản phẩm không được để trống")
     private NhanSanPham nhan;
 
     private String ghiChu;
 
+    @NotNull(message = "Trạng thái không được để trống")
     private TrangThaiSanPham trangThai;
 
     @NotNull(message = "Vui lòng chỉ định ảnh chính")

@@ -273,8 +273,12 @@ public class DanhMucServiceImpl implements DanhMucService {
             xuLyThayDoiTrangThai(danhMucToUpdate, request.getTrangThai());
         }
 
-        // Không cần gọi save() vì entity đang ở trạng thái managed trong transaction
-        DanhMucQuanLyResponse response = mapToDanhMucQuanLyResponse(danhMucToUpdate);
+        // Gọi save() để đảm bảo các thay đổi được đồng bộ với CSDL.
+        // Mặc dù @Transactional có cơ chế dirty-checking, việc gọi save() tường minh
+        // sẽ giúp code rõ ràng hơn và tránh các lỗi ngầm không đáng có.
+        DanhMuc savedDanhMuc = danhMucRepository.save(danhMucToUpdate);
+
+        DanhMucQuanLyResponse response = mapToDanhMucQuanLyResponse(savedDanhMuc);
         response.setThongBao("Cập nhật danh mục thành công.");
         return response;
     }
@@ -309,6 +313,11 @@ public class DanhMucServiceImpl implements DanhMucService {
             // Ràng buộc: Không thể gán vào một danh mục cha đang không hoạt động.
             if (danhMucChaMoiEntity.getTrangThai() == TrangThaiDanhMuc.KHONG_HOAT_DONG) {
                 throw new IllegalArgumentException("Không thể gán vào danh mục cha đang ở trạng thái không hoạt động.");
+            }
+
+            // Ràng buộc: Không cho phép gán vào một danh mục con khác (ngăn chặn cây 3 cấp).
+            if (danhMucChaMoiEntity.getDanhMucCha() != null) {
+                throw new IllegalArgumentException("Không thể di chuyển danh mục vào một danh mục con khác (hệ thống chỉ hỗ trợ 2 cấp).");
             }
 
             danhMuc.setDanhMucCha(danhMucChaMoiEntity);

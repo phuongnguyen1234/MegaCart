@@ -6,12 +6,14 @@ import com.megacart.service.FileStorageService;
 import com.megacart.exception.FileStorageException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
@@ -38,6 +40,13 @@ public class FileStorageServiceImpl implements FileStorageService {
         } catch (IOException e) {
             throw new FileStorageException("Lỗi khi lưu file " + originalFilename, e);
         }
+    }
+
+    @Override
+    @Async // Đánh dấu phương thức này để chạy bất đồng bộ trên một luồng khác
+    public CompletableFuture<String> storeFileAsync(MultipartFile file, String subDir) {
+        // Gọi lại phương thức đồng bộ và bọc kết quả trong một CompletableFuture
+        return CompletableFuture.completedFuture(storeFile(file, subDir));
     }
 
     @Override

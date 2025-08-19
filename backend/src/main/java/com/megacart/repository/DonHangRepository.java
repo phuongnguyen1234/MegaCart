@@ -30,6 +30,10 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer>, JpaS
     @EntityGraph(attributePaths = {"chiTietDonHangs", "chiTietDonHangs.sanPham"})
     Optional<DonHang> findByMaDonHangAndKhachHang_MaKhachHang(Integer maDonHang, Integer maKhachHang);
     
+    // Lấy đơn hàng theo mã và mã nhân viên giao hàng, fetch sẵn các chi tiết cần thiết
+    @EntityGraph(attributePaths = {"chiTietDonHangs.sanPham.kho"})
+    Optional<DonHang> findByMaDonHangAndNhanVienGiaoHang_MaNhanVien(Integer maDonHang, Integer maNhanVien);
+
     boolean existsByKhachHang_MaKhachHangAndTrangThaiIn(Integer maKhachHang, List<TrangThaiDonHang> trangThais);
 
     /**
