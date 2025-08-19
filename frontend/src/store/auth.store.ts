@@ -5,28 +5,25 @@ import * as taiKhoanService from "@/service/taikhoan.service";
 import type { LoginCredentials } from "@/service/taikhoan.service";
 import router from "@/router";
 import { useCartStore } from "./giohang.store";
-
-interface JwtPayload {
-  sub: string; // User's email
-  name: string; // User's full name
-  roles: string[]; // User's roles
-  iat: number;
-  exp: number;
-}
+import type { JwtPayload } from "@/types/api.types";
 
 export const useAuthStore = defineStore("auth", () => {
   const token = ref<string | null>(localStorage.getItem("access_token"));
   const userName = ref<string>("");
   const userEmail = ref<string>("");
+  const role = ref<string>("");
 
   // Không khởi tạo cartStore ở đây để tránh dependency cycle
 
   const isLoggedIn = computed(() => !!token.value);
+  const isAdmin = computed(() => role.value === "ADMIN");
+  const isKhachHang = computed(() => role.value === "KHACH_HANG");
 
   const _clearState = () => {
     token.value = null;
     userName.value = "";
     userEmail.value = "";
+    role.value = "";
     localStorage.removeItem("access_token");
     useCartStore().clearCartCount(); // Xóa số lượng giỏ hàng khi logout
   };
@@ -42,6 +39,7 @@ export const useAuthStore = defineStore("auth", () => {
       token.value = jwt;
       userName.value = decoded.name;
       userEmail.value = decoded.sub;
+      role.value = decoded.role || "";
       localStorage.setItem("access_token", jwt);
     } catch (error) {
       console.error("Failed to decode token:", error);
@@ -55,7 +53,7 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   const fetchUser = async () => {
-    if (!isLoggedIn.value) return; // Chỉ fetch khi đã đăng nhập
+    if (!isLoggedIn.value || !isKhachHang.value) return; // Chỉ fetch khi đã đăng nhập và là khách hàng
     try {
       // Gọi API để lấy thông tin mới nhất và cập nhật vào store
       const userData = await taiKhoanService.layThongTinTaiKhoan();
@@ -70,8 +68,20 @@ export const useAuthStore = defineStore("auth", () => {
   const login = async (credentials: LoginCredentials) => {
     const response = await taiKhoanService.login(credentials);
     _decodeAndSetState(response.token);
-    // Lấy thông tin người dùng và giỏ hàng song song để tăng tốc
-    await Promise.all([fetchUser(), useCartStore().fetchCartCount()]);
+
+    const fetchPromises = [];
+
+    // Đối với khách hàng, chúng ta cần lấy thông tin tài khoản chi tiết (để cập nhật)
+    // và số lượng giỏ hàng.
+    // Đối với Admin/Nhân viên, thông tin tên từ JWT là đủ, và họ không có giỏ hàng.
+    if (role.value === "KHACH_HANG") {
+      fetchPromises.push(fetchUser());
+      fetchPromises.push(useCartStore().fetchCartCount());
+    }
+
+    if (fetchPromises.length > 0) {
+      await Promise.all(fetchPromises);
+    }
   };
 
   const logout = async () => {
@@ -96,6 +106,9 @@ export const useAuthStore = defineStore("auth", () => {
     isLoggedIn,
     userName,
     userEmail,
+    role,
+    isAdmin,
+    isKhachHang,
     login,
     logout,
     updateUserName,

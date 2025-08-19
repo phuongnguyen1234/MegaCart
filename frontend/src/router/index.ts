@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { decodeJwtPayload } from "@/utils/jwt";
-
+import { JwtPayload } from "@/types/api.types";
 // --- General & Customer Views ---
 import DangNhapView from "@/views/DangNhapView.vue";
 import TrangChuView from "@/views/khachhang/TrangChuView.vue";
@@ -153,12 +153,14 @@ const router = createRouter({
  */
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem("access_token");
-  const payload = token ? decodeJwtPayload(token) : null;
+  const payload = token ? (decodeJwtPayload(token) as JwtPayload | null) : null;
   if (payload) {
     // Log payload đã được giải mã để kiểm tra
     console.log("Decoded JWT Payload in Router Guard:", payload);
   }
-  const userRole = payload?.role;
+  // Lỗi: JWT payload chứa một mảng các vai trò (roles), không phải một vai trò (role) đơn lẻ.
+  // Sửa lại để đọc mảng roles.
+  const userRole = payload?.role || "";
 
   const isGuestRoute = to.matched.some((record) => record.meta.guest);
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
@@ -169,10 +171,13 @@ router.beforeEach((to, from, next) => {
     (record) => record.meta.customerOnly
   );
 
+  // Tạo biến cờ để code dễ đọc hơn
+  const isStaff = userRole === "ADMIN" || userRole === "NHAN_VIEN";
+
   // Luồng 1: Đã đăng nhập nhưng vào trang guest (vd: /dang-nhap)
   // Chuyển hướng về trang chủ/dashboard tương ứng.
   if (token && isGuestRoute) {
-    if (userRole === "ADMIN" || userRole === "NHAN_VIEN") {
+    if (isStaff) {
       return next({ path: "/admin/dashboard" });
     }
     return next({ name: "TrangChu" });
@@ -180,22 +185,21 @@ router.beforeEach((to, from, next) => {
 
   // Luồng 1.5 (Mới): Admin/Nhân viên đã đăng nhập và cố gắng truy cập trang chỉ dành cho khách hàng.
   // Chuyển hướng họ về trang dashboard.
-  if (
-    token &&
-    (userRole === "ADMIN" || userRole === "NHAN_VIEN") &&
-    isCustomerOnlyRoute
-  ) {
+  if (token && isStaff && isCustomerOnlyRoute) {
     return next({ path: "/admin/dashboard" });
   }
 
   // Luồng 2: Chưa đăng nhập nhưng vào trang cần xác thực
   if (!token && requiresAuth) {
-    return next({ name: "DangNhap" });
+    // Cải tiến: Lưu lại trang đích để chuyển hướng sau khi đăng nhập thành công
+    return next({ name: "DangNhap", query: { redirect: to.fullPath } });
   }
 
   // Luồng 3: Đã đăng nhập, kiểm tra vai trò cho các trang yêu cầu vai trò cụ thể
   if (token && requiredRoles.length > 0) {
-    if (!userRole || !requiredRoles.includes(userRole)) {
+    // Kiểm tra xem vai trò của người dùng có nằm trong danh sách vai trò được yêu cầu không
+    const hasRequiredRole = requiredRoles.includes(userRole);
+    if (!hasRequiredRole) {
       // Không có quyền -> chuyển hướng về trang phù hợp với vai trò
       console.warn(
         `Truy cập bị từ chối: Route ${
@@ -204,7 +208,7 @@ router.beforeEach((to, from, next) => {
           ", "
         )}, nhưng người dùng có vai trò ${userRole || "không xác định"}.`
       );
-      if (userRole === "ADMIN" || userRole === "NHAN_VIEN") {
+      if (isStaff) {
         return next({ path: "/admin/dashboard" });
       }
       return next({ name: "TrangChu" });

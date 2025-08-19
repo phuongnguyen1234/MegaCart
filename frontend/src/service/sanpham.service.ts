@@ -11,6 +11,11 @@ import type {
   ChiTietSanPhamResponse,
   TimKiemFilterParams,
   FilterParams,
+  GetSanPhamQuanLyParams,
+  SanPhamQuanLyResponse,
+  ChiTietSanPhamQuanLyResponse,
+  ThemSanPhamRequest,
+  CapNhatSanPhamRequest,
 } from "@/types/sanpham.types";
 
 export { NhanSanPhamKey };
@@ -114,4 +119,87 @@ export const getChiTietSanPham = (
   maSanPham: number
 ): Promise<ChiTietSanPhamResponse> => {
   return apiClient.get(`/san-pham/${maSanPham}`);
+};
+
+/**
+ * =================================================================
+ * FOR ADMIN PANEL (QUAN LY SAN PHAM)
+ * =================================================================
+ */
+
+/**
+ * Lấy danh sách sản phẩm cho trang quản lý, có phân trang và lọc.
+ * Tương ứng với `GET /api/admin/san-pham`.
+ * @param params - Các tham số lọc, tìm kiếm và phân trang.
+ * @returns Promise chứa danh sách sản phẩm đã phân trang.
+ */
+export const getDanhSachSanPhamQuanLy = (
+  params: GetSanPhamQuanLyParams
+): Promise<PagedResponse<SanPhamQuanLyResponse>> => {
+  return apiClient.get("/admin/san-pham", { params });
+};
+
+/**
+ * Lấy thông tin chi tiết của một sản phẩm cho trang quản lý.
+ * Tương ứng với `GET /api/admin/san-pham/{maSanPham}`.
+ * @param maSanPham - Mã của sản phẩm cần xem.
+ * @returns Promise chứa thông tin chi tiết sản phẩm.
+ */
+export const getChiTietSanPhamQuanLy = (
+  maSanPham: number
+): Promise<ChiTietSanPhamQuanLyResponse> => {
+  return apiClient.get(`/admin/san-pham/${maSanPham}`);
+};
+
+/**
+ * Tạo một sản phẩm mới.
+ * Gửi request multipart/form-data.
+ * Tương ứng với `POST /api/admin/san-pham`.
+ * @param data - Dữ liệu JSON của sản phẩm.
+ * @param files - Danh sách các file ảnh.
+ * @returns Promise chứa thông tin sản phẩm vừa tạo.
+ */
+export const themSanPham = (
+  data: ThemSanPhamRequest,
+  files: File[]
+): Promise<SanPhamQuanLyResponse> => {
+  const formData = new FormData();
+  formData.append(
+    "sanPham",
+    new Blob([JSON.stringify(data)], { type: "application/json" })
+  );
+  files.forEach((file) => {
+    formData.append("files", file);
+  });
+
+  // Axios tự động set Content-Type là multipart/form-data khi data là FormData
+  return apiClient.post("/admin/san-pham", formData);
+};
+
+/**
+ * Cập nhật một sản phẩm đã có.
+ * Gửi request multipart/form-data.
+ * Tương ứng với `PATCH /api/admin/san-pham/{maSanPham}`.
+ * @param maSanPham - Mã sản phẩm cần cập nhật.
+ * @param data - Dữ liệu JSON của sản phẩm.
+ * @param files - Danh sách các file ảnh mới (tùy chọn).
+ * @returns Promise chứa thông tin chi tiết sản phẩm sau khi cập nhật.
+ */
+export const capNhatSanPham = (
+  maSanPham: number,
+  data: CapNhatSanPhamRequest,
+  files?: File[]
+): Promise<ChiTietSanPhamQuanLyResponse> => {
+  const formData = new FormData();
+  formData.append(
+    "sanPham",
+    new Blob([JSON.stringify(data)], { type: "application/json" })
+  );
+  if (files && files.length > 0) {
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+  }
+
+  return apiClient.patch(`/admin/san-pham/${maSanPham}`, formData);
 };

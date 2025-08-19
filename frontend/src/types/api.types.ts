@@ -34,3 +34,13 @@ export interface EnumObject<T extends string> {
   value: T;
   label: string;
 }
+
+// --- Types ---
+// Định nghĩa cấu trúc của JWT payload để đảm bảo an toàn kiểu dữ liệu.
+export interface JwtPayload {
+  sub: string; // User's email
+  name: string; // User's full name
+  role: string; // User's single role
+  iat: number;
+  exp: number;
+}

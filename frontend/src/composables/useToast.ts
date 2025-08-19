@@ -12,9 +12,20 @@ interface Toast {
 const toasts = ref<Toast[]>([]);
 let toastId = 0;
 const MAX_TOASTS = 5; // Giới hạn số lượng toast hiển thị cùng lúc
+const DEFAULT_DURATION = 5000; // 5 giây
 
 // Composable function
 export function useToast() {
+  /**
+   * Xóa một toast bằng id của nó.
+   */
+  const dongToast = (id: number) => {
+    const index = toasts.value.findIndex((toast) => toast.id === id);
+    if (index > -1) {
+      toasts.value.splice(index, 1);
+    }
+  };
+
   /**
    * Hiển thị một toast mới.
    * Nếu đã đạt đến giới hạn, toast cũ nhất sẽ bị xóa.
@@ -25,18 +36,18 @@ export function useToast() {
       toasts.value.shift();
     }
 
+    const id = toastId++;
     const newToast: Toast = {
-      id: toastId++,
+      id,
       ...options,
     };
     toasts.value.push(newToast); // Thêm toast mới vào cuối mảng
-  };
 
-  /**
-   * Xóa một toast bằng id của nó.
-   */
-  const dongToast = (id: number) => {
-    toasts.value = toasts.value.filter((toast) => toast.id !== id);
+    // Tự động xóa toast sau một khoảng thời gian
+    const duration = options.thoiLuong ?? DEFAULT_DURATION;
+    setTimeout(() => {
+      dongToast(id);
+    }, duration);
   };
 
   // `readonly` để ngăn chặn việc sửa đổi trực tiếp mảng toasts từ bên ngoài

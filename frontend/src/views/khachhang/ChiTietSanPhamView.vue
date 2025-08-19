@@ -207,11 +207,6 @@ const isLoading = ref(true);
 const error = ref<string | null>(null);
 const isRedirecting = ref(false);
 
-const VITE_API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(
-  "/api",
-  ""
-);
-
 const selectedImage = ref("");
 
 const isOutOfStock = computed(
@@ -230,13 +225,6 @@ const fetchSanPham = async () => {
 
   try {
     const data = await getChiTietSanPham(maSanPham);
-
-    // Chuyển đổi đường dẫn ảnh tương đối thành URL đầy đủ
-    data.anhMinhHoas.forEach((anh) => {
-      if (anh.duongDan && !anh.duongDan.startsWith("http")) {
-        anh.duongDan = `${VITE_API_BASE_URL}${anh.duongDan}`;
-      }
-    });
 
     sanPham.value = data;
     // Set ảnh chính làm ảnh được chọn ban đầu

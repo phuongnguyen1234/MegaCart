@@ -3,7 +3,9 @@
     <h1 class="text-2xl font-bold mb-4">Quản lí sản phẩm</h1>
 
     <!-- Chức năng -->
-    <div class="flex justify-between items-center mb-4">
+    <div
+      class="flex justify-between items-center mb-4 bg-white p-4 rounded-lg shadow"
+    >
       <!-- Nút thêm sản phẩm -->
       <button
         @click="openAddModal"
@@ -15,10 +17,7 @@
 
       <!-- Thanh tìm kiếm -->
       <ThanhTimKiem
-        :ds-tieu-chi="[
-          { value: 'maSanPham', label: 'Mã sản phẩm' },
-          { value: 'tenSanPham', label: 'Tên sản phẩm' },
-        ]"
+        :ds-tieu-chi="[{ value: 'tenSanPham', label: 'Tên sản phẩm' }]"
         v-model:modelValueLoai="loaiTimKiem"
         v-model:modelValueTuKhoa="tuKhoa"
       />
@@ -26,20 +25,24 @@
 
     <!-- Bảng dữ liệu sản phẩm -->
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
-      <!-- 
-        Lưu ý: Để các nút "Sửa" và ảnh minh họa hoạt động, component DataTable 
-        cần hỗ trợ slots cho các ô (cell). Dưới đây là một ví dụ về cách sử dụng:
-        - Slot `cell-1` sẽ tùy chỉnh cách hiển thị cho cột thứ 2 (Ảnh minh họa).
-        - Slot `cell-7` sẽ tùy chỉnh cách hiển thị cho cột thứ 8 (Hành động).
-        Component DataTable của bạn có thể cần được cập nhật để nhận các slot này.
-       -->
-      <DataTable :headers="headers" :rows="rows">
+      <DataTable :headers="headers" :rows="rows" :is-loading="isLoading">
         <template #cell-1="{ value }">
           <img
             :src="value"
             alt="Ảnh sản phẩm"
-            class="w-16 h-16 object-cover rounded"
+            class="w-16 h-16 object-cover rounded border"
           />
+        </template>
+        <template #cell-6="{ value: trangThai }">
+          <span
+            :class="
+              trangThai.value === 'BAN'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            "
+            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+            >{{ trangThai.label }}</span
+          >
         </template>
         <template #cell-7="{ value }">
           <button
@@ -76,14 +79,23 @@ import ThanhTimKiem from "@/components/base/ThanhTimKiem.vue";
 import DataTable from "@/components/base/DataTable.vue";
 import PhanTrang from "@/components/base/PhanTrang.vue";
 import ThemSuaSanPhamModal from "@/components/quanlisanpham_danhmuc/ThemSuaSanPhamModal.vue";
-import type { SanPham } from "@/types/SanPham";
+import { getDanhSachSanPhamQuanLy } from "@/service/sanpham.service";
+import type {
+  SanPhamQuanLyResponse,
+  GetSanPhamQuanLyParams,
+} from "@/types/sanpham.types";
+import { useToast } from "@/composables/useToast";
 
 // --- State ---
 const loaiTimKiem = ref("tenSanPham");
 const tuKhoa = ref("");
 const isModalVisible = ref(false);
 const isEditMode = ref(false);
-const selectedProduct = ref<SanPham | null>(null);
+const selectedProduct = ref<SanPhamQuanLyResponse | null>(null);
+const isLoading = ref(false);
+const { showToast } = useToast();
+
+const allSanPham = ref<SanPhamQuanLyResponse[]>([]);
 
 // --- Modal Logic ---
 const modalTitle = computed(() =>
@@ -96,14 +108,13 @@ const openAddModal = () => {
   isModalVisible.value = true;
 };
 
-const openEditModal = (product: SanPham) => {
+const openEditModal = (product: SanPhamQuanLyResponse) => {
   isEditMode.value = true;
   selectedProduct.value = product;
   isModalVisible.value = true;
 };
 
 const handleEditClick = (productId: any) => {
-  // `value` từ slot là mã sản phẩm, chúng ta dùng nó để tìm sản phẩm đầy đủ.
   const productToEdit = allSanPham.value.find((p) => p.maSanPham === productId);
   if (productToEdit) {
     openEditModal(productToEdit);
@@ -114,62 +125,19 @@ const closeModal = () => {
   isModalVisible.value = false;
 };
 
-// --- Dữ liệu mẫu ---
-const allSanPham = ref<SanPham[]>(
-  Array.from({ length: 125 }, (_, i) => ({
-    maSanPham: `SP${String(i + 1).padStart(4, "0")}`,
-    anhMinhHoa: [
-      `https://via.placeholder.com/150/F5F5F5/333333?text=Ảnh+${i + 1}`,
-    ],
-    tenSanPham: `Sản phẩm mẫu ${i + 1}`,
-    danhMucCha:
-      i % 3 === 0 ? "Điện tử" : i % 3 === 1 ? "Thời trang" : "Gia dụng",
-    danhMucCon:
-      i % 3 === 0 ? "Điện thoại" : i % 3 === 1 ? "Áo thun" : "Nồi cơm",
-    donGia: 50000 + i * 15000,
-    donVi: "Cái",
-    nhaSanXuat: `Nhà sản xuất ${String.fromCharCode(65 + (i % 10))}`,
-    trangThai: i % 5 === 0 ? "Ngừng bán" : "Đang bán",
-  }))
-);
-
-// --- Computed Properties ---
-const sanPhamDaLoc = computed(() => {
-  if (!tuKhoa.value.trim()) {
-    return allSanPham.value;
-  }
-  const keyword = tuKhoa.value.toLowerCase();
-  return allSanPham.value.filter((sp) => {
-    if (loaiTimKiem.value === "maSanPham") {
-      return String(sp.maSanPham).toLowerCase().includes(keyword);
-    }
-    // Mặc định tìm theo tên sản phẩm
-    return sp.tenSanPham.toLowerCase().includes(keyword);
-  });
-});
-
 // --- Phân trang ---
 const trangHienTai = ref(0);
 const soLuongMoiTrang = ref(10);
-
-const tongSoTrang = computed(() =>
-  Math.ceil(sanPhamDaLoc.value.length / soLuongMoiTrang.value)
-);
-
-const sanPhamHienThi = computed(() => {
-  const batDau = trangHienTai.value * soLuongMoiTrang.value;
-  const ketThuc = batDau + soLuongMoiTrang.value;
-  return sanPhamDaLoc.value.slice(batDau, ketThuc);
-});
+const tongSoTrang = ref(1);
 
 // --- Cấu hình DataTable ---
 const headers = [
   "Mã sản phẩm",
   "Ảnh minh họa",
   "Tên sản phẩm",
-  "Danh mục cha",
-  "Danh mục con",
+  "Danh mục",
   "Đơn giá",
+  "Tồn kho",
   "Trạng thái",
   "Hành động",
 ];
@@ -182,20 +150,42 @@ const formatCurrency = (value: number): string => {
 };
 
 const rows = computed(() =>
-  sanPhamHienThi.value.map((sp) => [
+  allSanPham.value.map((sp) => [
     sp.maSanPham,
-    sp.anhMinhHoa[0],
+    sp.anhMinhHoaChinh,
     sp.tenSanPham,
-    sp.danhMucCha,
-    sp.danhMucCon,
+    sp.tenDanhMuc,
     formatCurrency(sp.donGia),
-    sp.trangThai,
-    sp.maSanPham, // Chỉ truyền mã sản phẩm (string) để tuân thủ kiểu dữ liệu
+    sp.soLuongTon,
+    sp.trangThai, // Truyền cả object để slot tùy chỉnh
+    sp.maSanPham,
   ])
 );
 
-// --- Watchers ---
-watch(sanPhamDaLoc, () => {
-  trangHienTai.value = 0;
-});
+// --- Fetch dữ liệu ---
+const fetchSanPham = async () => {
+  isLoading.value = true;
+  try {
+    const params: GetSanPhamQuanLyParams = {
+      page: trangHienTai.value,
+      size: soLuongMoiTrang.value,
+      tuKhoa: tuKhoa.value || undefined,
+    };
+    const response = await getDanhSachSanPhamQuanLy(params);
+    allSanPham.value = response.content;
+    tongSoTrang.value = response.totalPages;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+    showToast({
+      loai: "loi",
+      thongBao: "Không thể tải danh sách sản phẩm.",
+    });
+    allSanPham.value = [];
+    tongSoTrang.value = 1;
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+watch([trangHienTai, tuKhoa], fetchSanPham, { immediate: true });
 </script>

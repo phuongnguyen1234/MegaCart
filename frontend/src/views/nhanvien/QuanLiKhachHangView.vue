@@ -17,8 +17,8 @@
           class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
         >
           <option value="">Tất cả</option>
-          <option value="hoatdong">Hoạt động</option>
-          <option value="ngunghoatdong">Ngừng hoạt động</option>
+          <option value="HOAT_DONG">Hoạt động</option>
+          <option value="KHOA">Khóa</option>
         </select>
       </div>
 
@@ -89,120 +89,72 @@ import ThanhTimKiem from "@/components/base/ThanhTimKiem.vue";
 import DataTable from "@/components/base/DataTable.vue";
 import PhanTrang from "@/components/base/PhanTrang.vue";
 import CapNhatKhachHangModal from "@/components/quanlitaikhoan/CapNhatKhachHangModal.vue";
+import {
+  getDanhSachKhachHang,
+  capNhatTrangThaiKhachHang,
+} from "@/service/quanlikhachhang.service";
 import type {
-  KhachHang,
-  DuLieuCapNhatKhachHang,
-} from "@/types/QuanLiKhachHang";
+  HienThiDanhSachKhachHangResponse,
+  GetKhachHangParams,
+  CapNhatTrangThaiTaiKhoanRequest,
+} from "@/types/khachhang.types";
+import { useToast } from "@/composables/useToast";
 
-// --- Dữ liệu giả lập ---
-const allKhachHang = ref<KhachHang[]>(
-  Array.from({ length: 150 }, (_, i) => ({
-    maKhachHang: `KH${String(i + 1).padStart(4, "0")}`,
-    tenKhachHang: `Nguyễn Văn ${String.fromCharCode(65 + (i % 26))}${i}`,
-    email: `nguyenvan${i}@example.com`,
-    diaChi: `${i + 1} Đường ABC, Phường XYZ, Quận 1, TP. HCM`,
-    soDienThoai: `090${String(i).padStart(7, "0")}`,
-    trangThai: i % 10 === 0 ? "Ngừng hoạt động" : "Hoạt động",
-  }))
-);
+// Sửa kiểu selectedTrangThai cho đúng với enum
+const selectedTrangThai = ref<"" | "HOAT_DONG" | "KHOA">("");
 
 const loaiTimKiem = ref("ten");
 const tuKhoa = ref("");
-const selectedTrangThai = ref<"hoatdong" | "ngunghoatdong" | "">("");
+const isLoading = ref(false);
+const { showToast } = useToast();
 
 const dsTieuChiTimKiem = [
   { value: "ten", label: "Tên khách hàng" },
   { value: "email", label: "Email" },
   { value: "sdt", label: "Số điện thoại" },
 ];
-
-// --- Lọc dữ liệu ---
-const khachHangDaLoc = computed(() => {
-  return allKhachHang.value.filter((kh) => {
-    const matchTrangThai = (() => {
-      if (!selectedTrangThai.value) return true;
-      const trangThaiNormalized =
-        selectedTrangThai.value === "hoatdong"
-          ? "Hoạt động"
-          : "Ngừng hoạt động";
-      return kh.trangThai === trangThaiNormalized;
-    })();
-
-    const matchTuKhoa = (() => {
-      if (!tuKhoa.value.trim()) return true;
-      const keyword = tuKhoa.value.toLowerCase();
-      switch (loaiTimKiem.value) {
-        case "ten":
-          return kh.tenKhachHang.toLowerCase().includes(keyword);
-        case "email":
-          return kh.email.toLowerCase().includes(keyword);
-        case "sdt":
-          return kh.soDienThoai.includes(keyword);
-        default:
-          return true;
-      }
-    })();
-
-    return matchTrangThai && matchTuKhoa;
-  });
-});
-
-// --- Phân trang ---
-const trangHienTai = ref(0);
-const soLuongMoiTrang = ref(10);
-
-const tongSoTrang = computed(() =>
-  Math.ceil(khachHangDaLoc.value.length / soLuongMoiTrang.value)
-);
-
-const khachHangHienThi = computed(() => {
-  const batDau = trangHienTai.value * soLuongMoiTrang.value;
-  const ketThuc = batDau + soLuongMoiTrang.value;
-  return khachHangDaLoc.value.slice(batDau, ketThuc);
-});
-
-const thongTinHienThi = computed(() => {
-  const total = khachHangDaLoc.value.length;
-  if (total === 0) {
-    return "Không có khách hàng nào được tìm thấy";
-  }
-  const start = trangHienTai.value * soLuongMoiTrang.value + 1;
-  const end = start + khachHangHienThi.value.length - 1;
-  return `Đang hiển thị ${start} - ${end} của ${total} khách hàng`;
-});
-
-watch(khachHangDaLoc, () => {
-  trangHienTai.value = 0;
-});
+const allKhachHang = ref<HienThiDanhSachKhachHangResponse[]>([]);
 
 // --- Cấu hình DataTable ---
-const headers = [
-  "Mã khách hàng",
-  "Tên khách hàng",
-  "Email",
-  "Địa chỉ",
-  "Số điện thoại",
-  "Trạng thái",
-  "Hành động",
-];
-
+// Sửa lại lấy trạng thái cho đúng với dữ liệu API
 const rows = computed(() =>
-  khachHangHienThi.value.map((kh) => [
+  khachHangHienThi.value.map((kh: HienThiDanhSachKhachHangResponse) => [
     kh.maKhachHang,
     kh.tenKhachHang,
     kh.email,
     kh.diaChi,
     kh.soDienThoai,
-    kh.trangThai,
-    kh.maKhachHang, // Truyền mã khách hàng cho slot hành động
+    kh.trangThaiTaiKhoan.label,
+    kh.maKhachHang,
   ])
 );
 
+// --- Phân trang ---
+// Sửa lại phân trang cho đúng dữ liệu từ API
+const trangHienTai = ref(0);
+const soLuongMoiTrang = ref(10);
+const tongSoTrang = ref(1);
+
+const khachHangHienThi = computed(() => {
+  // Dữ liệu đã phân trang từ API, không cần slice lại
+  return allKhachHang.value;
+});
+
+const thongTinHienThi = computed(() => {
+  const total = allKhachHang.value.length;
+  if (total === 0) {
+    return "Không có khách hàng nào được tìm thấy";
+  }
+  const start = trangHienTai.value * soLuongMoiTrang.value + 1;
+  const end = start + allKhachHang.value.length - 1;
+  return `Đang hiển thị ${start} - ${end} của ${total} khách hàng`;
+});
+
 // --- Xử lý hành động ---
 const isModalVisible = ref(false);
-const khachHangDangSua = ref<KhachHang | null>(null);
+const khachHangDangSua = ref<HienThiDanhSachKhachHangResponse | null>(null);
 
-const handleEdit = (maKhachHang: string) => {
+const handleEdit = (maKhachHang: number) => {
   const customerToEdit = allKhachHang.value.find(
     (kh) => kh.maKhachHang === maKhachHang
   );
@@ -212,11 +164,76 @@ const handleEdit = (maKhachHang: string) => {
   }
 };
 
-const handleSave = (data: DuLieuCapNhatKhachHang) => {
-  console.log("Lưu thông tin khách hàng:", data);
-  // Logic cập nhật dữ liệu thật (thay thế dữ liệu giả lập)
-  // const index = allKhachHang.value.findIndex(kh => kh.maKhachHang === data.maKhachHang);
-  // if (index !== -1) { ... }
-  isModalVisible.value = false;
+const handleSave = async (payload: {
+  maKhachHang: number;
+  data: CapNhatTrangThaiTaiKhoanRequest;
+}) => {
+  try {
+    const updatedKhachHang = await capNhatTrangThaiKhachHang(
+      payload.maKhachHang,
+      payload.data
+    );
+
+    // Cập nhật lại danh sách khách hàng trên UI để phản ánh thay đổi ngay lập tức
+    const index = allKhachHang.value.findIndex(
+      (kh) => kh.maKhachHang === payload.maKhachHang
+    );
+    if (index !== -1) {
+      allKhachHang.value[index] = updatedKhachHang;
+    }
+    showToast({
+      thongBao: "Cập nhật trạng thái khách hàng thành công!",
+      loai: "thanhCong",
+    });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái khách hàng:", error);
+    showToast({
+      thongBao: "Có lỗi xảy ra, không thể cập nhật trạng thái khách hàng.",
+      loai: "loi",
+    });
+  }
 };
+
+// --- Fetch dữ liệu từ API ---
+const fetchKhachHang = async () => {
+  isLoading.value = true;
+  try {
+    const params: GetKhachHangParams = {
+      searchField:
+        loaiTimKiem.value === "ten"
+          ? "tenKhachHang"
+          : loaiTimKiem.value === "email"
+          ? "email"
+          : "soDienThoai",
+      searchValue: tuKhoa.value,
+      hienThiTaiKhoanBiKhoa: selectedTrangThai.value === "KHOA",
+      page: trangHienTai.value,
+      size: soLuongMoiTrang.value,
+    };
+    const response = await getDanhSachKhachHang(params);
+    allKhachHang.value = response.content;
+    tongSoTrang.value = response.totalPages;
+  } catch (error) {
+    allKhachHang.value = [];
+    tongSoTrang.value = 1;
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+watch(
+  [loaiTimKiem, tuKhoa, selectedTrangThai, trangHienTai, soLuongMoiTrang],
+  fetchKhachHang,
+  { immediate: true }
+);
+
+const headers = [
+  "Mã khách hàng",
+  "Tên khách hàng",
+  "Email",
+  "Địa chỉ",
+  "Số điện thoại",
+  "Trạng thái",
+  "",
+];
 </script>

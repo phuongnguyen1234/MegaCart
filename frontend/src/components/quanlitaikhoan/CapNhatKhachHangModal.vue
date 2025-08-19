@@ -54,7 +54,7 @@
               class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
             ></div>
             <span class="ml-3 text-sm font-medium text-gray-900">{{
-              formData.trangThai
+              trangThaiLabel
             }}</span>
           </label>
         </div>
@@ -78,14 +78,27 @@
 import { ref, computed, watch } from "vue";
 import BaseModal from "@/components/base/modals/BaseModal.vue";
 import type {
-  KhachHang,
-  DuLieuCapNhatKhachHang,
-} from "@/types/QuanLiKhachHang";
+  HienThiDanhSachKhachHangResponse,
+  CapNhatTrangThaiTaiKhoanRequest,
+} from "@/types/khachhang.types";
+import {
+  TrangThaiTaiKhoanKey,
+  TrangThaiTaiKhoanLabel,
+} from "@/types/khachhang.types";
 
-const props = defineProps<{ visible: boolean; khachHang: KhachHang | null }>();
+const props = defineProps<{
+  visible: boolean;
+  khachHang: HienThiDanhSachKhachHangResponse | null;
+}>();
 const emit = defineEmits<{
   (e: "close"): void;
-  (e: "save", data: DuLieuCapNhatKhachHang): void;
+  (
+    e: "save",
+    payload: {
+      maKhachHang: number;
+      data: CapNhatTrangThaiTaiKhoanRequest;
+    }
+  ): void;
 }>();
 
 const formData = ref({
@@ -93,7 +106,7 @@ const formData = ref({
   email: "",
   diaChi: "",
   soDienThoai: "",
-  trangThai: "Hoạt động" as "Hoạt động" | "Ngừng hoạt động",
+  trangThaiTaiKhoan: TrangThaiTaiKhoanKey.HOAT_DONG,
 });
 
 const tieuDeModal = computed(
@@ -101,21 +114,27 @@ const tieuDeModal = computed(
 );
 
 const trangThaiHoatDong = computed({
-  get: () => formData.value.trangThai === "Hoạt động",
+  get: () =>
+    formData.value.trangThaiTaiKhoan === TrangThaiTaiKhoanKey.HOAT_DONG,
   set: (value) => {
-    formData.value.trangThai = value ? "Hoạt động" : "Ngừng hoạt động";
+    formData.value.trangThaiTaiKhoan = value
+      ? TrangThaiTaiKhoanKey.HOAT_DONG
+      : TrangThaiTaiKhoanKey.KHOA;
   },
+});
+
+const trangThaiLabel = computed(() => {
+  return TrangThaiTaiKhoanLabel[formData.value.trangThaiTaiKhoan];
 });
 
 const dongModal = () => emit("close");
 
 const luuThayDoi = () => {
   if (!props.khachHang) return;
-  const data: DuLieuCapNhatKhachHang = {
-    maKhachHang: props.khachHang.maKhachHang,
-    trangThai: formData.value.trangThai, // ✅ Chỉ gửi trạng thái
+  const data: CapNhatTrangThaiTaiKhoanRequest = {
+    trangThai: formData.value.trangThaiTaiKhoan,
   };
-  emit("save", data);
+  emit("save", { maKhachHang: props.khachHang.maKhachHang, data });
   dongModal();
 };
 
@@ -127,7 +146,8 @@ watch(
       formData.value.email = props.khachHang.email;
       formData.value.diaChi = props.khachHang.diaChi;
       formData.value.soDienThoai = props.khachHang.soDienThoai;
-      formData.value.trangThai = props.khachHang.trangThai;
+      formData.value.trangThaiTaiKhoan =
+        props.khachHang.trangThaiTaiKhoan.value;
     }
   }
 );

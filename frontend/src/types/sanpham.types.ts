@@ -1,4 +1,4 @@
-import type { EnumObject } from "./api.types";
+import type { EnumObject, PageableParams } from "./api.types";
 
 /**
  * Các key của nhãn sản phẩm, dùng để gửi lên API.
@@ -63,11 +63,20 @@ export enum TrangThaiSanPhamKey {
 }
 
 /**
+ * Ánh xạ từ key của trạng thái kinh doanh sang tên hiển thị (label).
+ */
+export const TrangThaiSanPhamLabel: Record<TrangThaiSanPhamKey, string> = {
+  [TrangThaiSanPhamKey.DANG_BAN]: "Đang bán",
+  [TrangThaiSanPhamKey.NGUNG_BAN]: "Ngừng bán",
+};
+
+/**
  * Cấu trúc đối tượng trạng thái kinh doanh sản phẩm nhận về từ API.
  */
 export type TrangThaiSanPhamObject = EnumObject<TrangThaiSanPhamKey>;
 
 export interface AnhMinhHoa {
+  maAnh?: number; // ID của ảnh, hữu ích cho việc xóa khi cập nhật
   duongDan: string;
   laAnhChinh: boolean;
 }
@@ -124,6 +133,81 @@ export interface TimKiemFilterParams {
   nhaSanXuat?: string;
   nhan?: NhanSanPhamKey;
   banChay?: boolean;
+}
+
+/**
+ * =================================================================
+ * FOR ADMIN PANEL (QUAN LY SAN PHAM)
+ * =================================================================
+ */
+
+/**
+ * Các tham số để lọc và tìm kiếm sản phẩm trong trang quản lý.
+ * Tương ứng với các @RequestParam trong `QuanLySanPhamController.getDSSanPham`.
+ */
+export interface GetSanPhamQuanLyParams extends PageableParams {
+  tuKhoa?: string;
+  maDanhMuc?: number;
+  trangThai?: TrangThaiSanPhamKey;
+}
+
+/**
+ * Dữ liệu tóm tắt của một sản phẩm trong danh sách quản lý.
+ * Tương ứng với `SanPhamQuanLyResponse.java` trên backend.
+ */
+export interface SanPhamQuanLyResponse {
+  maSanPham: number;
+  anhMinhHoaChinh: string;
+  tenSanPham: string;
+  tenDanhMuc: string;
+  donGia: number;
+  trangThai: TrangThaiSanPhamObject;
+}
+
+/**
+ * Dữ liệu chi tiết của một sản phẩm trong trang quản lý (dùng cho form sửa).
+ * Tương ứng với `ChiTietSanPhamQuanLyResponse.java`.
+ */
+export interface ChiTietSanPhamQuanLyResponse {
+  maSanPham: number;
+  tenSanPham: string;
+  moTa: string;
+  ghiChu: string;
+  donGia: number;
+  donVi: string;
+  maDanhMuc: number;
+  tenDanhMuc: string;
+  maNhaSanXuat: number;
+  tenNhaSanXuat: string;
+  trangThai: TrangThaiSanPhamKey; // Dùng key để dễ bind vào form
+  anhMinhHoas: AnhMinhHoa[];
+}
+
+/**
+ * Dữ liệu gửi lên khi thêm một sản phẩm mới.
+ * Đây là phần JSON của request multipart/form-data.
+ * Tương ứng với `ThemSanPhamRequest.java`.
+ */
+export interface ThemSanPhamRequest {
+  tenSanPham: string;
+  moTa: string;
+  ghiChu?: string;
+  donGia: number;
+  donVi: string;
+  maDanhMuc: number;
+  maNhaSanXuat: number;
+  trangThai: TrangThaiSanPhamKey;
+}
+
+/**
+ * Dữ liệu gửi lên khi cập nhật một sản phẩm.
+ * Đây là phần JSON của request multipart/form-data.
+ * Tương ứng với `CapNhatSanPhamRequest.java`.
+ */
+export interface CapNhatSanPhamRequest
+  extends Omit<ThemSanPhamRequest, "soLuongBanDau"> {
+  // Danh sách ID của các ảnh đã có mà người dùng muốn xóa
+  maAnhCanXoa?: number[];
 }
 
 /**
