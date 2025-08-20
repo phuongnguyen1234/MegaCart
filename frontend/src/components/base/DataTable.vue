@@ -8,7 +8,7 @@
               v-for="header in headers"
               :key="header"
               scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
             >
               {{ header }}
             </th>
@@ -19,7 +19,7 @@
           <tr v-if="rows.length === 0">
             <td
               :colspan="headers.length"
-              class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center"
+              class="px-6 py-4 whitespace-nowrap text-base text-gray-500 text-center"
             >
               Không có dữ liệu để hiển thị
             </td>
@@ -34,7 +34,7 @@
             <td
               v-for="(cell, cellIndex) in row"
               :key="cellIndex"
-              class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 align-top"
+              class="px-6 py-4 whitespace-nowrap text-base text-gray-500 text-center align-middle"
             >
               <!-- 
                 Đây là phần quan trọng để tùy chỉnh ô:

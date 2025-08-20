@@ -45,11 +45,11 @@
     </div>
 
     <!-- Số lượng đơn -->
-    <p class="mb-2 text-sm text-gray-600">{{ thongTinHienThi }}</p>
+    <p class="mb-2 text-base text-gray-600">{{ thongTinHienThi }}</p>
 
     <!-- Bảng -->
     <div class="overflow-x-auto shadow-md sm:rounded-lg">
-      <table class="w-full text-sm text-left text-gray-500">
+      <table class="w-full text-base text-left text-gray-500">
         <thead class="text-xs text-gray-700 uppercase bg-gray-50">
           <tr>
             <th

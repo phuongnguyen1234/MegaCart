@@ -22,7 +22,7 @@
 
     <!-- Thông tin hiển thị -->
     <div class="mb-4">
-      <p class="text-sm text-gray-600">
+      <p class="text-base text-gray-600">
         {{ thongTinHienThi }}
       </p>
     </div>
@@ -35,7 +35,7 @@
           <img
             :src="value"
             alt="Ảnh sản phẩm"
-            class="w-16 h-16 object-cover rounded border"
+            class="w-16 h-16 object-cover rounded border mx-auto"
           />
         </template>
         <!-- Tùy chỉnh cột Số lượng tồn (cột thứ 6, index 5) -->

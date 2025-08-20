@@ -3,6 +3,7 @@ import type {
   TrangThaiThanhToanObject,
   HinhThucThanhToanObject,
   ChiTietDonHangItem,
+  TrangThaiThanhToanKey,
 } from "./donhang.types";
 
 /**
@@ -20,7 +21,7 @@ import type {
 export interface GetDonHangDangGiaoParams extends PageableParams {
   searchField?:
     | "maDonHang"
-    | "tenKhachHang"
+    | "tenNguoiNhan"
     | "tenNhanVienGiaoHang"
     | "sdtNhanHang"
     | "diaChiNhanHang";
@@ -108,12 +109,12 @@ export interface ChiTietDonHangGiaoHangResponse {
 }
 
 /**
- * Các key của trạng thái cập nhật giao hàng, dùng để gửi lên API.
- * Giá trị của enum này phải TRÙNG KHỚP với tên của enum constant trong `TrangThaiGiaoHang.java` ở backend.
+ * Các key của kết quả giao hàng, dùng để gửi lên API.
+ * Giá trị của enum này phải TRÙNG KHỚP với tên của enum constant trong `KetQuaGiaoHang.java` ở backend.
  */
-export enum TrangThaiGiaoHangKey {
-  DA_GIAO_THANH_CONG = "DA_GIAO_THANH_CONG",
-  GIAO_HANG_THAT_BAI = "GIAO_HANG_THAT_BAI",
+export enum KetQuaGiaoHangKey {
+  THANH_CONG = "THANH_CONG",
+  THAT_BAI = "THAT_BAI",
 }
 
 /**
@@ -121,6 +122,7 @@ export enum TrangThaiGiaoHangKey {
  * Tương ứng với `CapNhatGiaoHangRequest.java` ở backend.
  */
 export interface CapNhatGiaoHangRequest {
-  trangThai: TrangThaiGiaoHangKey;
-  ghiChu?: string;
+  ketQua: KetQuaGiaoHangKey;
+  lyDoThatBai?: string;
+  trangThaiThanhToan?: TrangThaiThanhToanKey;
 }

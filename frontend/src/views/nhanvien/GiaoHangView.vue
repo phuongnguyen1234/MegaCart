@@ -22,7 +22,7 @@
       </div>
 
       <!-- Số lượng đơn -->
-      <p class="mb-4 text-sm text-gray-600">{{ thongTinHienThi }}</p>
+      <p class="mb-4 text-base text-gray-600">{{ thongTinHienThi }}</p>
 
       <!-- Danh sách đơn hàng -->
       <div class="space-y-4">

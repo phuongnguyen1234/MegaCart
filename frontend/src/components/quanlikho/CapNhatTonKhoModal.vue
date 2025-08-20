@@ -87,8 +87,7 @@
             id="noi-dung-cap-nhat"
             v-model="formData.noiDung"
             rows="3"
-            placeholder="Ví dụ: Nhập hàng từ nhà cung cấp A, điều chỉnh kiểm kê,..."
-            required
+            placeholder="Ví dụ: Nhập hàng từ NCC A, điều chỉnh kiểm kê,... (không bắt buộc)"
             class="input mt-1"
           ></textarea>
         </div>
@@ -179,16 +178,17 @@ const handleSubmit = async () => {
     showToast({ loai: "loi", thongBao: "Số lượng cập nhật không hợp lệ." });
     return;
   }
-  if (!formData.value.noiDung.trim()) {
-    showToast({ loai: "loi", thongBao: "Vui lòng nhập nội dung cập nhật." });
-    return;
-  }
 
   const payload: CapNhatKhoRequest = {
     hinhThuc: formData.value.hinhThuc,
     soLuong: formData.value.soLuong,
-    noiDung: formData.value.noiDung,
   };
+
+  // Chỉ thêm `noiDung` vào payload nếu người dùng có nhập.
+  // Nếu không, trường này sẽ là `undefined` và không được gửi đi, đúng với định nghĩa `noiDung?: string`.
+  if (formData.value.noiDung?.trim()) {
+    payload.noiDung = formData.value.noiDung.trim();
+  }
 
   isLoading.value = true;
   try {

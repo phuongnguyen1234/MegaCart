@@ -19,7 +19,7 @@
     </div>
 
     <!-- Số lượng đơn -->
-    <p class="mb-4 text-sm text-gray-600">{{ thongTinHienThi }}</p>
+    <p class="mb-4 text-base text-gray-600">{{ thongTinHienThi }}</p>
 
     <!-- Bảng dữ liệu -->
     <div class="space-y-4">

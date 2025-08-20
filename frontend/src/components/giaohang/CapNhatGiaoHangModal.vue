@@ -8,7 +8,7 @@
     <div v-if="!donHang" class="text-center p-8 text-gray-500">
       Đang tải chi tiết đơn hàng...
     </div>
-    <div v-else class="space-y-4 text-sm">
+    <div v-else class="space-y-4 text-base">
       <!-- Danh sách sản phẩm -->
       <div class="overflow-y-auto mb-2 px-2 py-1 space-y-2 max-h-60">
         <CardSanPhamDonHang
@@ -62,30 +62,63 @@
           <label class="flex items-center gap-2">
             <input
               type="radio"
-              :value="TrangThaiGiaoHangKey.DA_GIAO_THANH_CONG"
-              v-model="trangThaiGiao"
+              :value="KetQuaGiaoHangKey.THANH_CONG"
+              v-model="ketQuaGiao"
             />
             Thành công
           </label>
           <label class="flex items-center gap-2">
             <input
               type="radio"
-              :value="TrangThaiGiaoHangKey.GIAO_HANG_THAT_BAI"
-              v-model="trangThaiGiao"
+              :value="KetQuaGiaoHangKey.THAT_BAI"
+              v-model="ketQuaGiao"
             />
             Thất bại
           </label>
         </div>
 
-        <div v-if="trangThaiGiao === TrangThaiGiaoHangKey.GIAO_HANG_THAT_BAI">
+        <!-- Hiển thị khi là đơn COD -->
+        <div v-if="isCODOrder" class="mt-2 space-y-2">
+          <p class="font-medium text-gray-800">
+            Cập nhật trạng thái thanh toán:
+          </p>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2">
+              <input
+                type="radio"
+                :value="TrangThaiThanhToanKey.DA_THANH_TOAN"
+                v-model="trangThaiThanhToanCapNhat"
+                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600 disabled:bg-gray-200"
+                :disabled="isDeliveryFailed"
+              />
+              Đã thanh toán (Đã thu tiền COD)
+            </label>
+            <label
+              class="flex items-center gap-2"
+              :class="{ 'text-gray-500': isDeliveryFailed }"
+            >
+              <input
+                type="radio"
+                :value="TrangThaiThanhToanKey.CHUA_THANH_TOAN"
+                v-model="trangThaiThanhToanCapNhat"
+                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600 disabled:bg-gray-200"
+                :disabled="isDeliveryFailed"
+              />
+              Chưa thanh toán
+            </label>
+          </div>
+        </div>
+
+        <!-- Hiển thị khi giao hàng thất bại -->
+        <div v-if="isDeliveryFailed">
           <label class="block text-gray-700 mb-1"
-            >Ghi chú (Lý do thất bại)</label
+            >Lý do thất bại (bắt buộc)</label
           >
           <textarea
-            v-model="ghiChu"
+            v-model="lyDoThatBai"
             rows="3"
-            class="w-full p-2 border rounded resize-none"
-            placeholder="Nhập lý do..."
+            class="w-full p-2 border rounded resize-none focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Ví dụ: Khách không nghe máy, khách hẹn lại ngày giao,..."
           ></textarea>
         </div>
       </div>
@@ -101,7 +134,7 @@
         <button
           @click="xacNhanGiaoHang"
           class="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:bg-gray-400"
-          :disabled="!trangThaiGiao"
+          :disabled="isConfirmButtonDisabled"
         >
           Xác nhận cập nhật
         </button>
@@ -117,7 +150,11 @@ import CardSanPhamDonHang from "../base/card/CardSanPhamDonHang.vue";
 import { useToast } from "@/composables/useToast";
 import { formatCurrency } from "@/utils/formatters";
 import {
-  TrangThaiGiaoHangKey,
+  HinhThucThanhToanKey,
+  TrangThaiThanhToanKey,
+} from "@/types/donhang.types";
+import {
+  KetQuaGiaoHangKey,
   type ChiTietDonHangGiaoHangResponse,
   type CapNhatGiaoHangRequest,
 } from "@/types/giaohang.types";
@@ -142,22 +179,51 @@ const { showToast } = useToast();
 const dongModal = () => emit("close");
 
 // Trạng thái giao hàng
-const trangThaiGiao = ref<TrangThaiGiaoHangKey | "">("");
-const ghiChu = ref("");
+const ketQuaGiao = ref<KetQuaGiaoHangKey | "">("");
+const lyDoThatBai = ref("");
+const trangThaiThanhToanCapNhat = ref<TrangThaiThanhToanKey | "">("");
+
+const isDeliveryFailed = computed(
+  () => ketQuaGiao.value === KetQuaGiaoHangKey.THAT_BAI
+);
+
+const isConfirmButtonDisabled = computed(() => {
+  // Case 1: Vô hiệu hóa khi giao thất bại nhưng chưa có lý do
+  if (isDeliveryFailed.value) {
+    return !lyDoThatBai.value.trim();
+  }
+
+  // Case 2: Vô hiệu hóa khi giao thành công đơn COD nhưng chưa chọn trạng thái thanh toán
+  if (
+    ketQuaGiao.value === KetQuaGiaoHangKey.THANH_CONG &&
+    isCODOrder.value &&
+    !trangThaiThanhToanCapNhat.value
+  ) {
+    return true;
+  }
+
+  // Bật trong các trường hợp còn lại
+  return false;
+});
+
+const isCODOrder = computed(() => {
+  if (!props.donHang) return false;
+  return (
+    props.donHang.hinhThucThanhToan?.value ===
+    HinhThucThanhToanKey.THANH_TOAN_KHI_NHAN_HANG
+  );
+});
 
 // Xác nhận gửi đi
 const xacNhanGiaoHang = () => {
-  if (!trangThaiGiao.value) {
+  if (!ketQuaGiao.value) {
     showToast({
       loai: "loi",
       thongBao: "Vui lòng chọn trạng thái giao hàng.",
     });
     return;
   }
-  if (
-    trangThaiGiao.value === TrangThaiGiaoHangKey.GIAO_HANG_THAT_BAI &&
-    !ghiChu.value.trim()
-  ) {
+  if (isDeliveryFailed.value && !lyDoThatBai.value.trim()) {
     showToast({
       loai: "loi",
       thongBao: "Vui lòng nhập lý do giao hàng thất bại.",
@@ -165,12 +231,30 @@ const xacNhanGiaoHang = () => {
     return;
   }
 
+  // Bảo vệ bổ sung: Kiểm tra trạng thái thanh toán cho đơn COD thành công
+  if (
+    ketQuaGiao.value === KetQuaGiaoHangKey.THANH_CONG &&
+    isCODOrder.value &&
+    !trangThaiThanhToanCapNhat.value
+  ) {
+    showToast({
+      loai: "loi",
+      thongBao: "Vui lòng chọn trạng thái thanh toán cho đơn hàng COD.",
+    });
+    return;
+  }
+
   const payload: CapNhatGiaoHangRequest = {
-    trangThai: trangThaiGiao.value,
+    ketQua: ketQuaGiao.value,
   };
 
-  if (trangThaiGiao.value === TrangThaiGiaoHangKey.GIAO_HANG_THAT_BAI) {
-    payload.ghiChu = ghiChu.value;
+  if (isDeliveryFailed.value) {
+    payload.lyDoThatBai = lyDoThatBai.value.trim();
+  }
+
+  // Nếu là đơn COD, gửi trạng thái thanh toán đã chọn.
+  if (isCODOrder.value && trangThaiThanhToanCapNhat.value) {
+    payload.trangThaiThanhToan = trangThaiThanhToanCapNhat.value;
   }
 
   emit("xacNhan", payload);
@@ -190,9 +274,38 @@ watch(
   () => props.visible,
   (isVisible) => {
     if (isVisible) {
-      trangThaiGiao.value = "";
-      ghiChu.value = "";
+      // Mặc định chọn "Thất bại" khi mở modal
+      ketQuaGiao.value = KetQuaGiaoHangKey.THAT_BAI;
+      lyDoThatBai.value = "";
+      // Reset trạng thái thanh toán về giá trị mặc định của đơn hàng khi modal mở
+      trangThaiThanhToanCapNhat.value =
+        props.donHang?.trangThaiThanhToan?.value ?? "";
     }
   }
 );
+
+watch(
+  () => props.donHang,
+  (newDonHang) => {
+    if (newDonHang) {
+      // Đặt trạng thái thanh toán mặc định là trạng thái hiện tại của đơn hàng
+      // Điều này đảm bảo radio button được chọn đúng khi modal mở
+      // Sử dụng optional chaining để tránh lỗi nếu trangThaiThanhToan không tồn tại
+      trangThaiThanhToanCapNhat.value =
+        newDonHang.trangThaiThanhToan?.value ?? "";
+    }
+  }
+);
+
+watch(ketQuaGiao, (newKetQua) => {
+  // Nếu giao hàng thất bại, tự động chọn "Chưa thanh toán".
+  if (newKetQua === KetQuaGiaoHangKey.THAT_BAI) {
+    trangThaiThanhToanCapNhat.value = TrangThaiThanhToanKey.CHUA_THANH_TOAN;
+  }
+  // Nếu là đơn COD và chuyển sang thành công, reset lựa chọn thanh toán
+  // để buộc nhân viên phải chọn lại, tránh sai sót.
+  else if (newKetQua === KetQuaGiaoHangKey.THANH_CONG && isCODOrder.value) {
+    trangThaiThanhToanCapNhat.value = "";
+  }
+});
 </script>

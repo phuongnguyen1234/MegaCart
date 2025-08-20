@@ -68,7 +68,7 @@
 
     <!-- Chú thích số lượng -->
     <div class="mb-4">
-      <p class="text-sm text-gray-600">
+      <p class="text-base text-gray-600">
         {{ thongTinHienThi }}
       </p>
     </div>

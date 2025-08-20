@@ -52,5 +52,5 @@ export enum HinhThucCapNhatKhoKey {
 export interface CapNhatKhoRequest {
   hinhThuc: HinhThucCapNhatKhoKey;
   soLuong: number;
-  noiDung: string;
+  noiDung?: string;
 }
