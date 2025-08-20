@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface QuanLyKhoService {
 
-    PagedResponse<KhoResponse> getDanhSachKho(String tuKhoa, Integer maDanhMuc, Pageable pageable);
+    PagedResponse<KhoResponse> getDanhSachKho(String searchField, String searchValue, Integer maDanhMuc, Pageable pageable);
 
     ChiTietKhoResponse getChiTietKho(Integer maSanPham);
 

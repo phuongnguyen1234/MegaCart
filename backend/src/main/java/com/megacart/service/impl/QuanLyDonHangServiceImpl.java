@@ -237,6 +237,9 @@ public class QuanLyDonHangServiceImpl implements QuanLyDonHangService {
             // Điều kiện lọc động
             if (StringUtils.hasText(searchField) && StringUtils.hasText(searchValue)) {
                 jakarta.persistence.criteria.Predicate searchPredicate = switch (searchField) {
+                    case "maDonHang" -> searchValue.matches("\\d+")
+                            ? cb.equal(root.get("maDonHang"), Integer.parseInt(searchValue))
+                            : cb.disjunction(); // Luôn false nếu searchValue không phải là số
                     case "tenNhanVienGiaoHang" -> cb.like(cb.lower(root.get("nhanVienGiaoHang").get("hoTen")), "%" + searchValue.toLowerCase() + "%");
                     case "tenNguoiNhan" -> cb.like(cb.lower(root.get("tenKhachHang")), "%" + searchValue.toLowerCase() + "%");
                     case "sdtNhanHang" -> cb.like(root.get("sdtNhanHang"), "%" + searchValue + "%");

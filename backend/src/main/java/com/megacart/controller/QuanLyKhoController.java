@@ -29,10 +29,11 @@ public class QuanLyKhoController {
 
     @GetMapping
     public ResponseEntity<PagedResponse<KhoResponse>> getDanhSachKho(
-            @RequestParam(required = false) String tuKhoa,
+            @RequestParam(required = false) String searchField,
+            @RequestParam(required = false) String searchValue,
             @RequestParam(required = false) Integer maDanhMuc,
             @PageableDefault(size = 30, sort = "maSanPham") Pageable pageable) {
-        return ResponseEntity.ok(quanLyKhoService.getDanhSachKho(tuKhoa, maDanhMuc, pageable));
+        return ResponseEntity.ok(quanLyKhoService.getDanhSachKho(searchField, searchValue, maDanhMuc, pageable));
     }
 
     @GetMapping("/{maSanPham}")
