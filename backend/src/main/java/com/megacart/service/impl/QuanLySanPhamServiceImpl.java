@@ -262,15 +262,27 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
         if (files != null && !files.isEmpty()) {
             String subDir = "sanpham/" + sanPham.getMaSanPham();
 
-            List<CompletableFuture<AnhMinhHoa>> uploadTasks = files.stream()
-                    .map(file -> fileStorageService.storeFileAsync(file, subDir)
+            // Tìm số thứ tự lớn nhất hiện có để gán cho các ảnh mới
+            final int maxSoThuTuHienTai = sanPham.getAnhMinhHoas().stream()
+                    .mapToInt(AnhMinhHoa::getSoThuTu)
+                    .max()
+                    .orElse(-1); // Nếu chưa có ảnh nào, bắt đầu từ -1
+
+            List<CompletableFuture<AnhMinhHoa>> uploadTasks = new ArrayList<>();
+            for (int i = 0; i < files.size(); i++) {
+                MultipartFile file = files.get(i);
+                final int soThuTuMoi = maxSoThuTuHienTai + 1 + i;
+
+                CompletableFuture<AnhMinhHoa> task = fileStorageService.storeFileAsync(file, subDir)
                             .thenApply(filePath -> AnhMinhHoa.builder()
                                     .duongDan(filePath)
                                     .sanPham(sanPham)
                                     .laAnhChinh(false) // Mặc định là false
+                                    .soThuTu(soThuTuMoi) // Gán số thứ tự ngay khi tạo
                                     .originalFileName(file.getOriginalFilename()) // Lưu tên file gốc để định danh
-                                    .build()))
-                    .toList();
+                                    .build());
+                uploadTasks.add(task);
+            }
 
             // Chờ tất cả các tác vụ hoàn thành và thu thập kết quả
             anhMoiList = uploadTasks.stream()

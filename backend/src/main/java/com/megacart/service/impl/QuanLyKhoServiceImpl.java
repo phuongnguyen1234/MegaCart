@@ -39,7 +39,7 @@ public class QuanLyKhoServiceImpl implements QuanLyKhoService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<KhoResponse> getDanhSachKho(String tuKhoa, Integer maDanhMuc, Pageable pageable) {
+    public PagedResponse<KhoResponse> getDanhSachKho(String searchField, String searchValue, Integer maDanhMuc, Pageable pageable) {
         Specification<Kho> spec = (root, query, cb) -> {
             // Để tránh N+1, fetch sẵn các entity liên quan.
             // Từ Kho -> SanPham -> DanhMuc -> DanhMucCha
@@ -53,13 +53,16 @@ public class QuanLyKhoServiceImpl implements QuanLyKhoService {
 
             List<Predicate> predicates = new ArrayList<>();
 
-            // Lọc theo từ khóa (mã hoặc tên sản phẩm)
-            if (StringUtils.hasText(tuKhoa)) {
-                Predicate tenPredicate = cb.like(cb.lower(root.get("sanPham").get("tenSanPham")), "%" + tuKhoa.toLowerCase() + "%");
-                Predicate maPredicate = tuKhoa.matches("\\d+")
-                        ? cb.equal(root.get("maSanPham"), Integer.parseInt(tuKhoa))
-                        : cb.disjunction(); // Predicate luôn false nếu không phải số
-                predicates.add(cb.or(tenPredicate, maPredicate));
+            // Lọc theo trường và giá trị cụ thể
+            if (StringUtils.hasText(searchField) && StringUtils.hasText(searchValue)) {
+                Predicate searchPredicate = switch (searchField) {
+                    case "maSanPham" -> searchValue.matches("\\d+")
+                            ? cb.equal(root.get("maSanPham"), Integer.parseInt(searchValue))
+                            : cb.disjunction(); // Luôn false nếu searchValue không phải là số
+                    case "tenSanPham" -> cb.like(cb.lower(root.get("sanPham").get("tenSanPham")), "%" + searchValue.toLowerCase() + "%");
+                    default -> cb.disjunction(); // Predicate luôn false nếu searchField không hợp lệ
+                };
+                predicates.add(searchPredicate);
             }
 
             // Lọc theo danh mục (bao gồm cả danh mục con)

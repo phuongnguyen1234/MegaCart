@@ -14,7 +14,6 @@ public class CapNhatKhoRequest {
     @NotNull(message = "Số lượng cập nhật không được để trống")
     private Integer soLuong;
 
-    @NotBlank(message = "Nội dung cập nhật không được để trống")
     @Size(max = 255, message = "Nội dung cập nhật không được vượt quá 255 ký tự")
     private String noiDung;
 }
