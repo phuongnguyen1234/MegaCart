@@ -3,7 +3,8 @@ import type { PageableParams, PagedResponse } from "@/types/api.types";
 import type {
   DanhMucMenuItem,
   DanhMucQuanLyResponse,
-  LuuDanhMucRequest,
+  ThemDanhMucRequest,
+  CapNhatDanhMucRequest,
   ChiTietDanhMucQuanLyResponse,
   TrangThaiDanhMucKey,
   GetDanhMucParams,
@@ -54,7 +55,7 @@ export const getDanhMucOptionsForFilter = (): Promise<
  * @returns The created category data.
  */
 export const themDanhMuc = (
-  data: LuuDanhMucRequest
+  data: ThemDanhMucRequest
 ): Promise<DanhMucQuanLyResponse> => {
   return apiClient.post("/admin/danh-muc", data);
 };
@@ -80,7 +81,7 @@ export const getChiTietDanhMuc = (
  */
 export const capNhatDanhMuc = (
   maDanhMuc: number,
-  data: LuuDanhMucRequest
+  data: CapNhatDanhMucRequest
 ): Promise<DanhMucQuanLyResponse> => {
   return apiClient.patch(`/admin/danh-muc/${maDanhMuc}`, data);
 };

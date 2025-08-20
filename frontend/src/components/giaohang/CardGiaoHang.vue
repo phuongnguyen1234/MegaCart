@@ -38,8 +38,8 @@
         <div class="flex items-start">
           <i class="fi fi-rr-credit-card mt-1 mr-2 text-gray-600"></i>
           <div>
-            <span class="font-semibold">Hình thức thanh toán:</span>
-            <span class="ml-1">{{ donHang.hinhThucThanhToan }}</span>
+            <span class="font-semibold">Trạng thái thanh toán:</span>
+            <span class="ml-1">{{ donHang.trangThaiThanhToan?.label }}</span>
           </div>
         </div>
       </div>
@@ -65,13 +65,13 @@
   </div>
 </template>
 <script setup lang="ts">
-import type { DonHang } from "@/types/DonHang";
+import type { DonHangGiaoHangResponse } from "@/types/giaohang.types";
 
 defineProps<{
-  donHang: DonHang;
+  donHang: DonHangGiaoHangResponse;
 }>();
 defineEmits<{
-  (e: "xemChiTiet", donHang: DonHang): void;
+  (e: "xemChiTiet", donHang: DonHangGiaoHangResponse): void;
 }>();
 const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat("vi-VN", {

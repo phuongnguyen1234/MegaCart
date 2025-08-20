@@ -54,7 +54,7 @@
           <span
             :class="[
               'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-              trangThai.value === 'HOAT_DONG'
+              trangThai.value === TrangThaiDanhMucKey.HOAT_DONG
                 ? 'bg-green-100 text-green-800'
                 : 'bg-red-100 text-red-800',
             ]"
@@ -163,8 +163,13 @@ const closeModal = () => {
 };
 
 const handleSuccess = () => {
-  fetchDanhMuc();
-  danhMucStore.fetchMenuDanhMuc(true); // Ép store tải lại dữ liệu mới
+  fetchDanhMuc(); // Tải lại bảng danh mục hiện tại
+
+  // Đồng thời, yêu cầu store tải lại cả hai loại dữ liệu danh mục
+  // để đảm bảo tính nhất quán trên toàn bộ ứng dụng.
+  danhMucStore.fetchMenuDanhMuc(true); // Dữ liệu cho menu khách hàng
+  danhMucStore.fetchAdminCategoryOptions(true); // Dữ liệu cho các dropdown/filter trong trang admin
+  danhMucStore.fetchAllCategoriesFlat(true); // Dữ liệu phẳng cho modal sửa danh mục
 };
 
 // --- Phân trang ---

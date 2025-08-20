@@ -3,6 +3,7 @@ import type {
   PageableParams,
   PagedResponse,
   SortDirection,
+  MessageResponse,
 } from "@/types/api.types";
 import { NhanSanPhamKey } from "@/types/sanpham.types";
 import type { FilterDataResponse } from "@/types/filter.types";
@@ -15,6 +16,7 @@ import type {
   SanPhamQuanLyResponse,
   ChiTietSanPhamQuanLyResponse,
   ThemSanPhamRequest,
+  ThemSanPhamAsyncResponse,
   CapNhatSanPhamRequest,
 } from "@/types/sanpham.types";
 
@@ -182,7 +184,7 @@ function createSanPhamFormData(data: object, files?: File[]): FormData {
 export const themSanPham = (
   data: ThemSanPhamRequest,
   files: File[]
-): Promise<SanPhamQuanLyResponse> => {
+): Promise<ThemSanPhamAsyncResponse> => {
   const formData = createSanPhamFormData(data, files);
   return apiClient.post("/admin/san-pham", formData); // Axios handles multipart header automatically
 };
@@ -200,7 +202,7 @@ export const capNhatSanPham = (
   maSanPham: number,
   data: CapNhatSanPhamRequest,
   files?: File[]
-): Promise<ChiTietSanPhamQuanLyResponse> => {
+): Promise<MessageResponse> => {
   const formData = createSanPhamFormData(data, files);
   return apiClient.patch(`/admin/san-pham/${maSanPham}`, formData); // Axios handles multipart header automatically
 };

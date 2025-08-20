@@ -87,7 +87,6 @@ export type CapNhatDonHangRequest = Partial<
     trangThaiThanhToan: TrangThaiThanhToanKey;
   }
 >;
-
 /**
  * Represents the structure of an order status object returned from the API.
  * The backend serializes the `TrangThaiDonHang` enum into this object.

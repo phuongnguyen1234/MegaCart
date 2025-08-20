@@ -23,37 +23,40 @@
         <!-- Danh mục -->
         <div>
           <label for="danhMucCha">Danh mục cha</label>
+          <!-- Đảm bảo kiểu value là số -->
           <select
             id="danhMucCha"
             v-model="selectedDanhMucCha"
             class="input w-full mt-1"
           >
-            <option value="">-- Chọn danh mục cha --</option>
+            <option :value="null">-- Chọn danh mục cha --</option>
             <option
               v-for="dmc in danhMucChaOptions"
               :key="dmc.maDanhMuc"
               :value="dmc.maDanhMuc"
             >
-              {{ dmc.tenDanhMuc }}
+              {{ dmc.tenDanhMuc || "Không rõ tên" }}
             </option>
           </select>
         </div>
 
+        <!-- Danh mục con -->
         <div>
           <label for="danhMucCon">Danh mục con</label>
           <select
             id="danhMucCon"
-            v-model="formData.maDanhMuc"
+            v-model="selectedDanhMucCon"
             class="input w-full mt-1"
             :disabled="!selectedDanhMucCha || danhMucConOptions.length === 0"
+            required
           >
-            <option value="">-- Chọn danh mục con --</option>
+            <option :value="null">-- Chọn danh mục con --</option>
             <option
               v-for="dmc in danhMucConOptions"
               :key="dmc.maDanhMuc"
               :value="dmc.maDanhMuc"
             >
-              {{ dmc.tenDanhMuc }}
+              {{ dmc.tenDanhMuc || "Không rõ tên" }}
             </option>
           </select>
         </div>
@@ -89,6 +92,7 @@
             type="number"
             v-model="formData.donGia"
             class="input w-full mt-1"
+            min="0"
             required
           />
         </div>
@@ -99,6 +103,7 @@
             type="text"
             v-model="formData.donVi"
             class="input w-full mt-1"
+            min="0"
             required
           />
         </div>
@@ -106,12 +111,8 @@
         <!-- Nhãn -->
         <div>
           <label for="nhan">Nhãn sản phẩm</label>
-          <select
-            id="nhan"
-            v-model="formData.nhan"
-            class="input w-full mt-1"
-            required
-          >
+          <select id="nhan" v-model="formData.nhan" class="input w-full mt-1">
+            <option :value="null">-- Không có nhãn --</option>
             <option
               v-for="(label, key) in NhanSanPhamLabel"
               :key="key"
@@ -177,17 +178,17 @@
             <div
               v-for="image in existingImages"
               :key="image.maAnh"
-              class="relative group cursor-pointer"
+              class="relative group cursor-pointer rounded-lg"
               @click="setPrimaryImage('existing', image.duongDan)"
+              :class="{
+                'ring-2 ring-offset-2 ring-blue-500':
+                  primaryImageIdentifier === image.duongDan,
+              }"
             >
               <img
                 :src="image.duongDan"
                 alt="Ảnh sản phẩm"
-                class="w-full h-24 object-cover rounded-lg border"
-                :class="{
-                  'ring-2 ring-offset-2 ring-blue-500':
-                    primaryImageIdentifier === image.duongDan,
-                }"
+                class="w-full aspect-square object-cover rounded-lg border"
               />
               <button
                 @click.stop="removeExistingImage(image)"
@@ -200,17 +201,17 @@
             <div
               v-for="(preview, index) in newImagePreviews"
               :key="index"
-              class="relative group cursor-pointer"
+              class="relative group cursor-pointer rounded-lg"
               @click="setPrimaryImage('new', index)"
+              :class="{
+                'ring-2 ring-offset-2 ring-blue-500':
+                  primaryImageIdentifier === newImageFiles[index]?.name,
+              }"
             >
               <img
                 :src="preview"
                 alt="Ảnh xem trước"
-                class="w-full h-24 object-cover rounded-lg border"
-                :class="{
-                  'ring-2 ring-offset-2 ring-blue-500':
-                    primaryImageIdentifier === newImageFiles[index]?.name,
-                }"
+                class="w-full aspect-square object-cover rounded-lg border"
               />
               <button
                 @click.stop="removeNewImage(index)"
@@ -222,7 +223,7 @@
             <!-- Nút tải ảnh -->
             <div
               @click="triggerFileInput"
-              class="flex flex-col justify-center items-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+              class="flex flex-col justify-center items-center w-full aspect-square border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
             >
               <i class="fi fi-rr-images text-2xl text-gray-400"></i>
               <p class="text-xs text-gray-500 mt-1">Tải ảnh lên</p>
@@ -238,7 +239,7 @@
           type="submit"
           class="btn btn-primary"
           @click="handleSubmit"
-          :disabled="isLoading || (isEditMode && !isFormDirty)"
+          :disabled="isLoading || (isEditMode && !isFormDirty) || !canSubmit"
         >
           {{ isEditMode ? "Cập nhật sản phẩm" : "Thêm sản phẩm" }}
         </button>
@@ -249,10 +250,14 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from "vue";
-import BaseModal from "@/components/base/modals/BaseModal.vue";
+import BaseModal from "../base/modals/BaseModal.vue";
 import { useDanhMucStore } from "@/store/danhmuc.store";
 import { useToast } from "@/composables/useToast";
 import { themSanPham, capNhatSanPham } from "@/service/sanpham.service";
+import type {
+  DanhMucOptionResponse,
+  DanhMucConOption,
+} from "@/types/danhmuc.types";
 import type {
   ThemSanPhamRequest,
   CapNhatSanPhamRequest,
@@ -260,9 +265,9 @@ import type {
   AnhMinhHoa,
 } from "@/types/sanpham.types";
 import {
+  NhanSanPhamLabel,
   TrangThaiSanPhamKey,
   NhanSanPhamKey,
-  NhanSanPhamLabel,
 } from "@/types/sanpham.types";
 
 const props = defineProps<{
@@ -275,70 +280,49 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "close"): void;
-  (e: "success"): void; // Gửi sự kiện khi thêm/sửa thành công
+  (e: "success"): void;
 }>();
 
 // --- Store ---
 const danhMucStore = useDanhMucStore();
 const { showToast } = useToast();
-const danhMucChaOptions = computed(() => danhMucStore.menuItems);
 
-// --- Form State ---
+// --- Refs ---
+const isLoading = ref(false);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+
+// Form data
 const initialFormData: ThemSanPhamRequest = {
   tenSanPham: "",
   moTa: "",
   ghiChu: "",
   donGia: 0,
   donVi: "",
-  maDanhMuc: 0,
+  maDanhMuc: 0, // 0 is used as the "not selected" value for validation
   nhaSanXuat: "",
   trangThai: TrangThaiSanPhamKey.BAN,
   nhan: NhanSanPhamKey.MOI,
-  anhChinhIndex: 0, // Mặc định ảnh đầu tiên là ảnh chính
+  anhChinhIndex: 0,
 };
-
 const formData = ref<ThemSanPhamRequest>({ ...initialFormData });
-const initialEditData = ref<ThemSanPhamRequest | null>(null); // Lưu trạng thái ban đầu để so sánh
-const initialPrimaryImageIdentifier = ref<string | null>(null);
-const selectedDanhMucCha = ref<number | "">("");
-const isLoading = ref(false);
 
-// --- Image State ---
-const fileInputRef = ref<HTMLInputElement | null>(null);
+// Category selection state
+const selectedDanhMucCha = ref<number | null>(null);
+const selectedDanhMucCon = ref<number | null>(null);
+
+// Image state
+const existingImages = ref<AnhMinhHoa[]>([]);
 const newImageFiles = ref<File[]>([]);
 const newImagePreviews = ref<string[]>([]);
-const existingImages = ref<AnhMinhHoa[]>([]);
 const urlsAnhXoaToDelete = ref<string[]>([]);
-const primaryImageIdentifier = ref<string | null>(null); // Lưu URL hoặc tên file của ảnh chính
+const primaryImageIdentifier = ref<string | null>(null);
+
+// Dirty checking state
+const initialEditData = ref<string>("");
+const initialPrimaryImageIdentifier = ref<string | null>(null);
+const initialExistingImagesCount = ref(0);
 
 // --- Computed Properties ---
-const isFormDirty = computed(() => {
-  // Chỉ áp dụng cho chế độ sửa
-  if (!props.isEditMode || !initialEditData.value) {
-    return false;
-  }
-
-  // 1. Kiểm tra có ảnh mới được thêm không
-  if (newImageFiles.value.length > 0) {
-    return true;
-  }
-
-  // 2. Kiểm tra có ảnh cũ bị xóa không
-  if (urlsAnhXoaToDelete.value.length > 0) {
-    return true;
-  }
-
-  // 3. Kiểm tra ảnh chính có thay đổi không
-  if (primaryImageIdentifier.value !== initialPrimaryImageIdentifier.value) {
-    return true;
-  }
-
-  // 4. So sánh dữ liệu form (dùng JSON.stringify để so sánh sâu)
-  return (
-    JSON.stringify(formData.value) !== JSON.stringify(initialEditData.value)
-  );
-});
-
 const isDangBan = computed({
   get: () => formData.value.trangThai === TrangThaiSanPhamKey.BAN,
   set: (value) => {
@@ -348,61 +332,111 @@ const isDangBan = computed({
   },
 });
 
+const allCategories = computed(() => danhMucStore.allCategoriesFlat);
+
+const danhMucChaOptions = computed(() => {
+  // Lọc ra các danh mục cha từ danh sách phẳng (những danh mục không có tenDanhMucCha)
+  return allCategories.value.filter((dm) => !dm.tenDanhMucCha);
+});
+
 const danhMucConOptions = computed(() => {
   if (!selectedDanhMucCha.value) return [];
+  // Tìm đối tượng danh mục cha đã chọn để lấy tên của nó
   const parent = danhMucChaOptions.value.find(
     (p) => p.maDanhMuc === selectedDanhMucCha.value
   );
-  return parent ? parent.danhMucCons : [];
+  if (!parent) return [];
+  // Lọc ra các danh mục con từ danh sách phẳng dựa vào tenDanhMucCha
+  return allCategories.value.filter(
+    (dm) => dm.tenDanhMucCha === parent.tenDanhMuc
+  );
+});
+
+const isFormDirty = computed(() => {
+  if (!props.isEditMode) {
+    return true; // Always enable for "Add" mode
+  }
+  // In edit mode, check for changes
+  const formDataChanged =
+    JSON.stringify(formData.value) !== initialEditData.value;
+  const newImagesAdded = newImageFiles.value.length > 0;
+  const imagesRemoved =
+    existingImages.value.length !== initialExistingImagesCount.value;
+  const primaryImageChanged =
+    primaryImageIdentifier.value !== initialPrimaryImageIdentifier.value;
+
+  return (
+    formDataChanged || newImagesAdded || imagesRemoved || primaryImageChanged
+  );
+});
+
+const canSubmit = computed(() => {
+  // Additional check to ensure a primary image is selected before allowing submission
+  const hasImages =
+    existingImages.value.length > 0 || newImageFiles.value.length > 0;
+  const hasPrimaryImage = !!primaryImageIdentifier.value;
+  return hasImages && hasPrimaryImage;
 });
 
 // --- Watchers ---
-watch(selectedDanhMucCha, (newParentId) => {
-  // Khi danh mục cha thay đổi, reset danh mục con
-  // Việc chọn danh mục con sẽ cập nhật formData.maDanhMuc
-  formData.value.maDanhMuc = 0;
+watch(selectedDanhMucCha, (maCha) => {
+  // When parent category changes, reset the child category selection
+  selectedDanhMucCon.value = null;
 });
 
-// Watch khi modal được mở/đóng
+watch(selectedDanhMucCon, (maCon) => {
+  // Use 0 as the "not selected" value to satisfy type constraints and validation
+  formData.value.maDanhMuc = maCon ?? 0;
+});
+
 watch(
   () => props.visible,
-  (isVisible) => {
+  async (isVisible) => {
     if (isVisible) {
-      resetFormState(); // Luôn reset khi mở
+      resetFormState();
+
+      // Lấy danh sách danh mục dạng phẳng, store sẽ cache lại.
+      await danhMucStore.fetchAllCategoriesFlat();
+
+      // If editing, populate the form after categories are loaded.
       if (props.isEditMode && props.sanPhamSua) {
-        // Chế độ sửa: điền dữ liệu
+        // Use nextTick to ensure dependent computed properties (like danhMucConOptions)
+        // have a chance to update before we set selected values.
+        await nextTick();
         populateFormForEdit(props.sanPhamSua);
       }
-    } else {
-      // Dọn dẹp URL ảnh preview khi đóng modal để giải phóng bộ nhớ
-      newImagePreviews.value.forEach((url) => URL.revokeObjectURL(url));
     }
   }
 );
 
 // --- Methods ---
-
-const findParentCategoryByChildId = (childId: number) => {
-  if (!childId) return undefined;
-  return danhMucChaOptions.value.find((parent) =>
-    parent.danhMucCons.some((child) => child.maDanhMuc === childId)
-  );
-};
-
 const resetFormState = () => {
   formData.value = { ...initialFormData };
-  initialEditData.value = null;
-  selectedDanhMucCha.value = "";
+  selectedDanhMucCha.value = null;
+  selectedDanhMucCon.value = null;
+
+  // Revoke old blob URLs to prevent memory leaks
+  newImagePreviews.value.forEach((url) => URL.revokeObjectURL(url));
+
+  existingImages.value = [];
   newImageFiles.value = [];
   newImagePreviews.value = [];
-  existingImages.value = [];
   urlsAnhXoaToDelete.value = [];
   primaryImageIdentifier.value = null;
+
+  // Reset dirty check state
+  initialEditData.value = "";
   initialPrimaryImageIdentifier.value = null;
+  initialExistingImagesCount.value = 0;
+
+  // Reset the file input visually
+  if (fileInputRef.value) {
+    fileInputRef.value.value = "";
+  }
 };
 
-const populateFormForEdit = async (sanPham: ChiTietSanPhamQuanLyResponse) => {
-  const populatedData: ThemSanPhamRequest = {
+const populateFormForEdit = (sanPham: ChiTietSanPhamQuanLyResponse) => {
+  const populatedData: Omit<ThemSanPhamRequest, "anhChinhIndex"> = {
     tenSanPham: sanPham.tenSanPham,
     moTa: sanPham.moTa,
     ghiChu: sanPham.ghiChu,
@@ -410,16 +444,16 @@ const populateFormForEdit = async (sanPham: ChiTietSanPhamQuanLyResponse) => {
     donVi: sanPham.donVi,
     maDanhMuc: sanPham.maDanhMuc,
     nhaSanXuat: sanPham.nhaSanXuat,
-    trangThai: sanPham.trangThai.value, // Lấy key từ object
-    nhan: sanPham.nhan.value, // Lấy key từ object
-    anhChinhIndex: 0, // Placeholder for edit mode to satisfy the type
+    trangThai: sanPham.trangThai.value,
+    nhan: sanPham.nhan?.value || null,
   };
-  // Điền dữ liệu vào form và lưu lại trạng thái ban đầu để so sánh
-  formData.value = { ...populatedData };
-  initialEditData.value = { ...populatedData };
-  existingImages.value = [...sanPham.anhMinhHoas];
+  formData.value = { ...populatedData, anhChinhIndex: 0 };
 
-  // Set ảnh chính ban đầu
+  // Store initial state for dirty checking (deep copy)
+  initialEditData.value = JSON.stringify(formData.value);
+  existingImages.value = [...sanPham.anhMinhHoas];
+  initialExistingImagesCount.value = sanPham.anhMinhHoas.length;
+
   const anhChinh = sanPham.anhMinhHoas.find((a) => a.laAnhChinh);
   const initialPrimary = anhChinh
     ? anhChinh.duongDan
@@ -427,13 +461,23 @@ const populateFormForEdit = async (sanPham: ChiTietSanPhamQuanLyResponse) => {
   primaryImageIdentifier.value = initialPrimary;
   initialPrimaryImageIdentifier.value = initialPrimary;
 
-  // Tìm và set danh mục cha
-  const parent = findParentCategoryByChildId(sanPham.maDanhMuc);
-  if (parent) {
-    selectedDanhMucCha.value = parent.maDanhMuc;
-    // Đợi DOM cập nhật để combobox con có options
-    await nextTick();
-    formData.value.maDanhMuc = sanPham.maDanhMuc;
+  // Tìm và đặt danh mục cha và con từ danh sách phẳng
+  const productCategory = allCategories.value.find(
+    (c) => c.maDanhMuc === sanPham.maDanhMuc
+  );
+
+  if (productCategory?.tenDanhMucCha) {
+    // Đây là danh mục con, tìm cha của nó
+    const parentCategory = allCategories.value.find(
+      (p) => p.tenDanhMuc === productCategory.tenDanhMucCha
+    );
+    if (parentCategory) {
+      selectedDanhMucCha.value = parentCategory.maDanhMuc;
+      // Đợi DOM cập nhật danh sách con rồi mới chọn
+      nextTick(() => {
+        selectedDanhMucCon.value = sanPham.maDanhMuc;
+      });
+    }
   }
 };
 
@@ -445,11 +489,21 @@ const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files) {
     const files = Array.from(target.files);
+    // Kiểm tra xem đây có phải là lần tải ảnh đầu tiên không (khi chưa có ảnh nào)
+    const isFirstUpload =
+      existingImages.value.length === 0 && newImageFiles.value.length === 0;
+
     newImageFiles.value.push(...files);
     files.forEach((file) => {
       const previewUrl = URL.createObjectURL(file);
       newImagePreviews.value.push(previewUrl);
     });
+
+    // Nếu đây là lần tải ảnh đầu tiên, tự động đặt ảnh mới đầu tiên làm ảnh chính
+    if (isFirstUpload && files.length > 0) {
+      // Sử dụng tên file làm định danh, giống như logic trong setPrimaryImage
+      primaryImageIdentifier.value = files[0].name;
+    }
   }
 };
 
@@ -470,70 +524,65 @@ const setPrimaryImage = (
 const removeNewImage = (index: number) => {
   const fileToRemove = newImageFiles.value[index];
   const urlToRemove = newImagePreviews.value[index];
-
-  // Nếu ảnh bị xóa là ảnh chính, reset lại
   if (primaryImageIdentifier.value === fileToRemove.name) {
     primaryImageIdentifier.value = null;
   }
-
-  URL.revokeObjectURL(urlToRemove); // Giải phóng bộ nhớ
+  URL.revokeObjectURL(urlToRemove);
   newImageFiles.value.splice(index, 1);
   newImagePreviews.value.splice(index, 1);
 };
 
 const removeExistingImage = (image: AnhMinhHoa) => {
   if (!image.duongDan) return;
-
-  // Nếu ảnh bị xóa là ảnh chính, reset lại
   if (primaryImageIdentifier.value === image.duongDan) {
     primaryImageIdentifier.value = null;
   }
-
-  // Thêm URL vào danh sách cần xóa
   urlsAnhXoaToDelete.value.push(image.duongDan);
-
-  // Xóa khỏi danh sách hiển thị
   existingImages.value = existingImages.value.filter(
     (img) => img.duongDan !== image.duongDan
   );
 };
 
 const handleSubmit = async () => {
-  // Validation
   if (!formData.value.maDanhMuc) {
     showToast({ loai: "loi", thongBao: "Vui lòng chọn danh mục sản phẩm." });
     return;
   }
-  if (existingImages.value.length === 0 && newImageFiles.value.length === 0) {
+  const totalImages = existingImages.value.length + newImageFiles.value.length;
+  if (totalImages === 0) {
     showToast({ loai: "loi", thongBao: "Vui lòng tải lên ít nhất một ảnh." });
+    return;
+  }
+  if (!primaryImageIdentifier.value) {
+    showToast({
+      loai: "loi",
+      thongBao: "Vui lòng chọn một ảnh làm ảnh chính.",
+    });
     return;
   }
 
   isLoading.value = true;
   try {
     if (props.isEditMode && props.sanPhamSua) {
-      // --- Logic Cập nhật ---
-      if (!primaryImageIdentifier.value) {
-        showToast({
-          loai: "loi",
-          thongBao: "Vui lòng chọn một ảnh làm ảnh chính.",
-        });
-        isLoading.value = false;
-        return;
-      }
-
+      // Xây dựng payload một cách cẩn thận để khớp với CapNhatSanPhamRequest
+      // và tránh gửi các trường không cần thiết như 'anhChinhIndex'.
       const updateData: CapNhatSanPhamRequest = {
-        ...formData.value,
+        tenSanPham: formData.value.tenSanPham,
+        maDanhMuc: formData.value.maDanhMuc,
+        moTa: formData.value.moTa,
+        nhaSanXuat: formData.value.nhaSanXuat,
+        donGia: formData.value.donGia,
+        donVi: formData.value.donVi,
+        nhan: formData.value.nhan,
+        ghiChu: formData.value.ghiChu,
+        trangThai: formData.value.trangThai,
         urlsAnhXoa:
           urlsAnhXoaToDelete.value.length > 0
             ? urlsAnhXoaToDelete.value
             : undefined,
-        anhChinhIdentifier: primaryImageIdentifier.value,
+        // Validation ở trên đảm bảo primaryImageIdentifier là một string ở đây.
+        anhChinhIdentifier: primaryImageIdentifier.value as string,
       };
-
-      // Xóa các trường không cần thiết cho payload cập nhật
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (updateData as any).anhChinhIndex;
 
       await capNhatSanPham(
         props.sanPhamSua.maSanPham,
@@ -545,24 +594,19 @@ const handleSubmit = async () => {
         thongBao: "Cập nhật sản phẩm thành công!",
       });
     } else {
-      // --- Logic Thêm mới ---
-      // Xác định index của ảnh chính
-      let anhChinhIndex = 0; // Mặc định là ảnh đầu tiên
-      if (primaryImageIdentifier.value) {
-        const foundIndex = newImageFiles.value.findIndex(
-          (f) => f.name === primaryImageIdentifier.value
-        );
-        if (foundIndex !== -1) {
-          anhChinhIndex = foundIndex;
-        }
+      let anhChinhIndex = 0;
+      // For new products, the primary image must be one of the new files
+      const foundIndex = newImageFiles.value.findIndex(
+        (f) => f.name === primaryImageIdentifier.value
+      );
+      if (foundIndex !== -1) {
+        anhChinhIndex = foundIndex;
       }
-
-      const payload: ThemSanPhamRequest = {
+      const createData: ThemSanPhamRequest = {
         ...formData.value,
-        anhChinhIndex: anhChinhIndex,
+        anhChinhIndex,
       };
-
-      await themSanPham(payload, newImageFiles.value);
+      await themSanPham(createData, newImageFiles.value);
       showToast({
         loai: "thanhCong",
         thongBao: "Thêm sản phẩm mới thành công!",
@@ -571,8 +615,15 @@ const handleSubmit = async () => {
     emit("success");
     emit("close");
   } catch (error) {
-    console.error("Lỗi khi lưu sản phẩm:", error);
-    showToast({ loai: "loi", thongBao: "Đã có lỗi xảy ra." });
+    const err = error as any;
+    const errorMessage =
+      err.response?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
+
+    showToast({
+      loai: "loi",
+      thongBao: errorMessage,
+    });
+    console.error("ERROR - handleSubmit:", error);
   } finally {
     isLoading.value = false;
   }
@@ -580,17 +631,20 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-/* 
+/*
   Thêm @reference để cung cấp ngữ cảnh của Tailwind cho khối style này.
   Đường dẫn cần trỏ đến file CSS chính của bạn.
 */
 @reference "../../assets/styles/main.css";
 
 .input {
-  @apply border border-gray-300 rounded px-3 py-2;
+  @apply border border-gray-300 rounded px-3 py-2 bg-white;
 }
 .input:focus {
   @apply outline-none ring-2 ring-blue-500;
+}
+.input:disabled {
+  @apply bg-gray-100 cursor-not-allowed;
 }
 
 .btn {

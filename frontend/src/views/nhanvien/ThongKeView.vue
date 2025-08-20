@@ -2,21 +2,27 @@
   <div>
     <section>
       <h2 class="text-xl font-bold text-gray-800 mb-4">Doanh thu</h2>
+      <!-- Sử dụng dữ liệu động -->
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <StatCard
           tieuDe="Doanh thu hôm nay"
-          giaTri="10.000.000 VND"
+          :giaTri="formatCurrency(thongKeTongQuan?.doanhThu.homNay ?? 0)"
           icon="lucide:coins"
+          :is-loading="isLoading.tongQuan"
         />
         <StatCard
           tieuDe="Doanh thu tháng này"
-          giaTri="10.000.000 VND"
+          :giaTri="formatCurrency(thongKeTongQuan?.doanhThu.thangNay ?? 0)"
           icon="lucide:wallet"
+          :is-loading="isLoading.tongQuan"
         />
         <StatCard
           tieuDe="Tăng trưởng doanh thu"
-          giaTri="+50%"
+          :giaTri="`${
+            thongKeTongQuan?.doanhThu.tangTruongSoVoiThangTruoc ?? 0
+          }%`"
           icon="lucide:arrow-up"
+          :is-loading="isLoading.tongQuan"
         />
       </div>
 
@@ -31,9 +37,11 @@
             <option>30 ngày</option>
           </select>
           <div class="relative mt-2 h-60">
+            <!-- Sử dụng dữ liệu động -->
             <BieuDoDuong
-              :labels="['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']"
-              :data="[200, 300, 250, 400, 500, 450, 300]"
+              v-if="doanhThuTheoNgay"
+              :labels="doanhThuTheoNgay.labels"
+              :data="doanhThuTheoNgay.data"
             />
           </div>
         </div>
@@ -45,9 +53,11 @@
             >
           </div>
           <div class="relative mt-2 h-60">
+            <!-- Sử dụng dữ liệu động -->
             <BieuDoDuong
-              :labels="['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']"
-              :data="[1000, 1500, 1200, 1700, 2000, 2500]"
+              v-if="doanhThuTheoThang"
+              :labels="doanhThuTheoThang.labels"
+              :data="doanhThuTheoThang.data"
             />
           </div>
           <div class="mt-auto pt-2 text-right">
@@ -97,8 +107,8 @@
           <div class="relative mt-2 h-60">
             <BieuDoGauge
               :tienDo="tienDoPhanTram"
-              :mucTieu="mucTieuHienTai"
-              :tienDoHienTai="tienDoHienTai"
+              :mucTieu="mucTieuDoanhThu?.mucTieu ?? 0"
+              :tienDoHienTai="mucTieuDoanhThu?.thucTe ?? 0"
             />
           </div>
         </div>
@@ -344,7 +354,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed, reactive } from "vue";
 import StatCard from "@/components/dashboard/StatCard.vue";
 import BieuDoGauge from "@/components/dashboard/BieuDoGauge.vue";
 import DataTable from "@/components/base/DataTable.vue";
@@ -352,27 +362,55 @@ import BieuDoCot from "@/components/dashboard/BieuDoCot.vue";
 import BieuDoDuong from "@/components/dashboard/BieuDoDuong.vue";
 import BieuDoTron from "@/components/dashboard/BieuDoTron.vue";
 import BaseModal from "@/components/base/modals/BaseModal.vue";
+// Giả sử bạn đã tạo service và types
+// import {
+//   getThongKeTongQuan,
+//   getDoanhThuTheoNgay,
+//   getDoanhThuTheoThang,
+//   getMucTieuDoanhThu,
+//   updateMucTieuDoanhThu,
+// } from "@/service/thongke.service";
+// import type {
+//   ThongKeTongQuan,
+//   BieuDoData,
+//   MucTieuDoanhThu,
+// } from "@/types/thongke.types";
+
+// --- State for loading indicators ---
+const isLoading = reactive({
+  tongQuan: false,
+  doanhThuNgay: false,
+  doanhThuThang: false,
+  mucTieu: false,
+});
+
+// --- State for data ---
+const thongKeTongQuan = ref<any>(null); // Thay 'any' bằng ThongKeTongQuan
+const doanhThuTheoNgay = ref<any>(null); // Thay 'any' bằng BieuDoData
+const doanhThuTheoThang = ref<any>(null); // Thay 'any' bằng BieuDoData
+const mucTieuDoanhThu = ref<any>(null); // Thay 'any' bằng MucTieuDoanhThu
 
 // --- Logic cho menu dropdown "Mục tiêu doanh thu" ---
 const isMenuOpen = ref(false);
 const menuRef = ref<HTMLElement | null>(null);
 const isMucTieuModalVisible = ref(false);
-const tienDoHienTai = ref(10000000);
-const mucTieuHienTai = ref(20000000);
 const mucTieuMoi = ref<number | null>(null);
 
-const tienDoPhanTram = computed(() =>
-  mucTieuHienTai.value > 0
-    ? (tienDoHienTai.value / mucTieuHienTai.value) * 100
-    : 0
-);
+const tienDoPhanTram = computed(() => {
+  if (!mucTieuDoanhThu.value || mucTieuDoanhThu.value.mucTieu === 0) {
+    return 0;
+  }
+  return (mucTieuDoanhThu.value.thucTe / mucTieuDoanhThu.value.mucTieu) * 100;
+});
+
+const mucTieuHienTai = computed(() => mucTieuDoanhThu.value?.mucTieu ?? 0);
 
 /**
  * Xử lý sự kiện khi người dùng click vào mục "Cập nhật mục tiêu".
  * Bạn có thể thêm logic mở modal hoặc các hành động khác tại đây.
  */
 const handleUpdateTarget = () => {
-  mucTieuMoi.value = mucTieuHienTai.value;
+  mucTieuMoi.value = mucTieuDoanhThu.value?.mucTieu ?? 0;
   isMucTieuModalVisible.value = true;
   isMenuOpen.value = false; // Đóng menu sau khi click
 };
@@ -382,9 +420,11 @@ const closeMucTieuModal = () => {
 };
 
 const saveMucTieuMoi = () => {
+  // await updateMucTieuDoanhThu({ mucTieuMoi: mucTieuMoi.value });
   if (mucTieuMoi.value !== null && mucTieuMoi.value > 0) {
-    mucTieuHienTai.value = mucTieuMoi.value;
+    mucTieuDoanhThu.value.mucTieu = mucTieuMoi.value;
   }
+  // fetchMucTieu(); // Tải lại dữ liệu mục tiêu sau khi lưu
   closeMucTieuModal();
 };
 
@@ -528,9 +568,47 @@ const formatCurrency = (value: number): string => {
 };
 
 onMounted(() => {
+  // fetchAllData();
   document.addEventListener("mousedown", handleClickOutside);
 });
+
 onUnmounted(() => {
   document.removeEventListener("mousedown", handleClickOutside);
 });
+
+// --- Data Fetching Functions ---
+// async function fetchAllData() {
+//   fetchThongKeTongQuan();
+//   fetchDoanhThuTheoNgay(7);
+//   fetchDoanhThuTheoThang(new Date().getFullYear());
+//   fetchMucTieu();
+//   // ... fetch other data
+// }
+
+// async function fetchThongKeTongQuan() {
+//   isLoading.tongQuan = true;
+//   try {
+//     thongKeTongQuan.value = await getThongKeTongQuan();
+//   } finally {
+//     isLoading.tongQuan = false;
+//   }
+// }
+
+// async function fetchDoanhThuTheoNgay(period: number) {
+//   isLoading.doanhThuNgay = true;
+//   try {
+//     doanhThuTheoNgay.value = await getDoanhThuTheoNgay({ period });
+//   } finally {
+//     isLoading.doanhThuNgay = false;
+//   }
+// }
+
+// async function fetchMucTieu() {
+//   isLoading.mucTieu = true;
+//   try {
+//     mucTieuDoanhThu.value = await getMucTieuDoanhThu();
+//   } finally {
+//     isLoading.mucTieu = false;
+//   }
+// }
 </script>

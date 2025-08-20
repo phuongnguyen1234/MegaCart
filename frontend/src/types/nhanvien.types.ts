@@ -73,3 +73,12 @@ export type CapNhatNhanVienRequest = Partial<
     trangThai: TrangThaiTaiKhoanKey;
   }
 >;
+
+/**
+ * Dữ liệu tóm tắt của nhân viên dùng cho các dropdown lựa chọn.
+ * Tương ứng với `NhanVienOptionResponse.java` trên backend.
+ */
+export interface NhanVienOptionResponse {
+  maNhanVien: number;
+  tenNhanVien: string;
+}

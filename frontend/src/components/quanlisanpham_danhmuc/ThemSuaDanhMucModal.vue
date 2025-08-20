@@ -102,7 +102,8 @@ import { useDanhMucStore } from "@/store/danhmuc.store";
 import BaseModal from "@/components/base/modals/BaseModal.vue";
 import { themDanhMuc, capNhatDanhMuc } from "@/service/danhmuc.service";
 import type {
-  LuuDanhMucRequest,
+  ThemDanhMucRequest,
+  CapNhatDanhMucRequest, // Import the new interface
   ChiTietDanhMucQuanLyResponse,
 } from "@/types/danhmuc.types";
 import { TrangThaiDanhMucKey } from "@/types/danhmuc.types";
@@ -127,13 +128,14 @@ const danhMucStore = useDanhMucStore();
 const isLoading = ref(false);
 const isDanhMucCha = ref(false);
 
-const initialFormData: LuuDanhMucRequest = {
+const initialFormData: ThemDanhMucRequest = {
   tenDanhMuc: "",
   maDanhMucCha: undefined,
   trangThai: TrangThaiDanhMucKey.HOAT_DONG,
 };
-const formData = ref<LuuDanhMucRequest>({ ...initialFormData });
+const formData = ref<ThemDanhMucRequest>({ ...initialFormData }); // formData vẫn dùng ThemDanhMucRequest cho việc binding
 const initialEditData = ref<string>(""); // Lưu trạng thái ban đầu để so sánh
+const initialIsDanhMucCha = ref(false); // Lưu trạng thái checkbox ban đầu
 
 // --- Computed Properties ---
 const isTrangThaiHoatDong = computed({
@@ -146,19 +148,32 @@ const isTrangThaiHoatDong = computed({
 });
 
 const filteredDanhMucChaOptions = computed(() => {
-  const options = danhMucStore.menuItems;
-  if (!props.isEditMode || !props.danhMucSua) {
-    return options;
+  // Bắt đầu với danh sách phẳng tất cả các danh mục
+  let options = danhMucStore.allCategoriesFlat;
+
+  // Chỉ hiển thị các danh mục không có cha (tức là chúng là danh mục cha).
+  // Dựa vào API, danh mục cha sẽ có `tenDanhMucCha` là null/undefined.
+  options = options.filter((dm) => !dm.tenDanhMucCha);
+
+  // Nếu đang ở chế độ sửa, loại bỏ chính danh mục đang sửa khỏi danh sách
+  // để tránh trường hợp một danh mục tự làm cha của chính nó.
+  if (props.isEditMode && props.danhMucSua) {
+    options = options.filter(
+      (dm) => dm.maDanhMuc !== props.danhMucSua!.maDanhMuc
+    );
   }
-  // Khi sửa, loại bỏ chính danh mục đang sửa khỏi danh sách tùy chọn cha
-  return options.filter((opt) => opt.maDanhMuc !== props.danhMucSua!.maDanhMuc);
+  return options;
 });
 
 const hasChanged = computed(() => {
   if (!props.isEditMode) {
     return true; // Ở chế độ "Thêm", nút luôn được bật
   }
-  return JSON.stringify(formData.value) !== initialEditData.value;
+  // So sánh dữ liệu form và trạng thái checkbox "Đây là danh mục cha"
+  const formDataChanged =
+    JSON.stringify(formData.value) !== initialEditData.value;
+  const isDanhMucChaChanged = isDanhMucCha.value !== initialIsDanhMucCha.value;
+  return formDataChanged || isDanhMucChaChanged;
 });
 
 // --- Methods ---
@@ -166,6 +181,7 @@ const resetFormState = () => {
   formData.value = { ...initialFormData };
   isDanhMucCha.value = false;
   initialEditData.value = "";
+  initialIsDanhMucCha.value = false; // Reset initial checkbox state
 };
 
 const populateFormForEdit = (danhMuc: ChiTietDanhMucQuanLyResponse) => {
@@ -182,6 +198,7 @@ const populateFormForEdit = (danhMuc: ChiTietDanhMucQuanLyResponse) => {
 
   // Lưu trạng thái ban đầu để so sánh
   initialEditData.value = JSON.stringify(formData.value);
+  initialIsDanhMucCha.value = isDanhMucCha.value; // Lưu trạng thái ban đầu của checkbox
 };
 
 const handleSubmit = async () => {
@@ -196,19 +213,39 @@ const handleSubmit = async () => {
 
   isLoading.value = true;
   try {
-    const payload = { ...formData.value };
-    if (isDanhMucCha.value) {
-      payload.maDanhMucCha = undefined;
-    }
-
     if (props.isEditMode && props.danhMucSua) {
-      await capNhatDanhMuc(props.danhMucSua.maDanhMuc, payload);
+      const initialData = JSON.parse(
+        initialEditData.value
+      ) as ThemDanhMucRequest;
+      const updatePayload: CapNhatDanhMucRequest = {
+        // Luôn gửi các trường cơ bản này
+        tenDanhMuc: formData.value.tenDanhMuc,
+        trangThai: formData.value.trangThai,
+      };
+
+      const isParentStatusChanged =
+        isDanhMucCha.value !== initialIsDanhMucCha.value;
+      const isParentIdChanged =
+        formData.value.maDanhMucCha !== initialData.maDanhMucCha;
+
+      // Chỉ thêm các trường liên quan đến cha-con vào payload NẾU chúng thực sự thay đổi.
+      // Điều này đảm bảo backend nhận được tín hiệu cập nhật chính xác.
+      if (isParentStatusChanged || isParentIdChanged) {
+        updatePayload.isDanhMucChaUpdated = true;
+        updatePayload.maDanhMucCha = isDanhMucCha.value
+          ? undefined
+          : formData.value.maDanhMucCha;
+      }
+
+      await capNhatDanhMuc(props.danhMucSua.maDanhMuc, updatePayload);
       showToast({
         loai: "thanhCong",
         thongBao: "Cập nhật danh mục thành công!",
       });
     } else {
-      await themDanhMuc(payload);
+      const createPayload = { ...formData.value };
+      if (isDanhMucCha.value) createPayload.maDanhMucCha = undefined;
+      await themDanhMuc(createPayload);
       showToast({
         loai: "thanhCong",
         thongBao: "Thêm danh mục mới thành công!",
@@ -218,7 +255,12 @@ const handleSubmit = async () => {
     emit("close");
   } catch (error) {
     console.error("Lỗi khi lưu danh mục:", error);
-    showToast({ loai: "loi", thongBao: "Đã có lỗi xảy ra." });
+    // Cố gắng lấy thông báo lỗi chi tiết từ API response
+    const err = error as any;
+    const errorMessage =
+      err.response?.data?.message || "Đã có lỗi xảy ra khi lưu danh mục.";
+
+    showToast({ loai: "loi", thongBao: errorMessage });
   } finally {
     isLoading.value = false;
   }
@@ -227,9 +269,16 @@ const handleSubmit = async () => {
 // --- Watchers & Lifecycle ---
 watch(
   () => props.visible,
-  (isVisible) => {
+  async (isVisible) => {
     if (isVisible) {
+      // 1. Tải danh sách danh mục phẳng để điền vào dropdown "Danh mục cha".
+      // Store sẽ tự xử lý việc cache để tránh gọi API không cần thiết.
+      // Việc này đảm bảo dữ liệu luôn có sẵn khi modal được mở.
+      await danhMucStore.fetchAllCategoriesFlat();
+
+      // 2. Reset trạng thái form về mặc định
       resetFormState();
+      // 3. Nếu là chế độ sửa, điền dữ liệu vào form
       if (props.isEditMode && props.danhMucSua) {
         populateFormForEdit(props.danhMucSua);
       }

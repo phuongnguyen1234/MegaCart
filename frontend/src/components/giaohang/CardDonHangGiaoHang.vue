@@ -5,7 +5,9 @@
       <div>
         Đơn hàng <span class="font-bold">#{{ donHang.maDonHang }}</span> - Đang
         được giao bởi:
-        <span class="font-bold">{{ donHang.nguoiGiao }}</span>
+        <span class="font-bold">{{
+          donHang.tenNhanVienGiaoHang || "Chưa gán"
+        }}</span>
       </div>
     </div>
 
@@ -25,7 +27,7 @@
           <i class="fi fi-rr-marker mt-1 mr-2 text-gray-600"></i>
           <div>
             <span class="font-semibold">Địa chỉ:</span>
-            <span class="ml-1">{{ donHang.diaChi }}</span>
+            <span class="ml-1">{{ donHang.diaChiNhanHang }}</span>
           </div>
         </div>
 
@@ -41,7 +43,7 @@
           <i class="fi fi-rr-credit-card mt-1 mr-2 text-gray-600"></i>
           <div>
             <span class="font-semibold">Trạng thái thanh toán:</span>
-            <span class="ml-1">{{ donHang.trangThaiThanhToan }}</span>
+            <span class="ml-1">{{ donHang.trangThaiThanhToan?.label }}</span>
           </div>
         </div>
       </div>
@@ -52,7 +54,7 @@
           <i class="fi fi-rr-phone-call mt-1 mr-2 text-gray-600"></i>
           <div>
             <span class="font-semibold">Số điện thoại:</span>
-            <span class="ml-1">{{ donHang.sdtNguoiNhan }}</span>
+            <span class="ml-1">{{ donHang.sdtNhanHang }}</span>
           </div>
         </div>
 
@@ -67,20 +69,13 @@
   </div>
 </template>
 <script setup lang="ts">
-interface DonHangGiao {
-  maDonHang: string;
-  nguoiGiao: string;
-  tenNguoiNhan: string;
-  diaChi: string;
-  sdtNguoiNhan: string;
-  tongTien: number;
-  trangThaiThanhToan: "Đã thanh toán" | "Chưa thanh toán";
-}
+import type { DonHangDangGiaoQuanLyResponse } from "@/types/giaohang.types";
+
 defineProps<{
-  donHang: DonHangGiao;
+  donHang: DonHangDangGiaoQuanLyResponse;
 }>();
 defineEmits<{
-  (e: "doiNguoiGiao", donHang: DonHangGiao): void;
+  (e: "doiNguoiGiao", donHang: DonHangDangGiaoQuanLyResponse): void;
 }>();
 const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat("vi-VN", {

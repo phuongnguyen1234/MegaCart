@@ -28,6 +28,14 @@ export interface PagedResponse<T> {
 }
 
 /**
+ * A generic response from the API that only contains a message.
+ * Useful for operations that don't need to return data, like delete or some updates.
+ */
+export interface MessageResponse {
+  message: string;
+}
+
+/**
  * Cấu trúc chung cho các đối tượng giống enum được trả về từ backend.
  * Chứa tên hằng số enum (value) và tên hiển thị (label).
  * @template T - Kiểu string literal cho các key của enum.

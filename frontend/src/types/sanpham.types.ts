@@ -179,9 +179,10 @@ export interface ChiTietSanPhamQuanLyResponse {
   donGia: number;
   donVi: string;
   ghiChu: string;
-  nhan: NhanSanPhamObject; // Backend trả về object đầy đủ
+  nhan?: NhanSanPhamObject; // Backend trả về object đầy đủ
   trangThai: TrangThaiSanPhamObject; // Backend trả về object đầy đủ
   anhMinhHoas: AnhMinhHoa[];
+  thongBao: string;
 }
 
 /**
@@ -191,15 +192,25 @@ export interface ChiTietSanPhamQuanLyResponse {
  */
 export interface ThemSanPhamRequest {
   tenSanPham: string;
+  maDanhMuc: number; //ma danh muc con
   moTa: string;
-  ghiChu?: string;
+  nhaSanXuat: string; // Backend xử lý việc tìm hoặc tạo mới từ tên
   donGia: number;
   donVi: string;
-  maDanhMuc: number;
-  nhaSanXuat: string; // Backend xử lý việc tìm hoặc tạo mới từ tên
+  nhan?: NhanSanPhamKey | null;
+  ghiChu?: string;
   trangThai: TrangThaiSanPhamKey;
-  nhan: NhanSanPhamKey;
   anhChinhIndex: number;
+}
+
+/**
+ * Phản hồi từ API khi thêm sản phẩm (có thể là xử lý bất đồng bộ).
+ * Tương ứng với `ThemSanPhamAsyncResponse.java`.
+ */
+export interface ThemSanPhamAsyncResponse {
+  maSanPham: number;
+  message: string;
+  // Có thể có thêm các trường khác như taskId nếu backend trả về
 }
 
 /**

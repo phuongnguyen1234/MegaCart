@@ -272,7 +272,7 @@ router.beforeEach((to, from, next) => {
       );
       // Chuyển hướng về trang an toàn
       if (isStaff) {
-        return next({ path: "/admin" }); // Để /admin tự điều hướng
+        return next({ path: "/quan-ly" }); // Để /quan-ly tự điều hướng
       }
       return next({ name: "TrangChu" });
     }
@@ -284,7 +284,7 @@ router.beforeEach((to, from, next) => {
     // Họ không được phép truy cập vào bất kỳ trang nào trong khu vực /admin.
     if (
       userPosition === ViTriNhanVienKey.NHAN_VIEN_GIAO_HANG &&
-      to.path.startsWith("/admin")
+      to.path.startsWith("/quan-ly")
     ) {
       return next({ name: "GiaoHang" });
     }

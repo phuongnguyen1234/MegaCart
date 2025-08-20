@@ -1,6 +1,7 @@
 <template>
   <div class="flex min-h-screen bg-gray-50">
     <!-- Side Menu (chế độ tối giản, chỉ hiển thị nút đăng xuất) -->
+    <!-- TheSideMenu is likely part of a layout, but kept here as per original file -->
     <TheSideMenu variant="minimal" />
 
     <!-- Nội dung chính -->
@@ -25,14 +26,18 @@
 
       <!-- Danh sách đơn hàng -->
       <div class="space-y-4">
+        <div v-if="isLoading" class="text-center py-10 text-gray-500">
+          Đang tải dữ liệu...
+        </div>
         <div
-          v-if="donHangHienThi.length === 0"
+          v-else-if="danhSachDonHang.length === 0"
           class="text-center py-10 text-gray-500"
         >
           Không có đơn hàng nào phù hợp.
         </div>
         <CardGiaoHang
-          v-for="donHang in donHangHienThi"
+          v-else
+          v-for="donHang in danhSachDonHang"
           :key="donHang.maDonHang"
           :don-hang="donHang"
           @xem-chi-tiet="openXemChiTietModal"
@@ -59,112 +64,107 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import CardGiaoHang from "@/components/giaohang/CardGiaoHang.vue";
 import CapNhatGiaoHangModal from "@/components/giaohang/CapNhatGiaoHangModal.vue";
 import PhanTrang from "@/components/base/PhanTrang.vue";
 import ThanhTimKiem from "@/components/base/ThanhTimKiem.vue";
 import TheSideMenu from "@/components/layouts/TheSideMenu.vue";
-import type { DonHang } from "@/types/DonHang";
+import { useToast } from "@/composables/useToast";
+import {
+  getDSDonHangCanGiao,
+  getChiTietDonHangGiaoHang,
+  capNhatTrangThaiGiaoHang,
+} from "@/service/giaohang.service";
+import type {
+  DonHangGiaoHangResponse,
+  GetDonHangGiaoHangParams,
+  ChiTietDonHangGiaoHangResponse,
+  CapNhatGiaoHangRequest,
+} from "@/types/giaohang.types";
 
-// --- State ---
-const loaiTimKiem = ref("maDonHang");
+const { showToast } = useToast();
+
+// --- State for Filters & Pagination ---
+const loaiTimKiem = ref<"maDonHang" | "tenKhachHang">("maDonHang");
 const tuKhoa = ref("");
 const trangHienTai = ref(0);
 const soLuongMoiTrang = 10;
 
+// --- State for Data ---
+const danhSachDonHang = ref<DonHangGiaoHangResponse[]>([]);
+const tongSoTrang = ref(1);
+const totalElements = ref(0);
+const isLoading = ref(false);
+
+// --- State for Modal ---
 const isXemChiTietModalVisible = ref(false);
-const donHangDangChon = ref<DonHang | null>(null);
+const donHangDangChon = ref<ChiTietDonHangGiaoHangResponse | null>(null);
 
-// --- Dữ liệu mẫu ---
-const allDonHang = ref<DonHang[]>(
-  Array.from({ length: 55 }, (_, i) => ({
-    maDonHang: `DH${1000 + i}`,
-    nguoiGiao: `Shipper ${String.fromCharCode(65 + (i % 5))}`,
-    tenNguoiNhan: `Nguyễn Văn ${String.fromCharCode(65 + (i % 26))}`,
-    diaChiNhanHang: `${i + 1} Đường ABC, Phường XYZ, Quận 1, TP. HCM`,
-    sdtNhanHang: `0909123${String(i).padStart(3, "0")}`,
-    tongTien: 150000 + i * 10000,
-    hinhThucThanhToan:
-      i % 2 === 0 ? "Thanh toán khi nhận hàng" : "Thanh toán online",
-    hinhThucNhanHang: i % 2 === 0 ? "Giao hàng tiêu chuẩn" : "Giao hàng nhanh",
-    trangThaiDonHang: "Chờ xác nhận", // Trạng thái mặc định
-    trangThaiThanhToan: "Chưa thanh toán",
-    thoiGianDatHang: new Date(
-      Date.now() - i * 24 * 60 * 60 * 1000
-    ).toISOString(),
-    thoiGianThanhToan: "N/A",
-    chiTietDonHang: [
-      {
-        maSanPham: `SP00${i % 10}`,
-        tenSanPham: `Sản phẩm mẫu ${i % 10}`,
-        soLuong: (i % 3) + 1,
-        gia: 50000,
-        hinhAnh: `https://via.placeholder.com/150/0000FF/808080?Text=SP${
-          i % 10
-        }`,
-      },
-    ],
-  }))
-);
+// --- Data Fetching ---
+const fetchDonHang = async () => {
+  isLoading.value = true;
+  try {
+    const params: GetDonHangGiaoHangParams = {
+      page: trangHienTai.value,
+      size: soLuongMoiTrang,
+      searchField: tuKhoa.value ? loaiTimKiem.value : undefined,
+      searchValue: tuKhoa.value || undefined,
+    };
+    const response = await getDSDonHangCanGiao(params);
+    danhSachDonHang.value = response.content;
+    tongSoTrang.value = response.totalPages;
+    totalElements.value = response.totalElements;
+  } catch (error) {
+    showToast({
+      loai: "loi",
+      thongBao: "Không thể tải danh sách đơn hàng.",
+    });
+    danhSachDonHang.value = [];
+    tongSoTrang.value = 1;
+    totalElements.value = 0;
+  } finally {
+    isLoading.value = false;
+  }
+};
 
-const danhSachNguoiGiaoHang = ref([
-  "Shipper A",
-  "Shipper B",
-  "Shipper C",
-  "Shipper D",
-  "Shipper E",
-  "Shipper F",
-]);
+onMounted(fetchDonHang);
+
+// --- Watchers ---
+watch([tuKhoa, loaiTimKiem], () => {
+  trangHienTai.value = 0;
+});
+
+watch([trangHienTai, tuKhoa, loaiTimKiem], fetchDonHang);
 
 // --- Computed ---
-const placeholderTimKiem = computed(() => {
-  if (loaiTimKiem.value === "maDonHang") {
-    return "Tìm kiếm mã đơn hàng...";
-  }
-  return "Tìm kiếm tên khách hàng...";
-});
-
-const donHangDaLoc = computed(() =>
-  allDonHang.value.filter((d) => {
-    if (!tuKhoa.value.trim()) return true;
-    const keyword = tuKhoa.value.toLowerCase();
-    if (loaiTimKiem.value === "maDonHang") {
-      return d.maDonHang.toLowerCase().includes(keyword);
-    }
-    if (loaiTimKiem.value === "tenKhachHang") {
-      return d.tenNguoiNhan.toLowerCase().includes(keyword);
-    }
-    return true; // Mặc định không lọc nếu loại tìm kiếm không xác định
-  })
-);
-
-// --- Phân trang ---
-const tongSoTrang = computed(() =>
-  Math.ceil(donHangDaLoc.value.length / soLuongMoiTrang)
-);
-
-const donHangHienThi = computed(() => {
-  const batDau = trangHienTai.value * soLuongMoiTrang;
-  return donHangDaLoc.value.slice(batDau, batDau + soLuongMoiTrang);
-});
-
 const thongTinHienThi = computed(() => {
-  const tongSo = donHangDaLoc.value.length;
-  if (tongSo === 0) {
+  const total = totalElements.value;
+  if (total === 0) {
     return "Không tìm thấy đơn hàng nào.";
   }
 
   const batDau = trangHienTai.value * soLuongMoiTrang + 1;
-  const ketThuc = batDau + donHangHienThi.value.length - 1;
+  const ketThuc = batDau + danhSachDonHang.value.length - 1;
 
-  return `Hiển thị từ ${batDau} đến ${ketThuc} trên tổng số ${tongSo} đơn hàng.`;
+  return `Hiển thị từ ${batDau} đến ${ketThuc} trên tổng số ${total} đơn hàng.`;
 });
 
 // --- Modal ---
-const openXemChiTietModal = (donHang: DonHang) => {
-  donHangDangChon.value = donHang;
+const openXemChiTietModal = async (donHang: DonHangGiaoHangResponse) => {
   isXemChiTietModalVisible.value = true;
+  donHangDangChon.value = null; // Reset before fetching
+  try {
+    // Show a loading state in the modal if needed
+    const chiTiet = await getChiTietDonHangGiaoHang(donHang.maDonHang);
+    donHangDangChon.value = chiTiet;
+  } catch (error) {
+    showToast({
+      loai: "loi",
+      thongBao: "Không thể tải chi tiết đơn hàng.",
+    });
+    closeXemChiTietModal();
+  }
 };
 
 const closeXemChiTietModal = () => {
@@ -172,24 +172,22 @@ const closeXemChiTietModal = () => {
   donHangDangChon.value = null;
 };
 
-const handleCapNhatTrangThai = (
-  maDonHang: string,
-  trangThaiMoi: "Đang giao" | "Đã giao" | "Hủy"
-) => {
-  const donHangCanCapNhat = allDonHang.value.find(
-    (dh) => dh.maDonHang === maDonHang
-  );
-  if (donHangCanCapNhat) {
-    donHangCanCapNhat.trangThaiDonHang = trangThaiMoi;
-    // Ở đây bạn có thể gọi API để cập nhật trạng thái trên server
-    console.log(`Đã cập nhật đơn hàng ${maDonHang} thành ${trangThaiMoi}`);
-    // Hiển thị thông báo thành công (nếu cần)
-  }
-  closeXemChiTietModal();
-};
+const handleCapNhatTrangThai = async (payload: CapNhatGiaoHangRequest) => {
+  if (!donHangDangChon.value) return;
 
-// --- Reset về trang đầu nếu bộ lọc thay đổi ---
-watch([tuKhoa, loaiTimKiem], () => {
-  trangHienTai.value = 0;
-});
+  try {
+    await capNhatTrangThaiGiaoHang(donHangDangChon.value.maDonHang, payload);
+    showToast({
+      loai: "thanhCong",
+      thongBao: "Cập nhật trạng thái giao hàng thành công!",
+    });
+    closeXemChiTietModal();
+    fetchDonHang(); // Refresh the list
+  } catch (error) {
+    showToast({
+      loai: "loi",
+      thongBao: "Có lỗi xảy ra khi cập nhật.",
+    });
+  }
+};
 </script>

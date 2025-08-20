@@ -83,19 +83,44 @@ export interface ChiTietDanhMucQuanLyResponse {
  * Represents the payload for creating or updating a category.
  * Corresponds to `ThemDanhMucRequest` and `CapNhatDanhMucRequest` in the backend.
  */
-export interface LuuDanhMucRequest {
+export interface ThemDanhMucRequest {
   tenDanhMuc: string;
   maDanhMucCha?: number;
   trangThai: TrangThaiDanhMucKey;
 }
 
 /**
- * Represents a category option for select/dropdown inputs.
+ * Represents the payload for updating a category.
+ * Corresponds to `CapNhatDanhMucRequest` in the backend.
+ * Fields are optional as it's typically used for PATCH requests.
+ */
+export interface CapNhatDanhMucRequest {
+  tenDanhMuc?: string;
+  maDanhMucCha?: number;
+  trangThai?: TrangThaiDanhMucKey;
+  isDanhMucChaUpdated?: boolean; // Corresponds to @JsonProperty("isDanhMucChaUpdated")
+}
+
+/**
+ * Represents a child category option for select/dropdown inputs.
+ * This is part of the `DanhMucOptionResponse` structure.
+ */
+export interface DanhMucConOption {
+  maDanhMuc: number;
+  tenDanhMucHienThi: string;
+}
+
+/**
+ * Represents a category option for select/dropdown inputs, especially for parent categories
+ * that contain child categories. This is used for populating category filters and
+ * selection in admin forms (e.g., in `ThemSuaSanPhamModal` or `BoLocDanhMuc`).
  * Corresponds to `DanhMucOptionResponse` in the backend.
+ * This is expected to be a nested structure (parent with children).
  */
 export interface DanhMucOptionResponse {
   maDanhMuc: number;
-  tenDanhMuc: string;
+  tenDanhMucHienThi: string;
+  danhMucCons: DanhMucConOption[];
 }
 
 /**

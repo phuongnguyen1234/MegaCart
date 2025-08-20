@@ -18,13 +18,6 @@
         v-model:modelValueLoai="loaiTimKiem"
         v-model:modelValueTuKhoa="tuKhoa"
       />
-
-      <button
-        @click="apDungBoLoc"
-        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-      >
-        Áp dụng
-      </button>
     </div>
 
     <!-- Thông tin hiển thị -->
@@ -36,7 +29,28 @@
 
     <!-- Bảng dữ liệu tồn kho -->
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
-      <DataTable :headers="headers" :rows="rows">
+      <DataTable :headers="headers" :rows="rows" :is-loading="isLoading">
+        <!-- Tùy chỉnh cột Ảnh sản phẩm (cột thứ 2, index 1) -->
+        <template #cell-1="{ value }">
+          <img
+            :src="value"
+            alt="Ảnh sản phẩm"
+            class="w-16 h-16 object-cover rounded border"
+          />
+        </template>
+        <!-- Tùy chỉnh cột Số lượng tồn (cột thứ 6, index 5) -->
+        <template #cell-5="{ value }">
+          <span
+            :class="[
+              'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+              value < 10
+                ? 'bg-red-100 text-red-800'
+                : 'bg-green-100 text-green-800',
+            ]"
+          >
+            {{ value }}
+          </span>
+        </template>
         <!-- Tùy chỉnh cột Hành động -->
         <template #cell-7="{ value }">
           <button
@@ -62,7 +76,7 @@
       :visible="isModalVisible"
       :san-pham="sanPhamDangSua"
       @close="isModalVisible = false"
-      @save="handleSave"
+      @success="handleUpdateSuccess"
     />
   </div>
 </template>
@@ -74,153 +88,130 @@ import PhanTrang from "@/components/base/PhanTrang.vue";
 import ThanhTimKiem from "@/components/base/ThanhTimKiem.vue";
 import BoLocDanhMuc from "@/components/base/BoLocDanhMuc.vue";
 import CapNhatTonKhoModal from "@/components/quanlikho/CapNhatTonKhoModal.vue";
-import type { SanPhamTonKho, DuLieuCapNhat } from "@/types/khohang.types";
-
-const allTonKho = ref<SanPhamTonKho[]>(
-  Array.from({ length: 125 }, (_, i) => {
-    const dmc = i % 2 === 0 ? danhMucCha.value[0] : danhMucCha.value[1];
-    const dm_con =
-      dmc.id === 1 ? danhMucCon.value[i % 2] : danhMucCon.value[2 + (i % 2)];
-    return {
-      maSanPham: `SP${String(i + 1).padStart(4, "0")}`,
-      tenSanPham: `Sản phẩm tồn kho ${i + 1}`,
-      idDanhMucCha: dmc.id,
-      danhMucCha: dmc.ten,
-      idDanhMucCon: dm_con.id,
-      danhMucCon: dm_con.ten,
-      soLuong: Math.floor(Math.random() * 200),
-      thoiGianCapNhat: new Date(Date.now() - i * 3600000),
-      noiDungCapNhat: i % 5 === 0 ? "Nhập hàng" : "Cập nhật sau bán",
-    };
-  })
-);
+import { getDanhSachKho } from "@/service/khohang.service";
+import type {
+  KhoResponse,
+  GetKhoParams,
+  CapNhatKhoRequest,
+} from "@/types/khohang.types";
+import { useToast } from "@/composables/useToast";
 
 const dsTieuChiTimKiem = [
-  { value: "ten", label: "Tên sản phẩm" },
-  { value: "ma", label: "Mã sản phẩm" },
+  { value: "maSanPham", label: "Mã sản phẩm" },
+  { value: "tenSanPham", label: "Tên sản phẩm" },
 ];
 
 // --- State cho bộ lọc ---
 const selectedDanhMucCha = ref<number | "">("");
 const selectedDanhMucCon = ref<number | "">("");
-const loaiTimKiem = ref("ten");
+const loaiTimKiem = ref("tenSanPham");
 const tuKhoa = ref("");
-const activeFilters = ref({
-  danhMucCha: "" as number | "",
-  danhMucCon: "" as number | "",
-  loaiTimKiem: "ten",
-  tuKhoa: "",
-});
+const isLoading = ref(false);
+const { showToast } = useToast();
 
-const apDungBoLoc = () => {
-  activeFilters.value = {
-    danhMucCha: selectedDanhMucCha.value,
-    danhMucCon: selectedDanhMucCon.value,
-    loaiTimKiem: loaiTimKiem.value,
-    tuKhoa: tuKhoa.value,
-  };
-};
+const danhSachTonKho = ref<KhoResponse[]>([]);
 
-// --- Lọc dữ liệu ---
-const tonKhoDaLoc = computed(() => {
-  return allTonKho.value.filter((item) => {
-    const matchDanhMucCha =
-      !activeFilters.value.danhMucCha ||
-      item.idDanhMucCha === activeFilters.value.danhMucCha;
-
-    const matchDanhMucCon =
-      !activeFilters.value.danhMucCon ||
-      item.idDanhMucCon === activeFilters.value.danhMucCon;
-
-    const matchTuKhoa = (() => {
-      if (!activeFilters.value.tuKhoa.trim()) return true;
-      const keyword = activeFilters.value.tuKhoa.toLowerCase();
-      if (activeFilters.value.loaiTimKiem === "ma") {
-        return item.maSanPham.toLowerCase().includes(keyword);
-      }
-      return item.tenSanPham.toLowerCase().includes(keyword);
-    })();
-
-    return matchDanhMucCha && matchDanhMucCon && matchTuKhoa;
-  });
+// Computed property để xác định mã danh mục cần lọc
+const activeMaDanhMuc = computed(() => {
+  // Ưu tiên lọc theo danh mục con nếu được chọn
+  return selectedDanhMucCon.value || selectedDanhMucCha.value || undefined;
 });
 
 // --- Phân trang ---
 const trangHienTai = ref(0);
 const soLuongMoiTrang = ref(10);
-
-const tongSoTrang = computed(() =>
-  Math.ceil(tonKhoDaLoc.value.length / soLuongMoiTrang.value)
-);
-
-const tonKhoHienThi = computed(() => {
-  const batDau = trangHienTai.value * soLuongMoiTrang.value;
-  const ketThuc = batDau + soLuongMoiTrang.value;
-  return tonKhoDaLoc.value.slice(batDau, ketThuc);
-});
+const tongSoTrang = ref(1);
+const totalElements = ref(0);
 
 const thongTinHienThi = computed(() => {
-  const total = tonKhoDaLoc.value.length;
+  const total = totalElements.value;
   if (total === 0) {
     return "Không có sản phẩm nào được tìm thấy";
   }
   const start = trangHienTai.value * soLuongMoiTrang.value + 1;
-  const end = start + tonKhoHienThi.value.length - 1;
+  const end = start + danhSachTonKho.value.length - 1;
   return `Đang hiển thị ${start} - ${end} của ${total} sản phẩm`;
 });
 
-watch(tonKhoDaLoc, () => {
+// --- Fetch dữ liệu từ API ---
+const fetchTonKho = async () => {
+  isLoading.value = true;
+  try {
+    const params: GetKhoParams = {
+      page: trangHienTai.value,
+      size: soLuongMoiTrang.value,
+      tuKhoa: tuKhoa.value || undefined,
+      maDanhMuc: activeMaDanhMuc.value,
+    };
+    const response = await getDanhSachKho(params);
+    danhSachTonKho.value = response.content;
+    tongSoTrang.value = response.totalPages;
+    totalElements.value = response.totalElements;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách tồn kho:", error);
+    showToast({
+      loai: "loi",
+      thongBao: "Không thể tải danh sách tồn kho.",
+    });
+    danhSachTonKho.value = [];
+    tongSoTrang.value = 1;
+    totalElements.value = 0;
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Tự động fetch lại dữ liệu khi bộ lọc hoặc trang thay đổi
+watch([trangHienTai, tuKhoa, activeMaDanhMuc], fetchTonKho, {
+  immediate: true,
+});
+
+// Reset về trang đầu tiên khi người dùng thay đổi bộ lọc
+watch([tuKhoa, activeMaDanhMuc], () => {
   trangHienTai.value = 0;
 });
 
 // --- Cấu hình DataTable ---
 const headers = [
   "Mã sản phẩm",
+  "Ảnh sản phẩm",
   "Tên sản phẩm",
   "Danh mục cha",
   "Danh mục con",
-  "Số lượng",
-  "Thời gian cập nhật",
+  "Số lượng tồn",
   "Nội dung cập nhật",
   "Hành động",
 ];
 
-const formatDateTime = (date: Date) => date.toLocaleString("vi-VN");
-
 const rows = computed(() =>
-  tonKhoHienThi.value.map((item) => [
+  danhSachTonKho.value.map((item) => [
     item.maSanPham,
+    item.anhMinhHoaChinh,
     item.tenSanPham,
-    item.danhMucCha,
-    item.danhMucCon,
+    item.danhMucCha || "—",
+    item.danhMucCon || "—",
     item.soLuong,
-    formatDateTime(item.thoiGianCapNhat),
-    item.noiDungCapNhat,
+    item.noiDungCapNhat || "—",
     item.maSanPham, // Truyền mã sản phẩm cho slot hành động
   ])
 );
 
 // --- Xử lý hành động ---
 const isModalVisible = ref(false);
-const sanPhamDangSua = ref<SanPhamTonKho | null>(null);
+const sanPhamDangSua = ref<KhoResponse | null>(null);
 
-const handleEdit = (maSanPham: string) => {
-  const productToEdit = allTonKho.value.find((p) => p.maSanPham === maSanPham);
+const handleEdit = (maSanPham: number) => {
+  const productToEdit = danhSachTonKho.value.find(
+    (p) => p.maSanPham === maSanPham
+  );
   if (productToEdit) {
     sanPhamDangSua.value = productToEdit;
     isModalVisible.value = true;
   }
 };
 
-const handleSave = (data: DuLieuCapNhat) => {
-  console.log("Lưu dữ liệu tồn kho:", data);
-  const productIndex = allTonKho.value.findIndex(
-    (p) => p.maSanPham === data.maSanPham
-  );
-  if (productIndex !== -1) {
-    // Cập nhật lại dữ liệu trong mảng (bạn sẽ thay bằng gọi API)
-    // ...
-  }
+const handleUpdateSuccess = () => {
   isModalVisible.value = false;
+  fetchTonKho(); // Tải lại dữ liệu bảng để hiển thị thông tin mới nhất
 };
 </script>

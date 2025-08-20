@@ -10,31 +10,39 @@ export interface GetKhoParams extends PageableParams {
 }
 
 /**
- * Đại diện cho thông tin tồn kho của một sản phẩm trong danh sách.
+ * Đại diện cho thông tin tồn kho của một sản phẩm trong danh sách quản lý kho.
  * Tương ứng với `KhoResponse` ở backend.
  *
- * Lưu ý: Component `QuanLiKhoView.vue` đang sử dụng một kiểu dữ liệu giả
- * tên là `SanPhamTonKho`. Interface này nên được sử dụng để thay thế.
+ * NOTE: This interface should replace the mock type `SanPhamTonKho` in `QuanLiKhoView.vue`.
+ * The view will need to be updated to use these field names.
  */
 export interface KhoResponse {
   maSanPham: number;
+  anhMinhHoaChinh: string;
   tenSanPham: string;
-  anhMinhHoaChinh: string; // Giả định có trường này để hiển thị ảnh
   danhMucCha?: string;
   danhMucCon?: string;
-  soLuongTon: number;
-  thoiGianCapNhatCuoi?: string; // Chuỗi ISO DateTime
-  noiDungCapNhatCuoi?: string;
+  soLuong: number;
+  noiDungCapNhat?: string;
 }
 
 /**
- * Đại diện cho thông tin tồn kho chi tiết của một sản phẩm, dùng cho việc sửa.
+ * Đại diện cho thông tin tồn kho chi tiết của một sản phẩm, dùng cho việc sửa trong modal.
  * Tương ứng với `ChiTietKhoResponse` ở backend.
  */
 export interface ChiTietKhoResponse {
   maSanPham: number;
   tenSanPham: string;
-  soLuongTon: number;
+  soLuongHienTai: number;
+}
+
+/**
+ * Các key của hình thức cập nhật kho, dùng để gửi lên API.
+ * Giá trị của enum này phải TRÙNG KHỚP với tên của enum constant trong `HinhThucCapNhatKho.java` ở backend.
+ */
+export enum HinhThucCapNhatKhoKey {
+  THEM_VAO_HIEN_TAI = "THEM_VAO_HIEN_TAI", // Cộng dồn vào số lượng hiện tại
+  GHI_DE = "GHI_DE", // Ghi đè số lượng hiện tại
 }
 
 /**
@@ -42,21 +50,7 @@ export interface ChiTietKhoResponse {
  * Tương ứng với `CapNhatKhoRequest` ở backend.
  */
 export interface CapNhatKhoRequest {
+  hinhThuc: HinhThucCapNhatKhoKey;
   soLuong: number;
-  noiDung: string;
-  /**
-   * Xác định xem số lượng mới sẽ ghi đè lên số lượng hiện tại (true)
-   * hay được cộng vào số lượng hiện tại (false).
-   */
-  ghiDe: boolean;
-}
-
-/**
- * Kiểu dữ liệu cho form cập nhật trong modal `CapNhatTonKhoModal`.
- * Đây là kiểu dữ liệu phía client và sẽ được chuyển đổi thành `CapNhatKhoRequest` trước khi gửi đi.
- */
-export interface DuLieuCapNhatKhoForm {
-  hinhThuc: "them" | "ghide";
-  soLuong: number | null;
   noiDung: string;
 }

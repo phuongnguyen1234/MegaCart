@@ -126,6 +126,7 @@ import type {
   ChiTietSanPhamQuanLyResponse,
 } from "@/types/sanpham.types";
 import { useToast } from "@/composables/useToast";
+import { formatCurrency } from "@/utils/formatters";
 
 // --- State ---
 const loaiTimKiem = ref("tenSanPham");
@@ -199,13 +200,6 @@ const headers = [
   "Trạng thái",
   "Hành động",
 ];
-
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(value);
-};
 
 const rows = computed(() =>
   allSanPham.value.map((sp) => [

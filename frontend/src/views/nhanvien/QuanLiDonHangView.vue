@@ -158,6 +158,7 @@ import {
   capNhatDonHang,
 } from "@/service/donhang.service";
 import { useToast } from "@/composables/useToast";
+import { formatCurrency } from "@/utils/formatters";
 
 // Helper function to get today's date in YYYY-MM-DD format
 const getTodayISOString = (): string => {
@@ -266,13 +267,6 @@ const formatDateTime = (iso: string): string => {
     hour: "2-digit",
     minute: "2-digit",
   });
-};
-
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(value);
 };
 
 // --- Hiển thị số lượng ---

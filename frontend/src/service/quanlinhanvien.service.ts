@@ -5,6 +5,7 @@ import type {
   HienThiDanhSachNhanVienResponse,
   ThemNhanVienRequest,
   CapNhatNhanVienRequest,
+  NhanVienOptionResponse,
 } from "@/types/nhanvien.types";
 
 /**
@@ -55,4 +56,13 @@ export const capNhatNhanVien = (
   data: CapNhatNhanVienRequest
 ): Promise<HienThiDanhSachNhanVienResponse> => {
   return apiClient.patch(`/admin/nhan-vien/${maNhanVien}`, data);
+};
+
+/**
+ * Lấy danh sách các nhân viên có vị trí "Giao hàng" để gán cho đơn hàng.
+ * Tương ứng với endpoint `GET /api/admin/nhan-vien/giao-hang`.
+ * @returns Một Promise chứa danh sách nhân viên giao hàng.
+ */
+export const getDSNhanVienGiaoHang = (): Promise<NhanVienOptionResponse[]> => {
+  return apiClient.get("/admin/nhan-vien/giao-hang");
 };

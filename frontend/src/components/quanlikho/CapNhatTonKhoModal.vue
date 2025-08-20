@@ -4,98 +4,105 @@
     :title="tieuDeModal"
     @close="dongModal"
     width-class="w-[550px]"
+    :is-loading="isLoading"
   >
-    <div class="space-y-4">
-      <!-- Số lượng hiện tại -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700">
-          Số lượng hiện tại
-        </label>
-        <p class="mt-1 text-lg font-semibold text-gray-900">
-          {{ sanPham?.soLuong ?? 0 }}
-        </p>
-      </div>
+    <form @submit.prevent="handleSubmit">
+      <div class="space-y-4">
+        <!-- Số lượng hiện tại -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700">
+            Số lượng hiện tại
+          </label>
+          <p class="mt-1 text-lg font-semibold text-gray-900">
+            {{ chiTietSanPham?.soLuongHienTai ?? 0 }}
+          </p>
+        </div>
 
-      <!-- Hình thức cập nhật -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700">
-          Hình thức cập nhật
-        </label>
-        <div class="mt-2 flex items-center gap-x-6">
-          <div class="flex items-center">
-            <input
-              id="hinh-thuc-them"
-              v-model="hinhThucCapNhat"
-              type="radio"
-              value="them"
-              class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
-            />
-            <label
-              for="hinh-thuc-them"
-              class="ml-2 block text-sm text-gray-900"
-            >
-              Thêm vào hiện tại
-            </label>
-          </div>
-          <div class="flex items-center">
-            <input
-              id="hinh-thuc-ghi-de"
-              v-model="hinhThucCapNhat"
-              type="radio"
-              value="ghide"
-              class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
-            />
-            <label
-              for="hinh-thuc-ghi-de"
-              class="ml-2 block text-sm text-gray-900"
-            >
-              Ghi đè
-            </label>
+        <!-- Hình thức cập nhật -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700">
+            Hình thức cập nhật
+          </label>
+          <div class="mt-2 flex items-center gap-x-6">
+            <div class="flex items-center">
+              <input
+                id="hinh-thuc-them"
+                v-model="formData.hinhThuc"
+                type="radio"
+                :value="HinhThucCapNhatKhoKey.THEM_VAO_HIEN_TAI"
+                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+              />
+              <label
+                for="hinh-thuc-them"
+                class="ml-2 block text-sm text-gray-900"
+              >
+                Thêm vào hiện tại
+              </label>
+            </div>
+            <div class="flex items-center">
+              <input
+                id="hinh-thuc-ghi-de"
+                v-model="formData.hinhThuc"
+                type="radio"
+                :value="HinhThucCapNhatKhoKey.GHI_DE"
+                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+              />
+              <label
+                for="hinh-thuc-ghi-de"
+                class="ml-2 block text-sm text-gray-900"
+              >
+                Ghi đè
+              </label>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Số lượng cập nhật -->
-      <div>
-        <label
-          for="so-luong-cap-nhat"
-          class="block text-sm font-medium text-gray-700"
-        >
-          Số lượng cập nhật
-        </label>
-        <input
-          id="so-luong-cap-nhat"
-          v-model.number="soLuongCapNhat"
-          type="number"
-          min="0"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        />
-      </div>
+        <!-- Số lượng cập nhật -->
+        <div>
+          <label
+            for="so-luong-cap-nhat"
+            class="block text-sm font-medium text-gray-700"
+          >
+            Số lượng cập nhật
+          </label>
+          <input
+            id="so-luong-cap-nhat"
+            v-model.number="formData.soLuong"
+            type="number"
+            min="0"
+            required
+            class="input mt-1"
+          />
+        </div>
 
-      <!-- Nội dung cập nhật -->
-      <div>
-        <label
-          for="noi-dung-cap-nhat"
-          class="block text-sm font-medium text-gray-700"
-        >
-          Nội dung cập nhật
-        </label>
-        <textarea
-          id="noi-dung-cap-nhat"
-          v-model="noiDungCapNhat"
-          rows="3"
-          placeholder="Ví dụ: Nhập hàng từ nhà cung cấp A, điều chỉnh kiểm kê,..."
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        ></textarea>
+        <!-- Nội dung cập nhật -->
+        <div>
+          <label
+            for="noi-dung-cap-nhat"
+            class="block text-sm font-medium text-gray-700"
+          >
+            Nội dung cập nhật
+          </label>
+          <textarea
+            id="noi-dung-cap-nhat"
+            v-model="formData.noiDung"
+            rows="3"
+            placeholder="Ví dụ: Nhập hàng từ nhà cung cấp A, điều chỉnh kiểm kê,..."
+            required
+            class="input mt-1"
+          ></textarea>
+        </div>
       </div>
-    </div>
+    </form>
 
     <!-- Footer với nút Lưu -->
     <template #footer>
-      <div class="flex justify-end">
+      <div class="flex justify-end gap-4">
+        <button class="btn" @click="dongModal">Hủy</button>
         <button
-          @click="luuThayDoi"
-          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          @click="handleSubmit"
+          class="btn btn-primary"
+          :disabled="isLoading"
         >
           Lưu thay đổi
         </button>
@@ -107,20 +114,34 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import BaseModal from "@/components/base/modals/BaseModal.vue";
-import type { DuLieuCapNhat, SanPhamTonKho } from "@/types/khohang.types";
+import { getChiTietKho, capNhatKho } from "@/service/khohang.service";
+import { useToast } from "@/composables/useToast";
+import type {
+  KhoResponse,
+  ChiTietKhoResponse,
+  CapNhatKhoRequest,
+} from "@/types/khohang.types";
+import { HinhThucCapNhatKhoKey } from "@/types/khohang.types";
 
 const props = defineProps<{
   visible: boolean;
-  sanPham: SanPhamTonKho | null;
+  sanPham: KhoResponse | null;
 }>();
 const emit = defineEmits<{
   (e: "close"): void;
-  (e: "save", data: DuLieuCapNhat): void;
+  (e: "success"): void;
 }>();
 
-const hinhThucCapNhat = ref<"them" | "ghide">("them");
-const soLuongCapNhat = ref<number | null>(null);
-const noiDungCapNhat = ref("");
+const isLoading = ref(false);
+const { showToast } = useToast();
+const chiTietSanPham = ref<ChiTietKhoResponse | null>(null);
+
+const initialFormData = {
+  hinhThuc: HinhThucCapNhatKhoKey.THEM_VAO_HIEN_TAI,
+  soLuong: null as number | null,
+  noiDung: "",
+};
+const formData = ref({ ...initialFormData });
 
 const tieuDeModal = computed(
   () => `Cập nhật tồn kho - ${props.sanPham?.tenSanPham ?? "Sản phẩm"}`
@@ -128,33 +149,91 @@ const tieuDeModal = computed(
 
 const dongModal = () => emit("close");
 
-const luuThayDoi = () => {
+const resetForm = () => {
+  formData.value = { ...initialFormData };
+  chiTietSanPham.value = null;
+};
+
+const fetchChiTietKho = async (maSanPham: number) => {
+  isLoading.value = true;
+  try {
+    chiTietSanPham.value = await getChiTietKho(maSanPham);
+  } catch (error) {
+    console.error("Lỗi khi lấy chi tiết tồn kho:", error);
+    showToast({
+      loai: "loi",
+      thongBao: "Không thể tải thông tin tồn kho hiện tại.",
+    });
+    dongModal();
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const handleSubmit = async () => {
   if (
     !props.sanPham ||
-    soLuongCapNhat.value === null ||
-    soLuongCapNhat.value < 0
+    formData.value.soLuong === null ||
+    formData.value.soLuong < 0
   ) {
-    console.error("Dữ liệu không hợp lệ!");
+    showToast({ loai: "loi", thongBao: "Số lượng cập nhật không hợp lệ." });
     return;
   }
-  const data: DuLieuCapNhat = {
-    maSanPham: props.sanPham.maSanPham,
-    hinhThuc: hinhThucCapNhat.value,
-    soLuong: soLuongCapNhat.value,
-    noiDung: noiDungCapNhat.value,
+  if (!formData.value.noiDung.trim()) {
+    showToast({ loai: "loi", thongBao: "Vui lòng nhập nội dung cập nhật." });
+    return;
+  }
+
+  const payload: CapNhatKhoRequest = {
+    hinhThuc: formData.value.hinhThuc,
+    soLuong: formData.value.soLuong,
+    noiDung: formData.value.noiDung,
   };
-  emit("save", data);
-  dongModal();
+
+  isLoading.value = true;
+  try {
+    await capNhatKho(props.sanPham.maSanPham, payload);
+    showToast({
+      loai: "thanhCong",
+      thongBao: "Cập nhật tồn kho thành công!",
+    });
+    emit("success");
+    dongModal();
+  } catch (error: any) {
+    const errorMessage =
+      error.response?.data?.message || "Có lỗi xảy ra khi cập nhật tồn kho.";
+    showToast({ loai: "loi", thongBao: errorMessage });
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 watch(
   () => props.visible,
   (isVisible) => {
-    if (isVisible) {
-      hinhThucCapNhat.value = "them";
-      soLuongCapNhat.value = null;
-      noiDungCapNhat.value = "";
+    if (isVisible && props.sanPham) {
+      resetForm();
+      fetchChiTietKho(props.sanPham.maSanPham);
     }
   }
 );
 </script>
+
+<style scoped>
+@reference "../../assets/styles/main.css";
+
+.input {
+  @apply border border-gray-300 rounded-md px-3 py-2 bg-white w-full shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm;
+}
+
+.btn {
+  @apply inline-flex justify-center items-center py-2 px-4 border shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors;
+  /* Kiểu mặc định cho nút "Hủy" */
+  @apply border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-400;
+}
+
+.btn-primary {
+  /* Ghi đè kiểu cho nút chính */
+  @apply border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+}
+</style>
