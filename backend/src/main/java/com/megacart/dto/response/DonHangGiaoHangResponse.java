@@ -11,6 +11,6 @@ public class DonHangGiaoHangResponse {
     private String tenNguoiNhan;
     private String sdtNhanHang;
     private String diaChiNhanHang;
-    private int tongTien;
+    private long tongTien;
     private TrangThaiThanhToan trangThaiThanhToan;
 }

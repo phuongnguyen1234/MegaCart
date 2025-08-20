@@ -2,10 +2,16 @@ package com.megacart.repository;
 
 import com.megacart.enumeration.TrangThaiDonHang;
 import com.megacart.model.DonHang;
+import com.megacart.dto.projection.DoanhThuTheoNgay;
+import com.megacart.dto.projection.DoanhThuTheoThang;
+import com.megacart.dto.projection.SoLuongDonHangTheoNgay;
+import com.megacart.dto.projection.SoLuongDonHangTheoTrangThai;
+import com.megacart.dto.projection.SoLuongDonHangTheoThang;
 
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -52,4 +58,76 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer>, JpaS
             @Param("tuNgay") LocalDateTime tuNgay,
             @Param("denNgay") LocalDateTime denNgay,
             Pageable pageable);
+
+    /**
+     * Tính tổng doanh thu từ các đơn hàng đã giao thành công trong một khoảng thời gian.
+     * Doanh thu được tính dựa trên tổng giá trị của các chi tiết đơn hàng.
+     * Sử dụng COALESCE để trả về 0 nếu không có đơn hàng nào khớp.
+     */
+    @Query("SELECT COALESCE(SUM(ctdh.donGia * ctdh.soLuong), 0) FROM DonHang dh JOIN dh.chiTietDonHangs ctdh WHERE dh.trangThai = :trangThai AND dh.thoiGianDatHang BETWEEN :startTime AND :endTime")
+    long sumRevenueByStatusAndTimeRange(@Param("trangThai") TrangThaiDonHang trangThai, @Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
+    /**
+     * Đếm số lượng đơn hàng được tạo trong một khoảng thời gian.
+     */
+    long countByThoiGianDatHangBetween(LocalDateTime startTime, LocalDateTime endTime);
+
+    /** Đếm số lượng đơn hàng theo một trạng thái cụ thể. */
+    long countByTrangThai(TrangThaiDonHang trangThai);
+
+    /**
+     * Thống kê tổng doanh thu theo từng ngày trong một khoảng thời gian cho các đơn hàng đã giao.
+     * Sử dụng FUNCTION để gọi các hàm xử lý ngày tháng của CSDL một cách linh hoạt.
+     * Ví dụ: DATE() cho MySQL/SQLite, CAST(.. AS DATE) cho PostgreSQL.
+     */
+    @Query("SELECT FUNCTION('DATE', dh.thoiGianDatHang) as ngay, SUM(ctdh.donGia * ctdh.soLuong) as tongDoanhThu " +
+           "FROM DonHang dh JOIN dh.chiTietDonHangs ctdh " +
+           "WHERE dh.trangThai = :trangThai AND dh.thoiGianDatHang BETWEEN :startTime AND :endTime " +
+           "GROUP BY ngay ORDER BY ngay ASC")
+    List<DoanhThuTheoNgay> findDoanhThuTheoNgay(@Param("trangThai") TrangThaiDonHang trangThai, @Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
+    /**
+     * Thống kê số lượng đơn hàng theo từng tháng trong một năm.
+     */
+    @Query("SELECT FUNCTION('MONTH', dh.thoiGianDatHang) as thang, COUNT(dh.maDonHang) as soLuong " +
+           "FROM DonHang dh WHERE FUNCTION('YEAR', dh.thoiGianDatHang) = :year " +
+           "GROUP BY thang ORDER BY thang ASC")
+    List<SoLuongDonHangTheoThang> findSoLuongDonHangTheoThang(@Param("year") int year);
+
+    /**
+     * Thống kê số lượng đơn hàng theo từng trạng thái.
+     */
+    @Query("SELECT dh.trangThai as trangThai, COUNT(dh.maDonHang) as soLuong FROM DonHang dh GROUP BY dh.trangThai")
+    List<SoLuongDonHangTheoTrangThai> findSoLuongTheoTrangThai();
+
+    /**
+     * Thống kê tổng doanh thu theo từng tháng trong một năm cho các đơn hàng đã giao.
+     */
+    @Query("SELECT FUNCTION('MONTH', dh.thoiGianDatHang) as thang, SUM(ctdh.donGia * ctdh.soLuong) as tongDoanhThu " +
+           "FROM DonHang dh JOIN dh.chiTietDonHangs ctdh " +
+           "WHERE dh.trangThai = :trangThai AND FUNCTION('YEAR', dh.thoiGianDatHang) = :year " +
+           "GROUP BY thang ORDER BY thang ASC")
+    List<DoanhThuTheoThang> findDoanhThuTheoThang(@Param("trangThai") TrangThaiDonHang trangThai, @Param("year") int year);
+
+    /**
+     * Thống kê số lượng đơn hàng theo từng ngày trong một khoảng thời gian.
+     */
+    @Query("SELECT FUNCTION('DATE', dh.thoiGianDatHang) as ngay, COUNT(dh.maDonHang) as soLuong " +
+           "FROM DonHang dh " +
+           "WHERE dh.thoiGianDatHang BETWEEN :startTime AND :endTime " +
+           "GROUP BY ngay ORDER BY ngay ASC")
+    List<SoLuongDonHangTheoNgay> findSoLuongDonHangTheoNgay(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
+    @Query("SELECT dh.trangThai as trangThai, COUNT(dh.maDonHang) as soLuong " +
+           "FROM DonHang dh " +
+           "WHERE dh.thoiGianDatHang BETWEEN :startTime AND :endTime " +
+           "GROUP BY dh.trangThai")
+    List<SoLuongDonHangTheoTrangThai> findSoLuongTheoTrangThaiInTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
+    /**
+     * Ghi đè phương thức findAll để luôn fetch khách hàng, tránh N+1 query.
+     */
+    @Override
+    @EntityGraph(attributePaths = {"khachHang"})
+    Page<DonHang> findAll(Specification<DonHang> spec, Pageable pageable);
 }

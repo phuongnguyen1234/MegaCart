@@ -8,7 +8,6 @@ import com.megacart.enumeration.TrangThaiThanhToan;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -21,11 +20,12 @@ public class ChiTietDonHangQuanLyResponse {
     private String tenNguoiNhan;
     private String sdtNhanHang;
     private String diaChiNhanHang;
-    private Instant thoiGianDatHang;
+    private LocalDateTime thoiGianDatHang;
     private HinhThucNhanHang hinhThucGiaoHang;
     private HinhThucThanhToan hinhThucThanhToan;
     private TrangThaiDonHang trangThai;
     private TrangThaiThanhToan trangThaiThanhToan;
+    private LocalDateTime thoiGianThanhToan;
     private LocalDateTime duKienGiaoHang;
     private String ghiChu;
     private List<Item> items;

@@ -4,14 +4,14 @@ import com.megacart.enumeration.TrangThaiDonHang;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
 public class DonHangQuanLyResponse {
     private Integer maDonHang;
     private String tenKhachHang;
-    private Instant thoiGianDatHang;
+    private LocalDateTime thoiGianDatHang;
     private TrangThaiDonHang trangThai;
-    private int tongTien;
+    private long tongTien;
 }

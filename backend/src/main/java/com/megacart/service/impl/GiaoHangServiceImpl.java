@@ -7,6 +7,7 @@ import com.megacart.dto.response.MessageResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.enumeration.KetQuaGiaoHang;
 import com.megacart.enumeration.TrangThaiDonHang;
+import com.megacart.dto.projection.TongTienDonHangProjection;
 import com.megacart.enumeration.TrangThaiThanhToan;
 import com.megacart.exception.ResourceNotFoundException;
 import com.megacart.model.ChiTietDonHang;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.megacart.utils.ImageUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -68,14 +70,16 @@ public class GiaoHangServiceImpl implements GiaoHangService {
 
         // Bước 2: Lấy chi tiết và tính tổng tiền (tương tự logic quản lý đơn hàng để đảm bảo hiệu suất)
         List<Integer> donHangIds = donHangsOnPage.stream().map(DonHang::getMaDonHang).toList();
-        Map<Integer, Integer> tongTienTheoDonHang = chiTietDonHangRepository.findByDonHang_MaDonHangIn(donHangIds).stream()
-                .collect(Collectors.groupingBy(ct -> ct.getDonHang().getMaDonHang(), Collectors.summingInt(ct -> ct.getDonGia() * ct.getSoLuong())));
+        // Tối ưu: Sử dụng query đã được tối ưu để tính tổng tiền tại CSDL
+        Map<Integer, Long> tongTienTheoDonHang = chiTietDonHangRepository.findTongTienByDonHangIds(donHangIds)
+                .stream()
+                .collect(Collectors.toMap(TongTienDonHangProjection::getMaDonHang, TongTienDonHangProjection::getTongTien));
 
         // Bước 3: Ánh xạ sang DTO
         List<DonHangGiaoHangResponse> responses = donHangsOnPage.stream()
                 .map(donHang -> DonHangGiaoHangResponse.builder()
                         .maDonHang(donHang.getMaDonHang()).tenNguoiNhan(donHang.getTenKhachHang()).sdtNhanHang(donHang.getSdtNhanHang())
-                        .diaChiNhanHang(donHang.getDiaChiNhanHang()).tongTien(tongTienTheoDonHang.getOrDefault(donHang.getMaDonHang(), 0))
+                        .diaChiNhanHang(donHang.getDiaChiNhanHang()).tongTien(tongTienTheoDonHang.getOrDefault(donHang.getMaDonHang(), 0L))
                         .trangThaiThanhToan(donHang.getTrangThaiThanhToan()).build())
                 .collect(Collectors.toList());
 
@@ -137,36 +141,48 @@ public class GiaoHangServiceImpl implements GiaoHangService {
         if (request.getKetQua() == KetQuaGiaoHang.THANH_CONG) {
             // Xử lý giao hàng thành công
             donHang.setTrangThai(TrangThaiDonHang.DA_GIAO);
-
-            // Nếu shipper có cập nhật trạng thái thanh toán (đặc biệt cho đơn COD)
-            if (request.getTrangThaiThanhToan() != null) {
-                // Chỉ cho phép chuyển từ Chưa thanh toán -> Đã thanh toán để đảm bảo logic
-                if (donHang.getTrangThaiThanhToan() == TrangThaiThanhToan.CHUA_THANH_TOAN && request.getTrangThaiThanhToan() == TrangThaiThanhToan.DA_THANH_TOAN) {
-                    donHang.setTrangThaiThanhToan(TrangThaiThanhToan.DA_THANH_TOAN);
-                    donHang.setThoiGianThanhToan(LocalDateTime.now());
+            
+            // Logic mới: Tự động xử lý thanh toán cho đơn COD khi giao thành công.
+            // Điều này đảm bảo không bao giờ có trạng thái "Đã giao" mà "Chưa thanh toán".
+            if (donHang.getTrangThaiThanhToan() == TrangThaiThanhToan.CHUA_THANH_TOAN) {
+                // Bắt buộc shipper phải xác nhận đã thu tiền cho đơn COD.
+                if (request.getTrangThaiThanhToan() != TrangThaiThanhToan.DA_THANH_TOAN) {
+                    throw new IllegalArgumentException("Với đơn hàng COD, phải xác nhận 'Đã thanh toán' khi giao hàng thành công.");
                 }
+                donHang.setTrangThaiThanhToan(TrangThaiThanhToan.DA_THANH_TOAN);
+                donHang.setThoiGianThanhToan(LocalDateTime.now());
             }
+            // Đối với đơn đã thanh toán online, không làm gì cả, trạng thái thanh toán vẫn là DA_THANH_TOAN.
 
         } else { // KetQuaGiaoHang.THAT_BAI
-            // Xử lý giao hàng thất bại
+            // Xử lý giao hàng thất bại (thử giao lại)
             if (request.getLyDoThatBai() == null || request.getLyDoThatBai().isBlank()) {
                 throw new IllegalArgumentException("Cần cung cấp lý do khi giao hàng thất bại.");
             }
 
-            donHang.setTrangThai(TrangThaiDonHang.DA_HUY);
-            donHang.setGhiChu("Giao hàng thất bại: " + request.getLyDoThatBai());
+            // Logic mới: Cập nhật thời gian giao hàng dự kiến để thử lại
+            LocalDateTime thoiGianHienTai = LocalDateTime.now();
+            LocalDateTime thoiGianGiaoHangMoi = thoiGianHienTai.plusHours(3);
 
-            // Hoàn trả hàng vào kho
-            for (ChiTietDonHang chiTiet : donHang.getChiTietDonHangs()) {
-                SanPham sanPham = chiTiet.getSanPham();
-                // Chỉ hoàn kho nếu sản phẩm vẫn còn tồn tại trong hệ thống
-                if (sanPham != null) {
-                    Kho kho = sanPham.getKho();
-                    if (kho != null) {
-                        kho.setSoLuong(kho.getSoLuong() + chiTiet.getSoLuong());
-                    }
-                }
+            // Nếu thời gian giao mới là từ 21h (9 PM) trở đi
+            if (thoiGianGiaoHangMoi.getHour() >= 21) {
+                // Chuyển sang 6h sáng ngày hôm sau
+                thoiGianGiaoHangMoi = thoiGianGiaoHangMoi.toLocalDate().plusDays(1).atTime(6, 0);
             }
+            donHang.setDuKienGiaoHang(thoiGianGiaoHangMoi);
+
+            // Nối lý do thất bại vào ghi chú của đơn hàng để theo dõi
+            String ghiChuCu = donHang.getGhiChu();
+            String lyDoMoi = "Giao thất bại lúc " + thoiGianHienTai.format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")) + ": " + request.getLyDoThatBai();
+            String ghiChuMoi;
+            if (StringUtils.hasText(ghiChuCu)) {
+                ghiChuMoi = ghiChuCu + " | " + lyDoMoi; // Dùng dấu | để phân cách các lần ghi chú
+            } else {
+                ghiChuMoi = lyDoMoi;
+            }
+            donHang.setGhiChu(ghiChuMoi);
+
+            // Giữ nguyên trạng thái DANG_GIAO và không hoàn kho để shipper có thể giao lại.
         }
         return new MessageResponse("Cập nhật trạng thái giao hàng thành công.");
     }

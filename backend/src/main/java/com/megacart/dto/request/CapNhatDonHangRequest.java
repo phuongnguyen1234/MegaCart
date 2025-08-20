@@ -12,7 +12,7 @@ public class CapNhatDonHangRequest {
     private TrangThaiDonHang trangThai;
     private TrangThaiThanhToan trangThaiThanhToan;
 
-    @FutureOrPresent(message = "Ngày giao hàng dự kiến không thể là một ngày trong quá khứ.")
+    // Validation sẽ được xử lý ở tầng service để linh hoạt hơn cho thao tác PATCH
     private LocalDateTime duKienGiaoHang;
 
     private String ghiChu;

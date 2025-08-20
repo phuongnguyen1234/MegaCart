@@ -15,6 +15,7 @@ import com.megacart.model.AnhMinhHoa;
 import com.megacart.model.DanhMuc;
 import com.megacart.model.Kho;
 import com.megacart.model.SanPham;
+import com.megacart.repository.projection.AnhChinhProjection;
 import com.megacart.repository.AnhMinhHoaRepository;
 import com.megacart.repository.DanhMucRepository;
 import com.megacart.repository.KhoRepository;
@@ -36,8 +37,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -55,26 +58,34 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<SanPhamQuanLyResponse> getDSSanPham(String tuKhoa, Integer maDanhMuc, TrangThaiSanPham trangThai, Pageable pageable) {
+    public PagedResponse<SanPhamQuanLyResponse> getDSSanPham(String searchField, String searchValue, Integer maDanhMuc, TrangThaiSanPham trangThai, Pageable pageable) {
 
         Specification<SanPham> spec = (root, query, cb) -> {
             // Để tránh N+1 queries, chúng ta sử dụng fetch joins.
             // Điều này đặc biệt quan trọng đối với các kết quả được phân trang.
-            if (Long.class != query.getResultType() && long.class != query.getResultType()) {
-                root.fetch("anhMinhHoas", JoinType.LEFT);
+            // Tối ưu: Không fetch ảnh ở đây nữa để tránh data over-fetching.
+            if (query.getResultType() != Long.class && query.getResultType() != long.class) {
                 root.fetch("danhMuc", JoinType.LEFT).fetch("danhMucCha", JoinType.LEFT);
             }
 
             List<Predicate> predicates = new ArrayList<>();
 
-            // 1. Lọc theo từ khóa (tên hoặc mã sản phẩm)
-            if (StringUtils.hasText(tuKhoa)) {
-                Predicate tenPredicate = cb.like(cb.lower(root.get("tenSanPham")), "%" + tuKhoa.toLowerCase() + "%");
-                Predicate maPredicate = cb.equal(root.get("maSanPham"), tuKhoa.matches("\\d+") ? Integer.parseInt(tuKhoa) : -1);
-                predicates.add(cb.or(tenPredicate, maPredicate));
+            // Logic mới: Nếu tìm kiếm theo mã, bỏ qua các bộ lọc khác
+            if ("maSanPham".equals(searchField) && StringUtils.hasText(searchValue)) {
+                if (searchValue.matches("\\d+")) {
+                    predicates.add(cb.equal(root.get("maSanPham"), Integer.parseInt(searchValue)));
+                    // Trả về ngay lập tức, không cần các bộ lọc khác
+                    return cb.and(predicates.toArray(new Predicate[0]));
+                } else {
+                    return cb.disjunction(); // Mã không hợp lệ, trả về rỗng
+                }
             }
 
-            // 2. Lọc theo danh mục (bao gồm cả các danh mục con)
+            // Lọc theo các trường khác nếu không phải tìm theo mã
+            if ("tenSanPham".equals(searchField) && StringUtils.hasText(searchValue)) {
+                predicates.add(cb.like(cb.lower(root.get("tenSanPham")), "%" + searchValue.toLowerCase() + "%"));
+            }
+
             if (maDanhMuc != null) {
                 List<Integer> categoryIdsToSearch = danhMucService.getAllSubCategoryIds(maDanhMuc);
                 if (categoryIdsToSearch != null && !categoryIdsToSearch.isEmpty()) {
@@ -82,7 +93,6 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
                 }
             }
 
-            // 3. Lọc theo trạng thái
             if (trangThai != null) {
                 predicates.add(cb.equal(root.get("trangThai"), trangThai));
             }
@@ -92,8 +102,28 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
 
         Page<SanPham> sanPhamPage = sanPhamRepository.findAll(spec, pageable);
 
-        List<SanPhamQuanLyResponse> responses = sanPhamPage.getContent().stream()
-                .map(this::mapToSanPhamQuanLyResponse)
+        List<SanPham> sanPhamsOnPage = sanPhamPage.getContent();
+        if (sanPhamsOnPage.isEmpty()) {
+            return new PagedResponse<>(Collections.emptyList(), sanPhamPage.getNumber(), sanPhamPage.getSize(), sanPhamPage.getTotalElements(), sanPhamPage.getTotalPages(), null);
+        }
+
+        // Tối ưu: Lấy tất cả ảnh chính trong 1 query
+        List<Integer> sanPhamIds = sanPhamsOnPage.stream()
+                .map(SanPham::getMaSanPham)
+                .collect(Collectors.toList());
+
+        // Thêm bước kiểm tra để tránh lỗi khi sanPhamIds rỗng
+        Map<Integer, String> anhChinhUrlMap;
+        if (sanPhamIds.isEmpty()) {
+            anhChinhUrlMap = Collections.emptyMap();
+        } else {
+            anhChinhUrlMap = sanPhamRepository.findAnhMinhHoaChinhProjectionBySanPhamIds(sanPhamIds)
+                    .stream()
+                    .collect(Collectors.toMap(AnhChinhProjection::getMaSanPham, AnhChinhProjection::getDuongDan));
+        }
+
+        List<SanPhamQuanLyResponse> responses = sanPhamsOnPage.stream()
+                .map(sanPham -> mapToSanPhamQuanLyResponse(sanPham, anhChinhUrlMap.get(sanPham.getMaSanPham())))
                 .collect(Collectors.toList());
 
         return new PagedResponse<>(responses, sanPhamPage.getNumber(), sanPhamPage.getSize(), sanPhamPage.getTotalElements(), sanPhamPage.getTotalPages(), null);
@@ -358,7 +388,7 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
         }
     }
 
-    private SanPhamQuanLyResponse mapToSanPhamQuanLyResponse(SanPham sanPham) {
+    private SanPhamQuanLyResponse mapToSanPhamQuanLyResponse(SanPham sanPham, String anhChinhUrl) {
         String danhMucCha = null;
         String danhMucCon = null;
         DanhMuc danhMuc = sanPham.getDanhMuc();
@@ -371,9 +401,6 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
                 danhMucCha = danhMuc.getTenDanhMuc();
             }
         }
-
-        // Lấy URL ảnh chính để hiển thị
-        String anhChinhUrl = ImageUtils.getAnhMinhHoaChinhUrl(sanPham.getAnhMinhHoas());
 
         return SanPhamQuanLyResponse.builder()
                 .maSanPham(sanPham.getMaSanPham())

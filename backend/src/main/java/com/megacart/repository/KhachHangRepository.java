@@ -4,6 +4,8 @@ import com.megacart.enumeration.TrangThaiTaiKhoan;
 import com.megacart.model.KhachHang;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,4 +26,11 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer>, 
     @Query("SELECT kh FROM KhachHang kh JOIN kh.taiKhoan tk " +
            "WHERE tk.trangThaiTaiKhoan = :trangThai")
     Page<KhachHang> findByTrangThaiTaiKhoan(@Param("trangThai") TrangThaiTaiKhoan trangThai, Pageable pageable);
+
+    /**
+     * Ghi đè phương thức findAll để luôn fetch tài khoản, tránh N+1 query.
+     */
+    @Override
+    @EntityGraph(attributePaths = {"taiKhoan"})
+    Page<KhachHang> findAll(Specification<KhachHang> spec, Pageable pageable);
 }

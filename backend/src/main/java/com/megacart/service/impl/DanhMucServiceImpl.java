@@ -169,7 +169,7 @@ public class DanhMucServiceImpl implements DanhMucService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<DanhMucQuanLyResponse> getDSDanhMuc(String tuKhoa, TrangThaiDanhMuc trangThai, Pageable pageable) {
+    public PagedResponse<DanhMucQuanLyResponse> getDSDanhMuc(String searchField, String searchValue, TrangThaiDanhMuc trangThai, Pageable pageable) {
         Specification<DanhMuc> spec = (root, query, cb) -> {
             // Để tránh N+1 query, fetch sẵn danh mục cha
             if (Long.class != query.getResultType() && long.class != query.getResultType()) {
@@ -178,13 +178,19 @@ public class DanhMucServiceImpl implements DanhMucService {
 
             List<Predicate> predicates = new ArrayList<>();
 
-            if (StringUtils.hasText(tuKhoa)) {
-                Predicate tenPredicate = cb.like(cb.lower(root.get("tenDanhMuc")), "%" + tuKhoa.toLowerCase() + "%");
-                // Chỉ tìm theo mã nếu từ khóa là một chuỗi số
-                Predicate maPredicate = tuKhoa.matches("\\d+")
-                        ? cb.equal(root.get("maDanhMuc"), Integer.parseInt(tuKhoa))
-                        : cb.disjunction(); // Một predicate luôn false nếu không phải số
-                predicates.add(cb.or(tenPredicate, maPredicate));
+            // Logic mới: Nếu tìm kiếm theo mã, bỏ qua các bộ lọc khác
+            if ("maDanhMuc".equals(searchField) && StringUtils.hasText(searchValue)) {
+                if (searchValue.matches("\\d+")) {
+                    predicates.add(cb.equal(root.get("maDanhMuc"), Integer.parseInt(searchValue)));
+                    return cb.and(predicates.toArray(new Predicate[0]));
+                } else {
+                    return cb.disjunction(); // Trả về rỗng nếu mã không phải số
+                }
+            }
+
+            // Lọc theo các trường khác
+            if ("tenDanhMuc".equals(searchField) && StringUtils.hasText(searchValue)) {
+                predicates.add(cb.like(cb.lower(root.get("tenDanhMuc")), "%" + searchValue.toLowerCase() + "%"));
             }
 
             if (trangThai != null) {

@@ -6,6 +6,7 @@ import com.megacart.enumeration.TrangThaiDonHang;
 import com.megacart.model.NhanVien;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -40,4 +41,11 @@ public interface NhanVienRepository extends JpaRepository<NhanVien, Integer>, Jp
            "GROUP BY nv ORDER BY COUNT(dh) ASC")
     List<NhanVien> findNhanVienGiaoHangItViecNhat(
             @Param("viTri") ViTri viTri, @Param("trangThaiTaiKhoan") TrangThaiTaiKhoan trangThaiTaiKhoan, @Param("trangThaiDonHang") TrangThaiDonHang trangThaiDonHang, Pageable pageable);
+
+    /**
+     * Ghi đè phương thức findAll để luôn fetch tài khoản, tránh N+1 query.
+     */
+    @Override
+    @EntityGraph(attributePaths = {"taiKhoan"})
+    Page<NhanVien> findAll(Specification<NhanVien> spec, Pageable pageable);
 }

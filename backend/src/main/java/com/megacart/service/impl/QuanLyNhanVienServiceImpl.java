@@ -49,7 +49,14 @@ public class QuanLyNhanVienServiceImpl implements QuanLyNhanVienService {
     @Override
     @Transactional(readOnly = true)
     public PagedResponse<HienThiDanhSachNhanVienResponse> getDSNhanVien(String searchField, String searchValue, ViTri viTri, TrangThaiTaiKhoan trangThai, Pageable pageable) {
-        Specification<NhanVien> spec = timKiemNhanVienSpecification.filterBy(searchField, searchValue, viTri, trangThai);
+        Specification<NhanVien> spec;
+
+        // Logic mới: Nếu tìm kiếm theo mã nhân viên, bỏ qua các bộ lọc khác để đảm bảo tìm thấy đúng nhân viên đó.
+        if ("maNhanVien".equals(searchField) && StringUtils.hasText(searchValue)) {
+            spec = timKiemNhanVienSpecification.filterBy(searchField, searchValue, null, null);
+        } else {
+            spec = timKiemNhanVienSpecification.filterBy(searchField, searchValue, viTri, trangThai);
+        }
 
         Page<NhanVien> nhanVienPage = nhanVienRepository.findAll(spec, pageable);
         // Chuyển đổi từ Page<Entity> sang PagedResponse<DTO>
@@ -121,8 +128,9 @@ public class QuanLyNhanVienServiceImpl implements QuanLyNhanVienService {
         updateSoDienThoai(nhanVien.getTaiKhoan(), request.getSoDienThoai());
         updateTrangThai(maNhanVien, nhanVien.getTaiKhoan(), request.getTrangThai());
 
-        // Không cần gọi save() vì entity đang ở trạng thái managed trong transaction
-        HienThiDanhSachNhanVienResponse response = mapToNhanVienResponse(nhanVien);
+        // Gọi save() để đảm bảo các thay đổi được đồng bộ và trả về entity đã được cập nhật.
+        NhanVien savedNhanVien = nhanVienRepository.save(nhanVien);
+        HienThiDanhSachNhanVienResponse response = mapToNhanVienResponse(savedNhanVien);
         response.setThongBao("Cập nhật thông tin nhân viên thành công.");
         return response;
     }
