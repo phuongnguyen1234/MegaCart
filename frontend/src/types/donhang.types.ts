@@ -145,7 +145,7 @@ export type TrangThaiThanhToanObject = EnumObject<TrangThaiThanhToanKey>;
 export interface ChiTietDonHangItem {
   maSanPham: number;
   tenSanPham: string;
-  anhMinhHoaChinh: string;
+  anhMinhHoa: string;
   donGia: number;
   soLuong: number;
   /**

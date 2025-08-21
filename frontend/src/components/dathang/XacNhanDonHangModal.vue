@@ -21,7 +21,7 @@
         <!-- Danh sách sản phẩm -->
         <div class="flex-1 overflow-y-auto mb-4 px-2 py-1 space-y-2">
           <CardSanPhamDonHang
-            v-for="sp in danhSachSanPham"
+            v-for="sp in sanPhamForCard"
             :key="sp.maSanPham"
             :sanPham="sp"
           />
@@ -80,11 +80,13 @@
   </Overlay>
 </template>
 <script setup lang="ts">
-import Overlay from "../base/Overlay.vue";
+import { computed } from "vue";
+import Overlay from "@/components/base/Overlay.vue";
 import CardSanPhamDonHang from "@/components/base/card/CardSanPhamDonHang.vue";
 import type { GioHangItem } from "@/types/giohang.types";
+import type { ChiTietDonHangItem } from "@/types/donhang.types";
 
-defineProps<{
+const props = defineProps<{
   visible: boolean;
   danhSachSanPham: GioHangItem[];
   thongTin: {
@@ -98,4 +100,21 @@ defineProps<{
 }>();
 
 defineEmits<{ (e: "close"): void; (e: "xacNhan"): void }>();
+
+/**
+ * Chuyển đổi dữ liệu từ `GioHangItem` sang một dạng tương thích với `ChiTietDonHangItem`
+ * để component `CardSanPhamDonHang` có thể sử dụng.
+ * Sự khác biệt chính là tên thuộc tính ảnh (`anhMinhHoa` vs `anhMinhHoaChinh`)
+ * và tên thuộc tính trạng thái (`trangThai` vs `trangThaiSanPham`).
+ */
+const sanPhamForCard = computed(() => {
+  return props.danhSachSanPham.map(
+    (item) =>
+      ({
+        ...item,
+        anhMinhHoaChinh: item.anhMinhHoa,
+        trangThaiSanPham: item.trangThai,
+      } as unknown as ChiTietDonHangItem) // Cast để TypeScript hài lòng
+  );
+});
 </script>

@@ -7,7 +7,7 @@
       class="shrink-0"
     >
       <img
-        :src="sanPham.anhMinhHoaChinh"
+        :src="sanPham.anhMinhHoa"
         alt="Ảnh sản phẩm"
         class="h-20 w-20 rounded-md object-cover"
       />

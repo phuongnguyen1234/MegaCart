@@ -15,6 +15,8 @@
           id="trang-thai"
           v-model="selectedTrangThai"
           class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+          :disabled="areOtherFiltersDisabled"
+          :class="{ 'bg-gray-100 cursor-not-allowed': areOtherFiltersDisabled }"
         >
           <option value="">Tất cả</option>
           <option
@@ -32,6 +34,7 @@
         :ds-tieu-chi="dsTieuChiTimKiem"
         v-model:modelValueLoai="loaiTimKiem"
         v-model:modelValueTuKhoa="tuKhoa"
+        @idSearchActive="areOtherFiltersDisabled = $event"
       />
     </div>
 
@@ -110,17 +113,20 @@ import {
 import { useToast } from "@/composables/useToast";
 
 const selectedTrangThai = ref<TrangThaiTaiKhoanKey | "">("");
-const loaiTimKiem = ref<"tenKhachHang" | "email" | "soDienThoai">(
-  "tenKhachHang"
-);
+const loaiTimKiem = ref<
+  "tenKhachHang" | "email" | "soDienThoai" | "maKhachHang"
+>("tenKhachHang");
 const tuKhoa = ref("");
 const isLoading = ref(false);
 const { showToast } = useToast();
+const areOtherFiltersDisabled = ref(false);
+const debounceTimer = ref<ReturnType<typeof setTimeout> | undefined>(undefined);
 
 const dsTieuChiTimKiem = [
   { value: "tenKhachHang", label: "Tên khách hàng" },
   { value: "email", label: "Email" },
   { value: "soDienThoai", label: "Số điện thoại" },
+  { value: "maKhachHang", label: "Mã khách hàng", isId: true },
 ];
 const allKhachHang = ref<HienThiDanhSachKhachHangResponse[]>([]);
 
@@ -200,11 +206,16 @@ const handleSave = async (payload: {
 // --- Fetch dữ liệu từ API ---
 const fetchKhachHang = async () => {
   isLoading.value = true;
+  // Hủy các tìm kiếm bằng từ khóa đang chờ để tránh race condition
+  // khi người dùng thực hiện hành động khác (ví dụ: lọc, phân trang) trong khi debounce đang đếm ngược.
+  clearTimeout(debounceTimer.value);
   try {
     const params: GetKhachHangParams = {
       searchField: tuKhoa.value ? loaiTimKiem.value : undefined,
       searchValue: tuKhoa.value || undefined,
-      trangThai: selectedTrangThai.value || undefined,
+      trangThai: areOtherFiltersDisabled.value
+        ? undefined
+        : selectedTrangThai.value || undefined,
       page: trangHienTai.value,
       size: soLuongMoiTrang.value,
     };
@@ -222,15 +233,50 @@ const fetchKhachHang = async () => {
   }
 };
 
-// Tự động fetch lại dữ liệu khi bộ lọc hoặc trang thay đổi
-// Reset về trang đầu tiên khi người dùng thay đổi bộ lọc
-watch([selectedTrangThai, tuKhoa], () => {
-  trangHienTai.value = 0;
+// --- Watchers ---
+
+// 1. Watch for search keyword changes with a debounce
+watch(tuKhoa, () => {
+  clearTimeout(debounceTimer.value);
+  debounceTimer.value = setTimeout(() => {
+    if (trangHienTai.value !== 0) {
+      trangHienTai.value = 0;
+    } else {
+      fetchKhachHang();
+    }
+  }, 300);
 });
 
-watch([trangHienTai, selectedTrangThai, tuKhoa], fetchKhachHang, {
-  immediate: true,
+// 2. Watch for status filter to apply immediately
+watch(selectedTrangThai, () => {
+  if (trangHienTai.value !== 0) {
+    trangHienTai.value = 0;
+  } else {
+    fetchKhachHang();
+  }
 });
+
+// 3. When the current page changes, fetch data
+watch(trangHienTai, fetchKhachHang);
+
+// 4. When changing search type, handle cleanup logic
+watch(loaiTimKiem, (newLoai) => {
+  const isIdSearch =
+    dsTieuChiTimKiem.find((t) => t.value === newLoai)?.isId ?? false;
+  areOtherFiltersDisabled.value = isIdSearch;
+
+  if (isIdSearch) {
+    // Gán giá trị rỗng cho bộ lọc trạng thái.
+    // Watcher của nó sẽ không bị trigger nếu giá trị cũ đã là rỗng.
+    selectedTrangThai.value = "";
+  }
+  // Xóa từ khóa sẽ trigger watcher của `tuKhoa` (đã được debounce),
+  // và tải lại bảng một cách an toàn, tránh race condition.
+  tuKhoa.value = "";
+});
+
+// 5. Initial data load
+fetchKhachHang();
 
 const headers = [
   "Mã khách hàng",

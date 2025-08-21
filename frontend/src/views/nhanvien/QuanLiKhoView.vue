@@ -112,6 +112,7 @@ const tuKhoa = ref("");
 const isLoading = ref(false);
 const { showToast } = useToast();
 const areOtherFiltersDisabled = ref(false);
+const debounceTimer = ref<ReturnType<typeof setTimeout> | undefined>(undefined);
 
 // Helper để lấy thông báo lỗi chi tiết
 const getErrorMessage = (error: any): string => {
@@ -156,8 +157,7 @@ const thongTinHienThi = computed(() => {
 const fetchTonKho = async () => {
   isLoading.value = true;
   try {
-    const params: any = {
-      // Use 'any' for now, or update GetKhoParams if needed
+    const params: GetKhoParams = {
       page: trangHienTai.value,
       size: soLuongMoiTrang.value,
       searchField: tuKhoa.value ? loaiTimKiem.value : undefined,
@@ -187,8 +187,20 @@ const fetchTonKho = async () => {
 
 // --- Watchers ---
 
-// 1. Khi các bộ lọc thay đổi, reset về trang đầu tiên.
-watch([tuKhoa, activeMaDanhMuc], () => {
+// 1. Watch for search keyword changes with a debounce to prevent race conditions
+watch(tuKhoa, () => {
+  clearTimeout(debounceTimer.value);
+  debounceTimer.value = setTimeout(() => {
+    if (trangHienTai.value !== 0) {
+      trangHienTai.value = 0;
+    } else {
+      fetchTonKho();
+    }
+  }, 300); // Wait for 300ms after user stops typing
+});
+
+// 2. Watch for category filter changes to apply immediately
+watch(activeMaDanhMuc, () => {
   if (trangHienTai.value !== 0) {
     trangHienTai.value = 0;
   } else {
@@ -196,11 +208,10 @@ watch([tuKhoa, activeMaDanhMuc], () => {
   }
 });
 
-// Reset về trang đầu tiên khi người dùng thay đổi bộ lọc
-// 2. Khi trang hiện tại thay đổi, fetch dữ liệu.
+// 3. When the current page changes, fetch data.
 watch(trangHienTai, fetchTonKho);
 
-// 3. Khi thay đổi loại tìm kiếm, xử lý logic một cách tập trung
+// 4. When changing search type, handle cleanup logic.
 watch(loaiTimKiem, (newLoai) => {
   const isIdSearch =
     dsTieuChiTimKiem.find((t) => t.value === newLoai)?.isId ?? false;
@@ -258,6 +269,6 @@ const handleUpdateSuccess = () => {
   fetchTonKho(); // Tải lại dữ liệu bảng để hiển thị thông tin mới nhất
 };
 
-// 4. Tải dữ liệu lần đầu tiên khi component được tạo.
+// 5. Initial data load when the component is created.
 fetchTonKho();
 </script>

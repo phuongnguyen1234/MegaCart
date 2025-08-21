@@ -146,7 +146,8 @@ export interface TimKiemFilterParams {
  * Tương ứng với các @RequestParam trong `QuanLySanPhamController.getDSSanPham`.
  */
 export interface GetSanPhamQuanLyParams extends PageableParams {
-  tuKhoa?: string;
+  searchField?: "tenSanPham" | "maSanPham";
+  searchValue?: string;
   maDanhMuc?: number;
   trangThai?: TrangThaiSanPhamKey;
 }

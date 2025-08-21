@@ -241,7 +241,7 @@
           @click="handleSubmit"
           :disabled="isLoading || (isEditMode && !isFormDirty) || !canSubmit"
         >
-          {{ isEditMode ? "Cập nhật sản phẩm" : "Thêm sản phẩm" }}
+          {{ isEditMode ? "Lưu thay đổi" : "Thêm sản phẩm" }}
         </button>
       </div>
     </template>
@@ -393,18 +393,16 @@ watch(
   () => props.visible,
   async (isVisible) => {
     if (isVisible) {
-      resetFormState();
-
       // Lấy danh sách danh mục dạng phẳng, store sẽ cache lại.
       await danhMucStore.fetchAllCategoriesFlat();
 
-      // If editing, populate the form after categories are loaded.
+      // Nếu là chế độ sửa, điền dữ liệu vào form.
       if (props.isEditMode && props.sanPhamSua) {
-        // Use nextTick to ensure dependent computed properties (like danhMucConOptions)
-        // have a chance to update before we set selected values.
         await nextTick();
         populateFormForEdit(props.sanPhamSua);
       }
+      // Nếu là chế độ thêm, không làm gì cả để giữ lại dữ liệu đã nhập.
+      // Việc reset form sẽ do component cha quyết định khi cần.
     }
   }
 );
@@ -611,6 +609,8 @@ const handleSubmit = async () => {
         loai: "thanhCong",
         thongBao: "Thêm sản phẩm mới thành công!",
       });
+      // Sau khi thêm thành công, tự động reset form để chuẩn bị cho lần thêm tiếp theo.
+      resetFormState();
     }
     emit("success");
     emit("close");
@@ -628,6 +628,11 @@ const handleSubmit = async () => {
     isLoading.value = false;
   }
 };
+
+// Expose a method for the parent component to call for resetting the form.
+defineExpose({
+  resetFormState,
+});
 </script>
 
 <style scoped>

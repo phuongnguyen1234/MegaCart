@@ -49,7 +49,7 @@ export interface CapNhatTrangThaiTaiKhoanRequest {
  * Tương ứng với các @RequestParam trong `QuanLyKhachHangController.getDSKhachHang`.
  */
 export interface GetKhachHangParams extends PageableParams {
-  searchField?: "tenKhachHang" | "email" | "soDienThoai";
+  searchField?: "tenKhachHang" | "email" | "soDienThoai" | "maKhachHang";
   searchValue?: string;
   trangThai?: TrangThaiTaiKhoanKey;
 }

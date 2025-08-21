@@ -5,7 +5,8 @@ import type { PageableParams } from "./api.types";
  * Tương ứng với các @RequestParam trong `QuanLyKhoController.getDanhSachKho`.
  */
 export interface GetKhoParams extends PageableParams {
-  tuKhoa?: string;
+  searchField?: "tenSanPham" | "maSanPham";
+  searchValue?: string;
   maDanhMuc?: number;
 }
 

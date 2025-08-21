@@ -25,6 +25,10 @@
             id="vi-tri"
             v-model="selectedViTri"
             class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+            :disabled="areOtherFiltersDisabled"
+            :class="{
+              'bg-gray-100 cursor-not-allowed': areOtherFiltersDisabled,
+            }"
           >
             <option value="">Tất cả</option>
             <option v-for="(label, key) in ViTriLabel" :key="key" :value="key">
@@ -45,6 +49,10 @@
             id="trang-thai"
             v-model="selectedTrangThai"
             class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+            :disabled="areOtherFiltersDisabled"
+            :class="{
+              'bg-gray-100 cursor-not-allowed': areOtherFiltersDisabled,
+            }"
           >
             <option value="">Tất cả</option>
             <option
@@ -63,6 +71,7 @@
         :ds-tieu-chi="dsTieuChiTimKiem"
         v-model:modelValueLoai="loaiTimKiem"
         v-model:modelValueTuKhoa="tuKhoa"
+        @idSearchActive="areOtherFiltersDisabled = $event"
       />
     </div>
 
@@ -143,10 +152,13 @@ import { getDanhSachNhanVien } from "@/service/quanlinhanvien.service";
 // State cho bộ lọc, tìm kiếm
 const selectedViTri = ref<ViTriKey | "">("");
 const selectedTrangThai = ref<TrangThaiTaiKhoanKey | "">("");
-const loaiTimKiem = ref<"hoTen" | "email" | "soDienThoai">("hoTen");
+const loaiTimKiem = ref<"hoTen" | "email" | "soDienThoai" | "maNhanVien">(
+  "hoTen"
+);
 const tuKhoa = ref("");
 const isLoading = ref(false);
-
+const areOtherFiltersDisabled = ref(false);
+const debounceTimer = ref<ReturnType<typeof setTimeout> | undefined>(undefined);
 // Dữ liệu danh sách nhân viên
 const danhSachNhanVien = ref<HienThiDanhSachNhanVienResponse[]>([]);
 const tongSoTrang = ref(1);
@@ -158,6 +170,7 @@ const dsTieuChiTimKiem = [
   { value: "hoTen", label: "Tên nhân viên" },
   { value: "email", label: "Email" },
   { value: "soDienThoai", label: "Số điện thoại" },
+  { value: "maNhanVien", label: "Mã nhân viên", isId: true },
 ];
 
 // Fetch danh sách nhân viên từ API
@@ -169,8 +182,12 @@ const fetchNhanVien = async () => {
       size: soLuongMoiTrang.value,
       searchField: tuKhoa.value ? loaiTimKiem.value : undefined,
       searchValue: tuKhoa.value || undefined,
-      viTri: selectedViTri.value || undefined,
-      trangThai: selectedTrangThai.value || undefined,
+      viTri: areOtherFiltersDisabled.value
+        ? undefined
+        : selectedViTri.value || undefined,
+      trangThai: areOtherFiltersDisabled.value
+        ? undefined
+        : selectedTrangThai.value || undefined,
     };
     const response = await getDanhSachNhanVien(params);
     danhSachNhanVien.value = response.content;
@@ -183,20 +200,44 @@ const fetchNhanVien = async () => {
   }
 };
 
-// Theo dõi thay đổi bộ lọc/tìm kiếm để tự động fetch lại
-watch([selectedViTri, selectedTrangThai, loaiTimKiem, tuKhoa], () => {
-  // Reset về trang đầu tiên khi người dùng thay đổi bộ lọc
-  trangHienTai.value = 0;
+// --- Watchers ---
+
+// 1. Watch for search keyword changes with a debounce
+watch(tuKhoa, () => {
+  clearTimeout(debounceTimer.value);
+  debounceTimer.value = setTimeout(() => {
+    if (trangHienTai.value !== 0) {
+      trangHienTai.value = 0;
+    } else {
+      fetchNhanVien();
+    }
+  }, 300);
 });
 
-// Fetch lại dữ liệu khi trang hoặc các bộ lọc thay đổi
-watch(
-  [trangHienTai, selectedViTri, selectedTrangThai, loaiTimKiem, tuKhoa],
-  fetchNhanVien,
-  {
-    immediate: true,
+// 2. Watch for other filters to apply immediately
+watch([selectedViTri, selectedTrangThai], () => {
+  if (trangHienTai.value !== 0) {
+    trangHienTai.value = 0;
+  } else {
+    fetchNhanVien();
   }
-);
+});
+
+// 3. When the current page changes, fetch data
+watch(trangHienTai, fetchNhanVien);
+
+// 4. When changing search type, handle cleanup logic
+watch(loaiTimKiem, (newLoai) => {
+  const isIdSearch =
+    dsTieuChiTimKiem.find((t) => t.value === newLoai)?.isId ?? false;
+  areOtherFiltersDisabled.value = isIdSearch;
+  tuKhoa.value = ""; // This will trigger the debounced watcher
+
+  if (isIdSearch) {
+    selectedViTri.value = "";
+    selectedTrangThai.value = "";
+  }
+});
 
 // Hiển thị số lượng
 const thongTinHienThi = computed(() => {
@@ -269,4 +310,7 @@ const handleSuccess = () => {
   // Tải lại danh sách nhân viên để hiển thị dữ liệu mới nhất
   fetchNhanVien();
 };
+
+// 5. Initial data load
+fetchNhanVien();
 </script>

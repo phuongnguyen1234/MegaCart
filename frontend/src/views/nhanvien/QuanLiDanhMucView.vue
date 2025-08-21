@@ -27,6 +27,8 @@
           id="trang-thai-filter"
           v-model="selectedTrangThai"
           class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm px-3 py-2"
+          :disabled="areOtherFiltersDisabled"
+          :class="{ 'bg-gray-100 cursor-not-allowed': areOtherFiltersDisabled }"
         >
           <option value="">Tất cả</option>
           <option
@@ -41,9 +43,10 @@
 
       <!-- Thanh tìm kiếm -->
       <ThanhTimKiem
-        :ds-tieu-chi="[{ value: 'tenDanhMuc', label: 'Tên danh mục' }]"
+        :ds-tieu-chi="dsTieuChiTimKiem"
         v-model:modelValueLoai="loaiTimKiem"
         v-model:modelValueTuKhoa="tuKhoa"
+        @idSearchActive="areOtherFiltersDisabled = $event"
       />
     </div>
 
@@ -115,7 +118,7 @@ import { useToast } from "@/composables/useToast";
 import { useDanhMucStore } from "@/store/danhmuc.store";
 
 // --- State ---
-const loaiTimKiem = ref("tenDanhMuc");
+const loaiTimKiem = ref<"tenDanhMuc" | "maDanhMuc">("tenDanhMuc");
 const tuKhoa = ref("");
 const selectedTrangThai = ref<TrangThaiDanhMucKey | "">("");
 const isModalVisible = ref(false);
@@ -124,6 +127,13 @@ const selectedCategory = ref<ChiTietDanhMucQuanLyResponse | null>(null);
 const isLoading = ref(false);
 const { showToast } = useToast();
 const danhMucStore = useDanhMucStore();
+const areOtherFiltersDisabled = ref(false);
+const debounceTimer = ref<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+const dsTieuChiTimKiem = [
+  { value: "tenDanhMuc", label: "Tên danh mục" },
+  { value: "maDanhMuc", label: "Mã danh mục", isId: true },
+];
 
 const allDanhMuc = ref<DanhMucQuanLyResponse[]>([]);
 
@@ -184,10 +194,11 @@ const fetchDanhMuc = async () => {
     const params: GetDanhMucParams = {
       page: trangHienTai.value,
       size: soLuongMoiTrang.value,
-      tuKhoa: tuKhoa.value || undefined,
-      trangThai: selectedTrangThai.value || undefined,
-      // Backend không hỗ trợ tìm theo mã danh mục qua `tuKhoa`
-      // nên ta bỏ qua `loaiTimKiem` ở đây.
+      searchField: tuKhoa.value ? loaiTimKiem.value : undefined,
+      searchValue: tuKhoa.value || undefined,
+      trangThai: areOtherFiltersDisabled.value
+        ? undefined
+        : selectedTrangThai.value || undefined,
     };
     const response = await getDanhSachDanhMuc(params);
     allDanhMuc.value = response.content;
@@ -225,11 +236,43 @@ const rows = computed(() =>
 );
 
 // --- Watchers ---
-watch([trangHienTai, tuKhoa, selectedTrangThai], fetchDanhMuc, {
-  immediate: true,
+
+// 1. Watch for search keyword changes with a debounce to prevent race conditions
+watch(tuKhoa, () => {
+  clearTimeout(debounceTimer.value);
+  debounceTimer.value = setTimeout(() => {
+    if (trangHienTai.value !== 0) {
+      trangHienTai.value = 0;
+    } else {
+      fetchDanhMuc();
+    }
+  }, 300); // Wait for 300ms after user stops typing
 });
 
-watch([tuKhoa, selectedTrangThai], () => {
-  trangHienTai.value = 0;
+// 2. Watch for status filter to apply immediately
+watch(selectedTrangThai, () => {
+  if (trangHienTai.value !== 0) {
+    trangHienTai.value = 0;
+  } else {
+    fetchDanhMuc();
+  }
 });
+
+// 3. When the current page changes, fetch data
+watch(trangHienTai, fetchDanhMuc);
+
+// 4. When changing search type, handle cleanup logic.
+watch(loaiTimKiem, (newLoai) => {
+  const isIdSearch =
+    dsTieuChiTimKiem.find((t) => t.value === newLoai)?.isId ?? false;
+  areOtherFiltersDisabled.value = isIdSearch;
+  tuKhoa.value = ""; // Clearing the keyword will trigger the debounced watcher
+
+  if (isIdSearch) {
+    selectedTrangThai.value = "";
+  }
+});
+
+// 5. Initial data load when the component is created.
+fetchDanhMuc();
 </script>

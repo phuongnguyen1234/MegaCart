@@ -46,7 +46,7 @@ export interface HienThiDanhSachNhanVienResponse {
  * Tương ứng với các @RequestParam trong `QuanLyNhanVienController.getDSNhanVien`.
  */
 export interface GetNhanVienParams extends PageableParams {
-  searchField?: "hoTen" | "email" | "soDienThoai";
+  searchField?: "hoTen" | "email" | "soDienThoai" | "maNhanVien";
   searchValue?: string;
   viTri?: ViTriKey;
   trangThai?: TrangThaiTaiKhoanKey;

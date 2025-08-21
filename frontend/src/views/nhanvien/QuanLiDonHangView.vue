@@ -81,7 +81,7 @@
             </td>
             <td class="px-6 py-4">{{ donHang.tenKhachHang }}</td>
             <td class="px-6 py-4">
-              {{ formatDateTime(donHang.thoiGianDatHang) }}
+              {{ formatDateTimeLocal(donHang.thoiGianDatHang) }}
             </td>
             <td class="px-6 py-4">
               <span
@@ -149,7 +149,7 @@ import {
   capNhatDonHang,
 } from "@/service/donhang.service";
 import { useToast } from "@/composables/useToast";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, formatDateTimeLocal } from "@/utils/formatters";
 
 // Helper function to get today's date in YYYY-MM-DD format
 const getTodayISOString = (): string => {
@@ -299,18 +299,6 @@ const getTrangThaiClass = (trangThaiKey: TrangThaiDonHangKey): string => {
     default:
       return "bg-gray-100 text-gray-800";
   }
-};
-
-const formatDateTime = (iso: string): string => {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return d.toLocaleString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 };
 
 // --- Hiển thị số lượng ---

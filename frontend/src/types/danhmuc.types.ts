@@ -128,6 +128,7 @@ export interface DanhMucOptionResponse {
  * Corresponds to the @RequestParam in `QuanLyDanhMucController.getDSDanhMuc`.
  */
 export interface GetDanhMucParams extends PageableParams {
-  tuKhoa?: string;
+  searchField?: "tenDanhMuc" | "maDanhMuc";
+  searchValue?: string;
   trangThai?: TrangThaiDanhMucKey;
 }

@@ -52,7 +52,7 @@
               :key="sp.maSanPham"
               :sanPham="sp"
               :isChecked="selectedItems.has(sp.maSanPham)"
-              :disabled="sp.trangThai.value !== TrangThaiSanPhamKey.DANG_BAN"
+              :disabled="sp.trangThai.value !== TrangThaiSanPhamKey.BAN"
               @chon="(isChecked:boolean) => toggleChon(sp.maSanPham, isChecked)"
               @thay-doi-so-luong="
                 (soLuong:number) => handleCapNhatSoLuong(sp.maSanPham, soLuong)
@@ -240,7 +240,7 @@ const hinhThucThanhToan = ref(
 
 const availableItems = computed(() =>
   cartItems.value.filter(
-    (item) => item.trangThai.value === TrangThaiSanPhamKey.DANG_BAN
+    (item) => item.trangThai.value === TrangThaiSanPhamKey.BAN
   )
 );
 
@@ -304,7 +304,7 @@ const fetchCartData = async () => {
 
     // Tự động chọn tất cả sản phẩm CÓ THỂ MUA khi tải trang
     response.items.forEach((item) => {
-      if (item.trangThai.value === TrangThaiSanPhamKey.DANG_BAN)
+      if (item.trangThai.value === TrangThaiSanPhamKey.BAN)
         selectedItems.value.add(item.maSanPham);
     });
 

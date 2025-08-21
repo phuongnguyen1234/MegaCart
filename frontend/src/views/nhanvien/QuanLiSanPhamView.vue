@@ -99,6 +99,7 @@
 
     <!-- Modal Thêm/Sửa sản phẩm -->
     <ThemSuaSanPhamModal
+      ref="themSuaModalRef"
       :visible="isModalVisible"
       :title="modalTitle"
       :is-edit-mode="isEditMode"
@@ -142,9 +143,13 @@ const tuKhoa = ref("");
 const isModalVisible = ref(false);
 const isEditMode = ref(false);
 const selectedProduct = ref<ChiTietSanPhamQuanLyResponse | null>(null);
+const themSuaModalRef = ref<InstanceType<typeof ThemSuaSanPhamModal> | null>(
+  null
+);
 const isLoading = ref(false);
 const { showToast } = useToast();
 const areOtherFiltersDisabled = ref(false);
+const debounceTimer = ref<ReturnType<typeof setTimeout> | undefined>(undefined);
 
 const dsTieuChiTimKiem = [
   { value: "tenSanPham", label: "Tên sản phẩm" },
@@ -165,6 +170,11 @@ const modalTitle = computed(() =>
 );
 
 const openAddModal = () => {
+  // Nếu lần trước đó là chế độ Sửa, form trong modal có thể vẫn còn dữ liệu cũ.
+  // Ta cần chủ động gọi phương thức reset của modal để dọn dẹp.
+  if (isEditMode.value) {
+    themSuaModalRef.value?.resetFormState();
+  }
   isEditMode.value = false;
   selectedProduct.value = null;
   isModalVisible.value = true;
@@ -232,7 +242,8 @@ const fetchSanPham = async () => {
     const params: GetSanPhamQuanLyParams = {
       page: trangHienTai.value,
       size: soLuongMoiTrang.value,
-      tuKhoa: tuKhoa.value || undefined,
+      searchField: tuKhoa.value ? loaiTimKiem.value : undefined,
+      searchValue: tuKhoa.value || undefined,
       // Chỉ thêm các bộ lọc khác nếu chúng không bị vô hiệu hóa
       maDanhMuc: areOtherFiltersDisabled.value
         ? undefined
@@ -264,22 +275,32 @@ const handleSuccess = () => {
 
 // --- Watchers ---
 
-// 1. Khi các bộ lọc (danh mục, trạng thái, từ khóa) thay đổi, reset về trang đầu tiên.
-// Nếu đã ở trang 0, thì fetch trực tiếp để đảm bảo dữ liệu được cập nhật.
-watch([activeMaDanhMuc, selectedTrangThai, tuKhoa], () => {
+// 1. Watch for search keyword changes with a debounce to prevent race conditions
+watch(tuKhoa, () => {
+  clearTimeout(debounceTimer.value);
+  debounceTimer.value = setTimeout(() => {
+    if (trangHienTai.value !== 0) {
+      trangHienTai.value = 0;
+    } else {
+      fetchSanPham();
+    }
+  }, 300); // Wait for 300ms after user stops typing
+});
+
+// 2. Watch for other filters (category, status) to apply immediately
+watch([activeMaDanhMuc, selectedTrangThai], () => {
   if (trangHienTai.value !== 0) {
-    trangHienTai.value = 0; // Setting page to 0 will trigger the page watcher
+    trangHienTai.value = 0;
   } else {
-    // If we are already on page 0, the page watcher won't fire, so we fetch manually.
     fetchSanPham();
   }
 });
 
-// 2. Khi trang hiện tại thay đổi (do người dùng click phân trang hoặc do watcher 1 reset), fetch dữ liệu.
+// 3. When the current page changes, fetch data
 watch(trangHienTai, fetchSanPham);
 
-// 3. Khi thay đổi loại tìm kiếm, chỉ xử lý logic dọn dẹp.
-// Việc xóa từ khóa sẽ kích hoạt watcher #1 để tải lại dữ liệu.
+// 4. When changing search type, handle cleanup logic.
+// Clearing the keyword will trigger the debounced watcher above.
 watch(loaiTimKiem, (newLoai) => {
   const isIdSearch =
     dsTieuChiTimKiem.find((t) => t.value === newLoai)?.isId ?? false;
@@ -293,6 +314,6 @@ watch(loaiTimKiem, (newLoai) => {
   }
 });
 
-// 4. Tải dữ liệu lần đầu tiên khi component được tạo.
+// 5. Initial data load when the component is created.
 fetchSanPham();
 </script>
