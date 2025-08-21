@@ -137,14 +137,14 @@ public class GioHangServiceImpl implements GioHangService {
     @Transactional
     public XoaKhoiGioHangResponse xoaKhoiGioHang(Integer maSanPham, TaiKhoan taiKhoan) {
         Integer maKhachHang = taiKhoan.getMaTaiKhoan();
-        ChiTietGioHangId id = new ChiTietGioHangId(maSanPham, maKhachHang);
 
         // Kiểm tra xem sản phẩm có thực sự tồn tại trong giỏ hàng không trước khi xóa
-        if (!chiTietGioHangRepository.existsById(id)) {
+        if (!chiTietGioHangRepository.existsById(new ChiTietGioHangId(maSanPham, maKhachHang))) {
             throw new ResourceNotFoundException("Sản phẩm không có trong giỏ hàng.");
         }
 
-        chiTietGioHangRepository.deleteById(id);
+        // Sử dụng phương thức mới để xóa và tự động đồng bộ cache
+        chiTietGioHangRepository.deleteByKhachHangAndSanPham(maKhachHang, maSanPham);
 
         // Lấy lại giỏ hàng sau khi xóa để tính toán lại tổng số lượng
         GioHang gioHang = gioHangRepository.findByKhachHang_MaKhachHang(maKhachHang)

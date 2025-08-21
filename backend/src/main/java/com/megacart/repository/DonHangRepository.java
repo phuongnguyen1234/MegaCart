@@ -1,13 +1,12 @@
 package com.megacart.repository;
 
-import com.megacart.enumeration.TrangThaiDonHang;
-import com.megacart.model.DonHang;
 import com.megacart.dto.projection.DoanhThuTheoNgay;
 import com.megacart.dto.projection.DoanhThuTheoThang;
 import com.megacart.dto.projection.SoLuongDonHangTheoNgay;
-import com.megacart.dto.projection.SoLuongDonHangTheoTrangThai;
 import com.megacart.dto.projection.SoLuongDonHangTheoThang;
-
+import com.megacart.dto.projection.SoLuongDonHangTheoTrangThai;
+import com.megacart.enumeration.TrangThaiDonHang;
+import com.megacart.model.DonHang;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -87,12 +86,14 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer>, JpaS
     List<DoanhThuTheoNgay> findDoanhThuTheoNgay(@Param("trangThai") TrangThaiDonHang trangThai, @Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
 
     /**
-     * Thống kê số lượng đơn hàng theo từng tháng trong một năm.
+     * Thống kê số lượng đơn hàng theo từng tháng trong một khoảng thời gian.
      */
-    @Query("SELECT FUNCTION('MONTH', dh.thoiGianDatHang) as thang, COUNT(dh.maDonHang) as soLuong " +
-           "FROM DonHang dh WHERE FUNCTION('YEAR', dh.thoiGianDatHang) = :year " +
-           "GROUP BY thang ORDER BY thang ASC")
-    List<SoLuongDonHangTheoThang> findSoLuongDonHangTheoThang(@Param("year") int year);
+    @Query("SELECT YEAR(dh.thoiGianDatHang) as nam, MONTH(dh.thoiGianDatHang) as thang, COUNT(dh.maDonHang) as soLuong " +
+           "FROM DonHang dh " +
+           "WHERE dh.thoiGianDatHang BETWEEN :startTime AND :endTime " +
+           "GROUP BY YEAR(dh.thoiGianDatHang), MONTH(dh.thoiGianDatHang)")
+    List<SoLuongDonHangTheoThang> findSoLuongDonHangTheoThangInRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
 
     /**
      * Thống kê số lượng đơn hàng theo từng trạng thái.
@@ -101,13 +102,13 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer>, JpaS
     List<SoLuongDonHangTheoTrangThai> findSoLuongTheoTrangThai();
 
     /**
-     * Thống kê tổng doanh thu theo từng tháng trong một năm cho các đơn hàng đã giao.
+     * Thống kê tổng doanh thu theo từng tháng trong một khoảng thời gian cho các đơn hàng đã giao.
      */
-    @Query("SELECT FUNCTION('MONTH', dh.thoiGianDatHang) as thang, SUM(ctdh.donGia * ctdh.soLuong) as tongDoanhThu " +
+    @Query("SELECT YEAR(dh.thoiGianDatHang) as nam, MONTH(dh.thoiGianDatHang) as thang, SUM(ctdh.donGia * ctdh.soLuong) as tongDoanhThu " +
            "FROM DonHang dh JOIN dh.chiTietDonHangs ctdh " +
-           "WHERE dh.trangThai = :trangThai AND FUNCTION('YEAR', dh.thoiGianDatHang) = :year " +
-           "GROUP BY thang ORDER BY thang ASC")
-    List<DoanhThuTheoThang> findDoanhThuTheoThang(@Param("trangThai") TrangThaiDonHang trangThai, @Param("year") int year);
+          "WHERE dh.trangThai = :trangThai AND dh.thoiGianDatHang BETWEEN :startTime AND :endTime " +
+           "GROUP BY YEAR(dh.thoiGianDatHang), MONTH(dh.thoiGianDatHang)")
+    List<DoanhThuTheoThang> findDoanhThuTheoThangInRange(@Param("trangThai") TrangThaiDonHang trangThai, @Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
 
     /**
      * Thống kê số lượng đơn hàng theo từng ngày trong một khoảng thời gian.

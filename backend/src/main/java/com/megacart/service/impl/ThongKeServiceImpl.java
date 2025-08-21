@@ -169,18 +169,34 @@ public class ThongKeServiceImpl implements ThongKeService {
 
     @Override
     @Transactional(readOnly = true)
-    public BieuDoDuongResponse getDonHangTheoThang(int year) {
-        // 1. Lấy dữ liệu thô từ CSDL
-        List<SoLuongDonHangTheoThang> donHangData = donHangRepository.findSoLuongDonHangTheoThang(year);
+    public BieuDoDuongResponse getDonHangTheoThang() {
+        final int MONTH_PERIOD = 6;
+        YearMonth currentMonth = YearMonth.now();
+        YearMonth startMonth = currentMonth.minusMonths(MONTH_PERIOD - 1);
 
-        // 2. Chuyển đổi dữ liệu thô sang Map để tra cứu nhanh (Key: Tháng, Value: Số lượng)
-        Map<Integer, Long> donHangMap = donHangData.stream()
-                .collect(Collectors.toMap(SoLuongDonHangTheoThang::getThang, SoLuongDonHangTheoThang::getSoLuong));
+        // 1. Xác định khoảng thời gian
+        LocalDateTime startTime = startMonth.atDay(1).atStartOfDay();
+        LocalDateTime endTime = currentMonth.atEndOfMonth().atTime(LocalTime.MAX);
 
-        // 3. Tạo danh sách 12 tháng và điền dữ liệu
-        List<String> labels = IntStream.rangeClosed(1, 12).mapToObj(month -> "Tháng " + month).collect(Collectors.toList());
-        List<Long> data = IntStream.rangeClosed(1, 12).mapToLong(month -> donHangMap.getOrDefault(month, 0L)).boxed().collect(Collectors.toList());
+        // 2. Lấy dữ liệu thô từ CSDL cho 6 tháng gần nhất
+        List<SoLuongDonHangTheoThang> donHangData = donHangRepository.findSoLuongDonHangTheoThangInRange(startTime, endTime);
 
+        // 3. Chuyển đổi dữ liệu thô sang Map để tra cứu nhanh (Key: YearMonth, Value: Số lượng)
+        // Sử dụng vòng lặp for-each để tránh lỗi suy luận kiểu phức tạp của trình biên dịch.
+        Map<YearMonth, Long> donHangMap = new java.util.LinkedHashMap<>();
+        for (SoLuongDonHangTheoThang d : donHangData) {
+            donHangMap.put(YearMonth.of(d.getNam(), d.getThang()), d.getSoLuong());
+        }
+
+        // 4. Tạo danh sách 6 tháng gần nhất và điền dữ liệu
+        List<String> labels = new ArrayList<>();
+        List<Long> data = new ArrayList<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/yyyy");
+        for (int i = 0; i < MONTH_PERIOD; i++) {
+            YearMonth month = startMonth.plusMonths(i);
+            labels.add(month.format(formatter));
+            data.add(donHangMap.getOrDefault(month, 0L));
+        }
         return BieuDoDuongResponse.builder()
                 .labels(labels)
                 .data(data)
@@ -313,23 +329,16 @@ public class ThongKeServiceImpl implements ThongKeService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<ChiTietDoanhThuThangResponse> getChiTietDoanhThuThang(int year, Pageable pageable) {
-        // 1. Lấy dữ liệu đã được tổng hợp sẵn từ bảng ThongKeThang
-        Page<ThongKeThang> thongKePage = thongKeThangRepository.findByNam(year, pageable);
+    public List<ChiTietDoanhThuThangResponse> getChiTietDoanhThuThang() {
+        // Lấy 12 tháng gần nhất
+        Pageable top12 = PageRequest.of(0, 12);
+        // 1. Lấy dữ liệu đã được tổng hợp sẵn từ bảng ThongKeThang, sắp xếp theo tháng mới nhất
+        List<ThongKeThang> thongKeList = thongKeThangRepository.findByOrderByNamDescThangDesc(top12).getContent();
 
         // 2. Chuyển đổi sang DTO
-        List<ChiTietDoanhThuThangResponse> content = thongKePage.getContent().stream()
+        return thongKeList.stream()
                 .map(this::mapToChiTietDoanhThuThangResponse)
                 .collect(Collectors.toList());
-
-        return new PagedResponse<>(
-                content,
-                thongKePage.getNumber(),
-                thongKePage.getSize(),
-                thongKePage.getTotalElements(),
-                thongKePage.getTotalPages(),
-                null
-        );
     }
 
     private ChiTietDoanhThuThangResponse mapToChiTietDoanhThuThangResponse(ThongKeThang thongKe) {
@@ -354,18 +363,34 @@ public class ThongKeServiceImpl implements ThongKeService {
 
     @Override
     @Transactional(readOnly = true)
-    public BieuDoDuongResponse getDoanhThuTheoThang(int year) {
-        // 1. Lấy dữ liệu thô từ CSDL (chỉ tính đơn đã giao)
-        List<DoanhThuTheoThang> doanhThuData = donHangRepository.findDoanhThuTheoThang(TrangThaiDonHang.DA_GIAO, year);
+    public BieuDoDuongResponse getDoanhThuTheoThang() {
+        final int MONTH_PERIOD = 6;
+        YearMonth currentMonth = YearMonth.now();
+        YearMonth startMonth = currentMonth.minusMonths(MONTH_PERIOD - 1);
 
-        // 2. Chuyển đổi dữ liệu thô sang Map để tra cứu nhanh (Key: Tháng, Value: Doanh thu)
-        Map<Integer, Long> doanhThuMap = doanhThuData.stream()
-                .collect(Collectors.toMap(DoanhThuTheoThang::getThang, DoanhThuTheoThang::getTongDoanhThu));
+        // 1. Xác định khoảng thời gian
+        LocalDateTime startTime = startMonth.atDay(1).atStartOfDay();
+        LocalDateTime endTime = currentMonth.atEndOfMonth().atTime(LocalTime.MAX);
 
-        // 3. Tạo danh sách 12 tháng và điền dữ liệu
-        List<String> labels = IntStream.rangeClosed(1, 12).mapToObj(month -> "Tháng " + month).collect(Collectors.toList());
-        List<Long> data = IntStream.rangeClosed(1, 12).mapToLong(month -> doanhThuMap.getOrDefault(month, 0L)).boxed().collect(Collectors.toList());
+        // 2. Lấy dữ liệu thô từ CSDL cho 6 tháng gần nhất (chỉ tính đơn đã giao)
+        List<DoanhThuTheoThang> doanhThuData = donHangRepository.findDoanhThuTheoThangInRange(TrangThaiDonHang.DA_GIAO, startTime, endTime);
 
+        // 3. Chuyển đổi dữ liệu thô sang Map để tra cứu nhanh (Key: YearMonth, Value: Doanh thu)
+        // Sử dụng vòng lặp for-each để tránh lỗi suy luận kiểu phức tạp của trình biên dịch.
+        Map<YearMonth, Long> doanhThuMap = new java.util.LinkedHashMap<>();
+        for (DoanhThuTheoThang d : doanhThuData) {
+            doanhThuMap.put(YearMonth.of(d.getNam(), d.getThang()), d.getTongDoanhThu());
+        }
+
+        // 4. Tạo danh sách 6 tháng gần nhất và điền dữ liệu
+        List<String> labels = new ArrayList<>();
+        List<Long> data = new ArrayList<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/yyyy");
+        for (int i = 0; i < MONTH_PERIOD; i++) {
+            YearMonth month = startMonth.plusMonths(i);
+            labels.add(month.format(formatter));
+            data.add(doanhThuMap.getOrDefault(month, 0L));
+        }
         return BieuDoDuongResponse.builder()
                 .labels(labels)
                 .data(data)
@@ -411,23 +436,16 @@ public class ThongKeServiceImpl implements ThongKeService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<ChiTietDonHangThangResponse> getChiTietDonHangThang(int year, Pageable pageable) {
-        // 1. Lấy dữ liệu đã được tổng hợp sẵn từ bảng ThongKeThang
-        Page<ThongKeThang> thongKePage = thongKeThangRepository.findByNam(year, pageable);
+    public List<ChiTietDonHangThangResponse> getChiTietDonHangThang() {
+        // Lấy 12 tháng gần nhất
+        Pageable top12 = PageRequest.of(0, 12);
+        // 1. Lấy dữ liệu đã được tổng hợp sẵn từ bảng ThongKeThang, sắp xếp theo tháng mới nhất
+        List<ThongKeThang> thongKeList = thongKeThangRepository.findByOrderByNamDescThangDesc(top12).getContent();
 
         // 2. Chuyển đổi sang DTO
-        List<ChiTietDonHangThangResponse> content = thongKePage.getContent().stream()
+        return thongKeList.stream()
                 .map(this::mapToChiTietDonHangThangResponse)
                 .collect(Collectors.toList());
-
-        return new PagedResponse<>(
-                content,
-                thongKePage.getNumber(),
-                thongKePage.getSize(),
-                thongKePage.getTotalElements(),
-                thongKePage.getTotalPages(),
-                null
-        );
     }
 
     private ChiTietDonHangThangResponse mapToChiTietDonHangThangResponse(ThongKeThang thongKe) {

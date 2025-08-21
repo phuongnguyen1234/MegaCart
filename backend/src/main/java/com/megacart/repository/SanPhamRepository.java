@@ -14,6 +14,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import com.megacart.model.AnhMinhHoa;
 import com.megacart.repository.projection.AnhChinhProjection;
+import com.megacart.repository.projection.BestSellingCategoryProjection;
 import com.megacart.repository.projection.PriceRangeProjection;
 import org.springframework.data.repository.query.Param;
 
@@ -38,7 +39,7 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
      * @return Optional chứa sản phẩm nếu tìm thấy.
      */
     @Override
-    @EntityGraph(attributePaths = {"kho", "anhMinhHoas"})
+    @EntityGraph(attributePaths = {"kho", "anhMinhHoas", "danhMuc"})
     Optional<SanPham> findById(Integer maSanPham);
 
     /**
@@ -166,4 +167,14 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
     @Modifying
     @Query("UPDATE SanPham sp SET sp.banChay = true WHERE sp.maSanPham IN :productIds")
     void setBanChayForProductIds(@Param("productIds") List<Integer> productIds);
+
+    /**
+     * Đếm số lượng sản phẩm có cờ 'banChay' = true cho mỗi danh mục.
+     * @return Danh sách các projection chứa mã danh mục và số lượng sản phẩm bán chạy tương ứng.
+     */
+    @Query("SELECT dm.maDanhMuc as maDanhMuc, count(sp.maSanPham) as soLuongSanPhamBanChay " +
+           "FROM SanPham sp JOIN sp.danhMuc dm " +
+           "WHERE sp.banChay = true AND dm.trangThai = com.megacart.enumeration.TrangThaiDanhMuc.HOAT_DONG " +
+           "GROUP BY dm.maDanhMuc")
+    List<BestSellingCategoryProjection> countBestSellingProductsPerCategory();
 }

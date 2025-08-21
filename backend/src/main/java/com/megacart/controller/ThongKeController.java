@@ -51,10 +51,8 @@ public class ThongKeController {
     }
 
     @GetMapping("/don-hang-theo-thang")
-    public ResponseEntity<BieuDoDuongResponse> getDonHangTheoThang(
-            // Tham số năm là bắt buộc
-            @RequestParam int year) {
-        return ResponseEntity.ok(thongKeService.getDonHangTheoThang(year));
+    public ResponseEntity<BieuDoDuongResponse> getDonHangTheoThang() {
+        return ResponseEntity.ok(thongKeService.getDonHangTheoThang());
     }
 
     @GetMapping("/muc-tieu-doanh-thu")
@@ -86,17 +84,13 @@ public class ThongKeController {
     }
 
     @GetMapping("/chi-tiet-doanh-thu-thang")
-    public ResponseEntity<PagedResponse<ChiTietDoanhThuThangResponse>> getChiTietDoanhThuThang(
-            @RequestParam int year,
-            @PageableDefault(size = 12, sort = "thang", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(thongKeService.getChiTietDoanhThuThang(year, pageable));
+    public ResponseEntity<List<ChiTietDoanhThuThangResponse>> getChiTietDoanhThuThang() {
+        return ResponseEntity.ok(thongKeService.getChiTietDoanhThuThang());
     }
 
     @GetMapping("/doanh-thu-theo-thang")
-    public ResponseEntity<BieuDoDuongResponse> getDoanhThuTheoThang(
-            // Tham số năm là bắt buộc
-            @RequestParam int year) {
-        return ResponseEntity.ok(thongKeService.getDoanhThuTheoThang(year));
+    public ResponseEntity<BieuDoDuongResponse> getDoanhThuTheoThang() {
+        return ResponseEntity.ok(thongKeService.getDoanhThuTheoThang());
     }
 
     @GetMapping("/don-hang-theo-ngay")
@@ -107,10 +101,8 @@ public class ThongKeController {
     }
 
     @GetMapping("/chi-tiet-don-hang-thang")
-    public ResponseEntity<PagedResponse<ChiTietDonHangThangResponse>> getChiTietDonHangThang(
-            @RequestParam int year,
-            @PageableDefault(size = 12, sort = "thang", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(thongKeService.getChiTietDonHangThang(year, pageable));
+    public ResponseEntity<List<ChiTietDonHangThangResponse>> getChiTietDonHangThang() {
+        return ResponseEntity.ok(thongKeService.getChiTietDonHangThang());
     }
 
     @GetMapping("/chi-tiet-san-pham-ban-chay")

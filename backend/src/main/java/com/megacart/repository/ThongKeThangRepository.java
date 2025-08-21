@@ -12,6 +12,6 @@ public interface ThongKeThangRepository extends JpaRepository<ThongKeThang, Inte
     // Tìm kiếm bản ghi thống kê theo năm và tháng
     Optional<ThongKeThang> findByNamAndThang(int nam, int thang);
 
-    // Lấy danh sách thống kê theo năm, có phân trang
-    Page<ThongKeThang> findByNam(int nam, Pageable pageable);
+   // Lấy danh sách thống kê, sắp xếp theo tháng mới nhất, có phân trang
+    Page<ThongKeThang> findByOrderByNamDescThangDesc(Pageable pageable);
 }

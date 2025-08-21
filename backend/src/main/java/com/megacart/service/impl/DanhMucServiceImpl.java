@@ -13,6 +13,7 @@ import com.megacart.exception.ResourceNotFoundException;
 import com.megacart.model.DanhMuc;
 import com.megacart.repository.DanhMucRepository;
 import com.megacart.repository.SanPhamRepository;
+import com.megacart.repository.projection.BestSellingCategoryProjection;
 import com.megacart.service.DanhMucService;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -49,32 +50,56 @@ public class DanhMucServiceImpl implements DanhMucService {
     @Override
     @Transactional(readOnly = true)
     public List<DanhMucMenuItemResponse> getMenuDanhMucs() {
-        final int SUB_CATEGORY_LIMIT = 12;
-
         // 1. Lấy tất cả danh mục đang hoạt động, dùng JOIN FETCH để lấy luôn danh mục cha
         List<DanhMuc> allActiveCategories = danhMucRepository.findAllByTrangThaiWithParent(TrangThaiDanhMuc.HOAT_DONG);
 
-        // 2. Nhóm các danh mục con theo ID của cha để tra cứu hiệu quả
+        // 2. Lấy số lượng sản phẩm bán chạy cho mỗi danh mục trong 1 query để tối ưu
+        Map<Integer, Long> bestSellingCountMap = sanPhamRepository.countBestSellingProductsPerCategory()
+                .stream()
+                .collect(Collectors.toMap(
+                        BestSellingCategoryProjection::getMaDanhMuc,
+                        BestSellingCategoryProjection::getSoLuongSanPhamBanChay
+                ));
+
+        // 3. Nhóm các danh mục con theo ID của cha để tra cứu hiệu quả
         Map<Integer, List<DanhMuc>> childrenByParentId = allActiveCategories.stream()
                 .filter(dm -> dm.getDanhMucCha() != null)
                 .collect(Collectors.groupingBy(dm -> dm.getDanhMucCha().getMaDanhMuc()));
 
-        // 3. Lấy ra các danh mục gốc (không có cha)
+        // 4. Tối ưu: Tính tổng "độ hot" cho mỗi danh mục cha từ các danh mục con của nó.
+        // "Độ hot" của danh mục cha = tổng số sản phẩm bán chạy của tất cả các con.
+        Map<Integer, Long> parentCategoryHotnessMap = childrenByParentId.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> entry.getValue().stream()
+                                .mapToLong(child -> bestSellingCountMap.getOrDefault(child.getMaDanhMuc(), 0L))
+                                .sum()
+                ));
+
+        // 5. Lấy ra các danh mục gốc (không có cha) và sắp xếp theo "độ hot"
         List<DanhMuc> rootCategoryEntities = allActiveCategories.stream()
                 .filter(dm -> dm.getDanhMucCha() == null)
-                .sorted(Comparator.comparing(DanhMuc::getTenDanhMuc, VIETNAMESE_COLLATOR)) // Sắp xếp danh mục cha
+                .sorted(Comparator
+                        .<DanhMuc>comparingLong(dm -> parentCategoryHotnessMap.getOrDefault(dm.getMaDanhMuc(), 0L))
+                        .reversed()
+                        .thenComparing(DanhMuc::getTenDanhMuc, VIETNAMESE_COLLATOR)
+                )
                 .toList();
 
-        // 4. Xây dựng cây DTO từ các danh mục gốc, áp dụng giới hạn cho các danh mục con
+        // 6. Xây dựng cây DTO từ các danh mục gốc
         return rootCategoryEntities.stream()
                 .map(rootEntity -> {
                     // Lấy danh sách con đầy đủ của danh mục gốc này
                     List<DanhMuc> children = childrenByParentId.getOrDefault(rootEntity.getMaDanhMuc(), Collections.emptyList());
 
-                    // Sắp xếp danh mục con theo tên (A-Z) trước khi giới hạn số lượng
-                    List<DanhMucMenuItemResponse> limitedChildrenDTOs = children.stream()
-                            .sorted(Comparator.comparing(DanhMuc::getTenDanhMuc, VIETNAMESE_COLLATOR))
-                            .limit(SUB_CATEGORY_LIMIT)
+                    // Sắp xếp danh mục con theo số lượng sản phẩm bán chạy (giảm dần),
+                    // sau đó theo tên (A-Z) để đảm bảo thứ tự ổn định.
+                    List<DanhMucMenuItemResponse> childrenDTOs = children.stream()
+                            .sorted(Comparator
+                                    .<DanhMuc>comparingLong(dm -> bestSellingCountMap.getOrDefault(dm.getMaDanhMuc(), 0L))
+                                    .reversed()
+                                    .thenComparing(DanhMuc::getTenDanhMuc, VIETNAMESE_COLLATOR)
+                            )
                             .map(this::mapToMenuItem)
                             .collect(Collectors.toList());
 
@@ -83,10 +108,7 @@ public class DanhMucServiceImpl implements DanhMucService {
                             .maDanhMuc(rootEntity.getMaDanhMuc())
                             .tenDanhMuc(rootEntity.getTenDanhMuc())
                             .slug(rootEntity.getSlug())
-                            .danhMucCons(limitedChildrenDTOs.isEmpty() ? null : limitedChildrenDTOs)
-                            // Đặt cờ 'hasMoreChildren' nếu số lượng con thực tế > giới hạn,
-                            // để frontend biết có cần hiển thị nút "Xem thêm" hay không.
-                            .hasMoreChildren(children.size() > SUB_CATEGORY_LIMIT ? true : null) // Chỉ hiển thị khi là true
+                            .danhMucCons(childrenDTOs.isEmpty() ? null : childrenDTOs)
                             .build();
                 })
                 .collect(Collectors.toList());

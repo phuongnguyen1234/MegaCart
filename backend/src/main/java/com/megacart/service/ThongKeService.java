@@ -32,10 +32,9 @@ public interface ThongKeService {
 
     /**
      * Lấy dữ liệu số lượng đơn hàng theo tháng cho biểu đồ đường.
-     * @param year Năm cần thống kê.
      * @return Dữ liệu cho biểu đồ.
      */
-    BieuDoDuongResponse getDonHangTheoThang(int year);
+    BieuDoDuongResponse getDonHangTheoThang();
 
     /**
      * Lấy dữ liệu mục tiêu và doanh thu thực tế của tháng hiện tại.
@@ -71,18 +70,15 @@ public interface ThongKeService {
 
     /**
      * Lấy chi tiết doanh thu theo từng tháng của một năm, có phân trang.
-     * @param year Năm cần xem chi tiết.
-     * @param pageable Thông tin phân trang.
      * @return Dữ liệu chi tiết doanh thu theo tháng đã được phân trang.
      */
-    PagedResponse<ChiTietDoanhThuThangResponse> getChiTietDoanhThuThang(int year, Pageable pageable);
+    List<ChiTietDoanhThuThangResponse> getChiTietDoanhThuThang();
 
     /**
      * Lấy dữ liệu doanh thu theo tháng cho biểu đồ đường.
-     * @param year Năm cần thống kê.
      * @return Dữ liệu cho biểu đồ.
      */
-    BieuDoDuongResponse getDoanhThuTheoThang(int year);
+    BieuDoDuongResponse getDoanhThuTheoThang();
 
     /**
      * Lấy dữ liệu số lượng đơn hàng theo ngày cho biểu đồ đường.
@@ -93,11 +89,9 @@ public interface ThongKeService {
 
     /**
      * Lấy chi tiết đơn hàng theo từng tháng của một năm, có phân trang.
-     * @param year Năm cần xem chi tiết.
-     * @param pageable Thông tin phân trang.
      * @return Dữ liệu chi tiết đơn hàng theo tháng đã được phân trang.
      */
-    PagedResponse<ChiTietDonHangThangResponse> getChiTietDonHangThang(int year, Pageable pageable);
+    List<ChiTietDonHangThangResponse> getChiTietDonHangThang();
 
     /**
      * Lấy danh sách chi tiết các sản phẩm bán chạy nhất, có phân trang.

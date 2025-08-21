@@ -44,7 +44,7 @@ public class QuanLySanPhamController {
             @RequestParam(required = false) String searchValue,
             @RequestParam(required = false) Integer maDanhMuc,
             @RequestParam(required = false) TrangThaiSanPham trangThai,
-            @PageableDefault(size = 30, sort = "maSanPham", direction = Sort.Direction.DESC) Pageable pageable // Sắp xếp theo sản phẩm mới nhất
+            @PageableDefault(size = 30, sort = "maSanPham", direction = Sort.Direction.ASC) Pageable pageable // Sắp xếp theo sản phẩm mới nhất
     ) {
         PagedResponse<SanPhamQuanLyResponse> response = quanLySanPhamService.getDSSanPham(searchField, searchValue, maDanhMuc, trangThai, pageable);
         return ResponseEntity.ok(response);
