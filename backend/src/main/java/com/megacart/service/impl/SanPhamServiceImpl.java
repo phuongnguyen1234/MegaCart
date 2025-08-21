@@ -151,7 +151,7 @@ public class SanPhamServiceImpl implements SanPhamService {
         // Nếu không, trả về lỗi 404 để thân thiện với người dùng và SEO.
         if (sanPham.getTrangThai() != TrangThaiSanPham.BAN ||
             sanPham.getDanhMuc() == null ||
-            sanPham.getDanhMuc().getTrangThai() != TrangThaiDanhMuc.KHONG_HOAT_DONG) {
+            sanPham.getDanhMuc().getTrangThai() != TrangThaiDanhMuc.HOAT_DONG) {
             throw new ResourceNotFoundException("Sản phẩm này không tồn tại hoặc đã ngừng kinh doanh.");
         }
 
