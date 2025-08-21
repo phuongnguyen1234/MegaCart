@@ -11,6 +11,7 @@ import com.megacart.dto.projection.SoLuongDonHangTheoThang;
 import com.megacart.dto.projection.TonKhoProjection;
 import com.megacart.dto.request.CapNhatMucTieuDoanhThuRequest;
 import com.megacart.dto.response.BieuDoDuongResponse;
+import com.megacart.dto.response.DonHangGanDayResponse;
 import com.megacart.dto.response.BieuDoTronResponse;
 import com.megacart.dto.response.ChiTietDoanhThuThangResponse;
 import com.megacart.dto.response.ChiTietSanPhamBanChayResponse;
@@ -22,6 +23,7 @@ import com.megacart.dto.response.SanPhamBanChayResponse;
 import com.megacart.dto.response.SanPhamTonKhoResponse;
 import com.megacart.dto.response.ThongKeTongQuanResponse;
 import com.megacart.enumeration.TrangThaiDonHang;
+import com.megacart.model.DonHang;
 import com.megacart.model.ThongKeThang;
 import com.megacart.repository.ChiTietDonHangRepository;
 import com.megacart.repository.DonHangRepository;
@@ -514,6 +516,36 @@ public class ThongKeServiceImpl implements ThongKeService {
                 .soLuongBanRa(soLuongBanRa)
                 .soDonDat(soDonDat)
                 .soLuongTrungBinhMoiDon(soLuongTrungBinhMoiDon)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DonHangGanDayResponse> getDonHangGanDay(int limit) {
+        // 1. Tạo Pageable để lấy 'limit' bản ghi đầu tiên, sắp xếp theo thời gian đặt hàng giảm dần
+        Pageable pageable = PageRequest.of(0, limit);
+
+        // 2. Gọi phương thức repository đã được tối ưu với @EntityGraph
+        List<DonHang> donHangs = donHangRepository.findByOrderByThoiGianDatHangDesc(pageable).getContent();
+
+        // 3. Ánh xạ sang DTO
+        return donHangs.stream()
+                .map(this::mapToDonHangGanDayResponse)
+                .collect(Collectors.toList());
+    }
+
+    private DonHangGanDayResponse mapToDonHangGanDayResponse(DonHang donHang) {
+        // Tính tổng tiền từ các chi tiết đơn hàng đã được fetch sẵn
+        long tongTien = donHang.getChiTietDonHangs().stream()
+                .mapToLong(ct -> (long) ct.getDonGia() * ct.getSoLuong())
+                .sum();
+
+        return DonHangGanDayResponse.builder()
+                .maDonHang(donHang.getMaDonHang())
+                .tenKhachHang(donHang.getTenKhachHang())
+                .thoiGianDatHang(donHang.getThoiGianDatHang())
+                .trangThai(donHang.getTrangThai())
+                .tongTien(tongTien)
                 .build();
     }
 }

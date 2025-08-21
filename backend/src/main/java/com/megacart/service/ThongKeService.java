@@ -4,6 +4,7 @@ import com.megacart.dto.request.CapNhatMucTieuDoanhThuRequest;
 import com.megacart.dto.response.BieuDoDuongResponse;
 import com.megacart.dto.response.BieuDoTronResponse;
 import com.megacart.dto.response.MessageResponse;
+import com.megacart.dto.response.DonHangGanDayResponse;
 import com.megacart.dto.response.ChiTietSanPhamBanChayResponse;
 import com.megacart.dto.response.ChiTietDonHangThangResponse;
 import com.megacart.dto.response.ChiTietDoanhThuThangResponse;
@@ -99,4 +100,11 @@ public interface ThongKeService {
      * @return Dữ liệu chi tiết sản phẩm bán chạy đã được phân trang.
      */
     PagedResponse<ChiTietSanPhamBanChayResponse> getChiTietSanPhamBanChay(Pageable pageable);
+
+    /**
+     * Lấy danh sách các đơn hàng được tạo gần đây nhất.
+     * @param limit Giới hạn số lượng đơn hàng trả về.
+     * @return Danh sách các đơn hàng gần đây.
+     */
+    List<DonHangGanDayResponse> getDonHangGanDay(int limit);
 }

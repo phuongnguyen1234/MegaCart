@@ -131,4 +131,12 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer>, JpaS
     @Override
     @EntityGraph(attributePaths = {"khachHang"})
     Page<DonHang> findAll(Specification<DonHang> spec, Pageable pageable);
+
+    /**
+     * Lấy N đơn hàng gần đây nhất, fetch sẵn chi tiết đơn hàng và khách hàng để tối ưu.
+     * @param pageable chứa thông tin về số lượng (limit) và sắp xếp.
+     * @return một Page chứa các đơn hàng.
+     */
+    @EntityGraph(attributePaths = {"khachHang", "chiTietDonHangs"})
+    Page<DonHang> findByOrderByThoiGianDatHangDesc(Pageable pageable);
 }
