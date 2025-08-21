@@ -31,6 +31,13 @@ public class TimKiemKhachHangSpecification {
             // Lọc theo trường tìm kiếm và giá trị tìm kiếm
             if (StringUtils.hasText(searchField) && StringUtils.hasText(searchValue)) {
                 switch (searchField.toLowerCase()) {
+                    case "makhachhang" -> {
+                        try {
+                            predicates.add(cb.equal(root.get("maKhachHang"), Integer.parseInt(searchValue)));
+                        } catch (NumberFormatException e) {
+                            predicates.add(cb.disjunction());
+                        }
+                    }
                     case "tenkhachhang" -> predicates.add(cb.like(cb.lower(root.get("tenKhachHang")), "%" + searchValue.toLowerCase() + "%"));
                     case "email" -> predicates.add(cb.like(cb.lower(root.get("taiKhoan").get("email")), "%" + searchValue.toLowerCase() + "%"));
                     case "sodienthoai" -> predicates.add(cb.like(root.get("taiKhoan").get("soDienThoai"), "%" + searchValue + "%"));

@@ -37,6 +37,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -105,6 +106,9 @@ public class QuanLyDonHangServiceImpl implements QuanLyDonHangService {
     }
 
     private ChiTietDonHangQuanLyResponse mapToChiTietDonHangQuanLyResponse(DonHang donHang) {
+         // Sử dụng AtomicLong để tính tổng tiền trong cùng một stream để tối ưu
+        AtomicLong tongTienDonHang = new AtomicLong(0);
+        
         List<ChiTietDonHangQuanLyResponse.Item> items = donHang.getChiTietDonHangs().stream()
                 .map(chiTiet -> {
                     SanPham sanPham = chiTiet.getSanPham();
@@ -117,16 +121,17 @@ public class QuanLyDonHangServiceImpl implements QuanLyDonHangService {
                             .donGia(chiTiet.getDonGia())
                             .donVi(chiTiet.getDonVi())
                             .soLuong(chiTiet.getSoLuong())
-                            .tongTien((long) chiTiet.getDonGia() * chiTiet.getSoLuong())
+                            .tongTien(tongTienDonHang.addAndGet((long) chiTiet.getDonGia() * chiTiet.getSoLuong()))
                             .build();
                 })
                 .collect(Collectors.toList());
 
-        long tongTienDonHang = items.stream().mapToLong(ChiTietDonHangQuanLyResponse.Item::getTongTien).sum();
+        // Tính lại tổng tiền cuối cùng từ các item đã được tính
+        long finalTongTien = items.stream().mapToLong(ChiTietDonHangQuanLyResponse.Item::getTongTien).sum();
 
         return ChiTietDonHangQuanLyResponse.builder()
                 .maDonHang(donHang.getMaDonHang())
-                .tongTien(tongTienDonHang)
+                 .tongTien(finalTongTien)
                 .tenNguoiNhan(donHang.getTenKhachHang())
                 .sdtNhanHang(donHang.getSdtNhanHang())
                 .diaChiNhanHang(donHang.getDiaChiNhanHang())

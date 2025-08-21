@@ -24,5 +24,6 @@ public class BackendApplication {
 		SpringApplication.run(BackendApplication.class, args);
 		// mvn clean install -DskipTests
 		// java -jar target/backend-0.0.1-SNAPSHOT.jar
+		// java "-Dspring.profiles.active=dev" -jar target/backend-0.0.1-SNAPSHOT.jar
 	}
 }

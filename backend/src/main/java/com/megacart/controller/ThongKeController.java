@@ -4,14 +4,17 @@ import com.megacart.dto.request.CapNhatMucTieuDoanhThuRequest;
 import com.megacart.dto.response.BieuDoDuongResponse;
 import com.megacart.dto.response.BieuDoTronResponse;
 import com.megacart.dto.response.ChiTietSanPhamBanChayResponse;
+import com.megacart.dto.response.DonHangGanDayResponse;
 import com.megacart.dto.response.ChiTietDonHangThangResponse;
 import com.megacart.dto.response.ChiTietDoanhThuThangResponse;
+import com.megacart.dto.response.ChiTietDonHangQuanLyResponse;
 import com.megacart.dto.response.MessageResponse;
 import com.megacart.dto.response.MucTieuDoanhThuResponse;
 import com.megacart.dto.response.PagedResponse;
 import com.megacart.dto.response.SanPhamBanChayResponse;
 import com.megacart.dto.response.SanPhamTonKhoResponse;
 import com.megacart.dto.response.ThongKeTongQuanResponse;
+import com.megacart.service.QuanLyDonHangService;
 import com.megacart.service.ThongKeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +41,7 @@ import java.util.List;
 public class ThongKeController {
 
     private final ThongKeService thongKeService;
+    private final QuanLyDonHangService quanLyDonHangService;
 
     @GetMapping("/tong-quan")
     public ResponseEntity<ThongKeTongQuanResponse> getThongKeTongQuan() {
@@ -110,5 +115,17 @@ public class ThongKeController {
             // Sắp xếp đã được xử lý trong query, không cần sort ở đây
             @PageableDefault(size = 10) Pageable pageable) {
         return ResponseEntity.ok(thongKeService.getChiTietSanPhamBanChay(pageable));
+    }
+
+    @GetMapping("/don-hang-gan-day")
+    public ResponseEntity<List<DonHangGanDayResponse>> getDonHangGanDay(
+            @RequestParam(defaultValue = "20") int limit) {
+        return ResponseEntity.ok(thongKeService.getDonHangGanDay(limit));
+    }
+    
+    @GetMapping("/don-hang/{maDonHang}")
+    public ResponseEntity<ChiTietDonHangQuanLyResponse> getChiTietDonHangGanDay(@PathVariable Integer maDonHang) {
+        // Tận dụng lại logic từ QuanLyDonHangService để tránh lặp code
+        return ResponseEntity.ok(quanLyDonHangService.getChiTietDonHang(maDonHang));
     }
 }
