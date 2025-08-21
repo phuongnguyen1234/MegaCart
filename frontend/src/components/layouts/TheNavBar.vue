@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="sticky top-0 z-40 flex h-[51px] text-white bg-[linear-gradient(135deg,_#1E88E5,_#1565C0)]"
+    class="top-0 z-40 flex h-[51px] text-white bg-[linear-gradient(135deg,_#1E88E5,_#1565C0)]"
   >
     <!-- Loading Skeleton -->
     <div v-if="isLoading" class="flex w-full animate-pulse">
