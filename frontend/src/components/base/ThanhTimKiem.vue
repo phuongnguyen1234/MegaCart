@@ -33,7 +33,7 @@
 import { computed, defineProps, defineEmits, watch, ref } from "vue";
 
 const props = defineProps<{
-  dsTieuChi: { value: string; label: string }[];
+  dsTieuChi: { value: string; label: string; isId?: boolean }[];
   modelValueLoai: string;
   modelValueTuKhoa: string;
 }>();
@@ -41,6 +41,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "update:modelValueLoai", value: string): void;
   (e: "update:modelValueTuKhoa", value: string): void;
+  (e: "idSearchActive", isActive: boolean): void;
 }>();
 
 // Local copies để v-model hoạt động
@@ -60,6 +61,24 @@ watch(
 // Emit khi local thay đổi
 watch(localLoaiTimKiem, (val) => emit("update:modelValueLoai", val));
 watch(localTuKhoa, (val) => emit("update:modelValueTuKhoa", val));
+
+// Logic để xác định xem tiêu chí tìm kiếm theo ID có được chọn hay không
+const isIdSearchSelected = computed(() => {
+  const selectedOption = props.dsTieuChi.find(
+    (t) => t.value === localLoaiTimKiem.value
+  );
+  // Kích hoạt ngay khi tiêu chí là ID được chọn
+  return !!selectedOption?.isId;
+});
+
+// Gửi trạng thái ra ngoài component cha khi nó thay đổi
+watch(
+  isIdSearchSelected,
+  (isActive) => {
+    emit("idSearchActive", isActive);
+  },
+  { immediate: true }
+);
 
 // Placeholder động
 const placeholder = computed(() => {

@@ -14,17 +14,17 @@
           type="date"
           v-model="ngayDat"
           class="mt-1 block w-48 border border-gray-300 rounded px-2 py-1 shadow-sm"
+          :disabled="areOtherFiltersDisabled"
+          :class="{ 'bg-gray-100 cursor-not-allowed': areOtherFiltersDisabled }"
         />
       </div>
 
       <!-- Tìm kiếm -->
       <ThanhTimKiem
-        :ds-tieu-chi="[
-          { value: 'maDonHang', label: 'Mã đơn hàng' },
-          { value: 'tenKhachHang', label: 'Tên khách hàng' },
-        ]"
+        :ds-tieu-chi="dsTieuChiTimKiem"
         v-model:modelValueLoai="loaiTimKiem"
         v-model:modelValueTuKhoa="tuKhoa"
+        @idSearchActive="areOtherFiltersDisabled = $event"
       />
 
       <!-- Trạng thái -->
@@ -36,6 +36,8 @@
           id="trang-thai"
           v-model="trangThai"
           class="mt-1 block w-48 border border-gray-300 rounded px-2 py-1 shadow-sm"
+          :disabled="areOtherFiltersDisabled"
+          :class="{ 'bg-gray-100 cursor-not-allowed': areOtherFiltersDisabled }"
         >
           <option v-for="tt in dsTrangThai" :key="tt.value" :value="tt.value">
             {{ tt.text }}
@@ -96,21 +98,9 @@
               <button
                 @click="openModal(donHang)"
                 class="text-gray-500 hover:text-blue-600 transition-colors duration-200"
-                :title="
-                  donHang.trangThai.value === TrangThaiDonHangKey.CHO_XU_LY ||
-                  donHang.trangThai.value === TrangThaiDonHangKey.DANG_GIAO
-                    ? 'Sửa đơn hàng'
-                    : 'Xem chi tiết'
-                "
+                title="Xem chi tiết"
               >
-                <i
-                  v-if="
-                    donHang.trangThai.value === TrangThaiDonHangKey.CHO_XU_LY ||
-                    donHang.trangThai.value === TrangThaiDonHangKey.DANG_GIAO
-                  "
-                  class="fi fi-rr-pencil text-lg align-middle"
-                ></i>
-                <i v-else class="fi fi-rr-eye text-lg align-middle"></i>
+                <i class="fi fi-rr-eye text-lg align-middle"></i>
               </button>
             </td>
           </tr>
@@ -150,6 +140,7 @@ import {
   GetDonHangQuanLyParams,
   TrangThaiDonHangKey,
   CapNhatDonHangRequest,
+  TrangThaiThanhToanKey,
   type ChiTietDonHangItem,
 } from "@/types/donhang.types";
 import {
@@ -171,12 +162,34 @@ const getTodayISOString = (): string => {
 
 // --- Bộ lọc ---
 const ngayDat = ref(getTodayISOString()); // Mặc định là ngày hôm nay
-const loaiTimKiem = ref<"maDonHang" | "tenKhachHang">("maDonHang");
+const loaiTimKiem = ref<"maDonHang" | "tenKhachHang">("tenKhachHang");
 const tuKhoa = ref("");
 const trangThai = ref(""); // TrangThaiDonHangKey hoặc ""
 const trangHienTai = ref(0);
 const soLuongMoiTrang = ref(20);
 const { showToast } = useToast();
+const areOtherFiltersDisabled = ref(false);
+
+// Helper để lấy thông báo lỗi chi tiết
+const getErrorMessage = (error: any): string => {
+  if (error && error.response && error.response.data) {
+    // Backend có thể trả về lỗi trong 'message' hoặc 'error'
+    return (
+      error.response.data.message ||
+      error.response.data.error ||
+      "Lỗi từ server nhưng không có message cụ thể."
+    );
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "Đã có lỗi không mong muốn xảy ra.";
+};
+
+const dsTieuChiTimKiem = [
+  { value: "tenKhachHang", label: "Tên người nhận" },
+  { value: "maDonHang", label: "Mã đơn hàng", isId: true },
+];
 
 const dsTrangThai = [
   { value: "", text: "Tất cả" },
@@ -202,38 +215,69 @@ const fetchDonHang = async () => {
       size: soLuongMoiTrang.value,
       searchField: tuKhoa.value ? loaiTimKiem.value : undefined,
       searchValue: tuKhoa.value || undefined,
-      trangThai: trangThai.value
+      // Chỉ thêm các bộ lọc khác nếu chúng không bị vô hiệu hóa
+      trangThai: areOtherFiltersDisabled.value
+        ? undefined
+        : trangThai.value
         ? (trangThai.value as TrangThaiDonHangKey)
         : undefined,
-      ngayDat: ngayDat.value || undefined,
+      ngayDat: areOtherFiltersDisabled.value
+        ? undefined
+        : ngayDat.value || undefined,
     };
     const res = await getDanhSachDonHangQuanLy(params);
     danhSachDonHang.value = res?.content ?? [];
     tongSoTrang.value = res?.totalPages ?? 1;
     totalElements.value = res?.totalElements ?? 0;
-  } catch {
+  } catch (error) {
     danhSachDonHang.value = [];
     tongSoTrang.value = 1;
     totalElements.value = 0;
+    console.error("Lỗi khi tải danh sách đơn hàng:", error);
+    showToast({ loai: "loi", thongBao: getErrorMessage(error) });
   } finally {
     isLoading.value = false;
   }
 };
 
-// --- Theo dõi thay đổi bộ lọc/tìm kiếm ---
-watch([ngayDat, loaiTimKiem, tuKhoa, trangThai, trangHienTai], fetchDonHang, {
-  immediate: true,
+// --- Watchers (Cấu trúc lại để tránh race condition) ---
+
+// 1. Khi các bộ lọc thay đổi, reset về trang đầu tiên.
+// Việc gán trangHienTai = 0 sẽ kích hoạt watcher số 2 để fetch dữ liệu.
+// Nếu đã ở trang 0, thì fetch trực tiếp.
+watch([ngayDat, tuKhoa, trangThai], () => {
+  if (trangHienTai.value !== 0) {
+    trangHienTai.value = 0;
+  } else {
+    fetchDonHang();
+  }
 });
 
-// Reset về trang đầu tiên khi người dùng thay đổi bộ lọc
-watch([ngayDat, tuKhoa, trangThai], () => {
-  trangHienTai.value = 0;
+// 2. Khi trang hiện tại thay đổi (do người dùng click phân trang hoặc do watcher 1 reset), fetch dữ liệu.
+watch(trangHienTai, fetchDonHang);
+
+// 3. Khi thay đổi loại tìm kiếm, xử lý logic một cách tập trung để tránh race condition
+watch(loaiTimKiem, (newLoai) => {
+  const isIdSearch =
+    dsTieuChiTimKiem.find((t) => t.value === newLoai)?.isId ?? false;
+  areOtherFiltersDisabled.value = isIdSearch;
+  tuKhoa.value = "";
+
+  if (isIdSearch) {
+    ngayDat.value = "";
+    trangThai.value = "";
+  } else {
+    ngayDat.value = getTodayISOString();
+  }
 });
+
+// 4. Tải dữ liệu lần đầu tiên khi component được tạo.
+fetchDonHang();
 
 // --- Header bảng ---
 const headers = [
   "Mã đơn hàng",
-  "Khách hàng",
+  "Tên người nhận",
   "Thời gian đặt",
   "Trạng thái",
   "Tổng tiền",
@@ -289,17 +333,28 @@ const sanPhamForModal = ref<ChiTietDonHangItem[]>([]); // Danh sách sản phẩ
 
 const openModal = async (donHang: DonHangQuanLyResponse) => {
   isModalVisible.value = true;
-  // Cho phép sửa khi đơn hàng đang ở trạng thái "Chờ xử lý" hoặc "Đang giao"
-  isEditMode.value =
-    donHang.trangThai.value === TrangThaiDonHangKey.CHO_XU_LY ||
-    donHang.trangThai.value === TrangThaiDonHangKey.DANG_GIAO;
+  // Mặc định là chế độ xem, sẽ cập nhật sau khi lấy chi tiết
+  isEditMode.value = false;
   try {
     const chiTiet = await getChiTietDonHangQuanLy(donHang.maDonHang);
     selectedDonHang.value = chiTiet;
     sanPhamForModal.value = chiTiet.items;
+
+    // Điều kiện để cho phép sửa:
+    // 1. Trạng thái đơn hàng là "Chờ xử lý", "Đang giao" hoặc "Đã giao"
+    // 2. VÀ Trạng thái thanh toán là "Chưa thanh toán"
+    const coTheSuaTheoTrangThaiDon =
+      chiTiet.trangThai.value === TrangThaiDonHangKey.CHO_XU_LY ||
+      chiTiet.trangThai.value === TrangThaiDonHangKey.DANG_GIAO ||
+      chiTiet.trangThai.value === TrangThaiDonHangKey.DA_GIAO;
+    const chuaThanhToan =
+      chiTiet.trangThaiThanhToan.value ===
+      TrangThaiThanhToanKey.CHUA_THANH_TOAN;
+
+    isEditMode.value = coTheSuaTheoTrangThaiDon && chuaThanhToan;
   } catch (error) {
     console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
-    showToast({ loai: "loi", thongBao: "Không thể tải chi tiết đơn hàng." });
+    showToast({ loai: "loi", thongBao: getErrorMessage(error) });
     selectedDonHang.value = null;
     sanPhamForModal.value = [];
     closeModal();
@@ -323,10 +378,7 @@ const handleLuuThayDoi = async (data: CapNhatDonHangRequest) => {
     showToast({ loai: "thanhCong", thongBao: "Cập nhật thành công!" });
   } catch (error) {
     console.error("Lỗi khi cập nhật đơn hàng:", error);
-    showToast({
-      loai: "loi",
-      thongBao: "Có lỗi xảy ra khi cập nhật đơn hàng.",
-    });
+    showToast({ loai: "loi", thongBao: getErrorMessage(error) });
   }
 };
 </script>

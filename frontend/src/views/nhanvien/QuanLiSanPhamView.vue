@@ -19,6 +19,8 @@
       <BoLocDanhMuc
         v-model:parent="selectedDanhMucCha"
         v-model:child="selectedDanhMucCon"
+        :disabled="areOtherFiltersDisabled"
+        :class="{ 'pointer-events-none opacity-50': areOtherFiltersDisabled }"
       />
 
       <!-- Bộ lọc theo trạng thái -->
@@ -33,6 +35,8 @@
           id="trang-thai-filter"
           v-model="selectedTrangThai"
           class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm px-3 py-2"
+          :disabled="areOtherFiltersDisabled"
+          :class="{ 'bg-gray-100 cursor-not-allowed': areOtherFiltersDisabled }"
         >
           <option value="">Tất cả</option>
           <option
@@ -47,9 +51,10 @@
 
       <!-- Thanh tìm kiếm -->
       <ThanhTimKiem
-        :ds-tieu-chi="[{ value: 'tenSanPham', label: 'Tên sản phẩm' }]"
+        :ds-tieu-chi="dsTieuChiTimKiem"
         v-model:modelValueLoai="loaiTimKiem"
         v-model:modelValueTuKhoa="tuKhoa"
+        @idSearchActive="areOtherFiltersDisabled = $event"
       />
     </div>
 
@@ -129,7 +134,7 @@ import { useToast } from "@/composables/useToast";
 import { formatCurrency } from "@/utils/formatters";
 
 // --- State ---
-const loaiTimKiem = ref("tenSanPham");
+const loaiTimKiem = ref<"maSanPham" | "tenSanPham">("tenSanPham");
 const selectedDanhMucCha = ref<number | "">("");
 const selectedDanhMucCon = ref<number | "">("");
 const selectedTrangThai = ref<TrangThaiSanPhamKey | "">("");
@@ -139,6 +144,12 @@ const isEditMode = ref(false);
 const selectedProduct = ref<ChiTietSanPhamQuanLyResponse | null>(null);
 const isLoading = ref(false);
 const { showToast } = useToast();
+const areOtherFiltersDisabled = ref(false);
+
+const dsTieuChiTimKiem = [
+  { value: "tenSanPham", label: "Tên sản phẩm" },
+  { value: "maSanPham", label: "Mã sản phẩm", isId: true },
+];
 
 const allSanPham = ref<SanPhamQuanLyResponse[]>([]);
 
@@ -222,8 +233,13 @@ const fetchSanPham = async () => {
       page: trangHienTai.value,
       size: soLuongMoiTrang.value,
       tuKhoa: tuKhoa.value || undefined,
-      maDanhMuc: activeMaDanhMuc.value,
-      trangThai: selectedTrangThai.value || undefined,
+      // Chỉ thêm các bộ lọc khác nếu chúng không bị vô hiệu hóa
+      maDanhMuc: areOtherFiltersDisabled.value
+        ? undefined
+        : activeMaDanhMuc.value,
+      trangThai: areOtherFiltersDisabled.value
+        ? undefined
+        : selectedTrangThai.value || undefined,
     };
     const response = await getDanhSachSanPhamQuanLy(params);
     allSanPham.value = response.content;
@@ -246,17 +262,37 @@ const handleSuccess = () => {
   fetchSanPham(); // Tải lại danh sách sản phẩm
 };
 
-watch(
-  [trangHienTai, tuKhoa, activeMaDanhMuc, selectedTrangThai],
-  fetchSanPham,
-  {
-    immediate: true,
-  }
-);
+// --- Watchers ---
 
-// Reset về trang đầu tiên khi người dùng thay đổi bộ lọc
-watch(
-  [tuKhoa, activeMaDanhMuc, selectedTrangThai],
-  () => (trangHienTai.value = 0)
-);
+// 1. Khi các bộ lọc (danh mục, trạng thái, từ khóa) thay đổi, reset về trang đầu tiên.
+// Nếu đã ở trang 0, thì fetch trực tiếp để đảm bảo dữ liệu được cập nhật.
+watch([activeMaDanhMuc, selectedTrangThai, tuKhoa], () => {
+  if (trangHienTai.value !== 0) {
+    trangHienTai.value = 0; // Setting page to 0 will trigger the page watcher
+  } else {
+    // If we are already on page 0, the page watcher won't fire, so we fetch manually.
+    fetchSanPham();
+  }
+});
+
+// 2. Khi trang hiện tại thay đổi (do người dùng click phân trang hoặc do watcher 1 reset), fetch dữ liệu.
+watch(trangHienTai, fetchSanPham);
+
+// 3. Khi thay đổi loại tìm kiếm, chỉ xử lý logic dọn dẹp.
+// Việc xóa từ khóa sẽ kích hoạt watcher #1 để tải lại dữ liệu.
+watch(loaiTimKiem, (newLoai) => {
+  const isIdSearch =
+    dsTieuChiTimKiem.find((t) => t.value === newLoai)?.isId ?? false;
+  areOtherFiltersDisabled.value = isIdSearch;
+  tuKhoa.value = "";
+
+  if (isIdSearch) {
+    selectedDanhMucCha.value = "";
+    selectedDanhMucCon.value = "";
+    selectedTrangThai.value = "";
+  }
+});
+
+// 4. Tải dữ liệu lần đầu tiên khi component được tạo.
+fetchSanPham();
 </script>

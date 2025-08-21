@@ -10,6 +10,8 @@
       <BoLocDanhMuc
         v-model:parent="selectedDanhMucCha"
         v-model:child="selectedDanhMucCon"
+        :disabled="areOtherFiltersDisabled"
+        :class="{ 'pointer-events-none opacity-50': areOtherFiltersDisabled }"
       />
 
       <!-- Thanh tìm kiếm -->
@@ -17,6 +19,7 @@
         :ds-tieu-chi="dsTieuChiTimKiem"
         v-model:modelValueLoai="loaiTimKiem"
         v-model:modelValueTuKhoa="tuKhoa"
+        @idSearchActive="areOtherFiltersDisabled = $event"
       />
     </div>
 
@@ -97,17 +100,33 @@ import type {
 import { useToast } from "@/composables/useToast";
 
 const dsTieuChiTimKiem = [
-  { value: "maSanPham", label: "Mã sản phẩm" },
   { value: "tenSanPham", label: "Tên sản phẩm" },
+  { value: "maSanPham", label: "Mã sản phẩm", isId: true },
 ];
 
 // --- State cho bộ lọc ---
 const selectedDanhMucCha = ref<number | "">("");
 const selectedDanhMucCon = ref<number | "">("");
-const loaiTimKiem = ref("tenSanPham");
+const loaiTimKiem = ref<"maSanPham" | "tenSanPham">("tenSanPham");
 const tuKhoa = ref("");
 const isLoading = ref(false);
 const { showToast } = useToast();
+const areOtherFiltersDisabled = ref(false);
+
+// Helper để lấy thông báo lỗi chi tiết
+const getErrorMessage = (error: any): string => {
+  if (error && error.response && error.response.data) {
+    return (
+      error.response.data.message ||
+      error.response.data.error ||
+      "Lỗi từ server nhưng không có message cụ thể."
+    );
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "Đã có lỗi không mong muốn xảy ra.";
+};
 
 const danhSachTonKho = ref<KhoResponse[]>([]);
 
@@ -137,11 +156,16 @@ const thongTinHienThi = computed(() => {
 const fetchTonKho = async () => {
   isLoading.value = true;
   try {
-    const params: GetKhoParams = {
+    const params: any = {
+      // Use 'any' for now, or update GetKhoParams if needed
       page: trangHienTai.value,
       size: soLuongMoiTrang.value,
-      tuKhoa: tuKhoa.value || undefined,
-      maDanhMuc: activeMaDanhMuc.value,
+      searchField: tuKhoa.value ? loaiTimKiem.value : undefined,
+      searchValue: tuKhoa.value || undefined,
+      // Chỉ thêm các bộ lọc khác nếu chúng không bị vô hiệu hóa
+      maDanhMuc: areOtherFiltersDisabled.value
+        ? undefined
+        : activeMaDanhMuc.value,
     };
     const response = await getDanhSachKho(params);
     danhSachTonKho.value = response.content;
@@ -151,7 +175,7 @@ const fetchTonKho = async () => {
     console.error("Lỗi khi lấy danh sách tồn kho:", error);
     showToast({
       loai: "loi",
-      thongBao: "Không thể tải danh sách tồn kho.",
+      thongBao: getErrorMessage(error),
     });
     danhSachTonKho.value = [];
     tongSoTrang.value = 1;
@@ -161,14 +185,33 @@ const fetchTonKho = async () => {
   }
 };
 
-// Tự động fetch lại dữ liệu khi bộ lọc hoặc trang thay đổi
-watch([trangHienTai, tuKhoa, activeMaDanhMuc], fetchTonKho, {
-  immediate: true,
+// --- Watchers ---
+
+// 1. Khi các bộ lọc thay đổi, reset về trang đầu tiên.
+watch([tuKhoa, activeMaDanhMuc], () => {
+  if (trangHienTai.value !== 0) {
+    trangHienTai.value = 0;
+  } else {
+    fetchTonKho();
+  }
 });
 
 // Reset về trang đầu tiên khi người dùng thay đổi bộ lọc
-watch([tuKhoa, activeMaDanhMuc], () => {
-  trangHienTai.value = 0;
+// 2. Khi trang hiện tại thay đổi, fetch dữ liệu.
+watch(trangHienTai, fetchTonKho);
+
+// 3. Khi thay đổi loại tìm kiếm, xử lý logic một cách tập trung
+watch(loaiTimKiem, (newLoai) => {
+  const isIdSearch =
+    dsTieuChiTimKiem.find((t) => t.value === newLoai)?.isId ?? false;
+  areOtherFiltersDisabled.value = isIdSearch;
+  tuKhoa.value = ""; // Always clear tuKhoa when changing search type
+
+  if (isIdSearch) {
+    // Xóa các bộ lọc khác
+    selectedDanhMucCha.value = "";
+    selectedDanhMucCon.value = "";
+  }
 });
 
 // --- Cấu hình DataTable ---
@@ -214,4 +257,7 @@ const handleUpdateSuccess = () => {
   isModalVisible.value = false;
   fetchTonKho(); // Tải lại dữ liệu bảng để hiển thị thông tin mới nhất
 };
+
+// 4. Tải dữ liệu lần đầu tiên khi component được tạo.
+fetchTonKho();
 </script>
