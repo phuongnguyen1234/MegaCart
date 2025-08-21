@@ -43,11 +43,12 @@ public class QuanLyDanhMucController {
 
     @GetMapping
     public ResponseEntity<PagedResponse<DanhMucQuanLyResponse>> getDSDanhMuc(
-            @RequestParam(required = false) String tuKhoa,
+            @RequestParam(required = false) String searchField,
+            @RequestParam(required = false) String searchValue,
             @RequestParam(required = false) TrangThaiDanhMuc trangThai,
             @PageableDefault(size = 30, sort = "maDanhMuc", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        PagedResponse<DanhMucQuanLyResponse> response = danhMucService.getDSDanhMuc(tuKhoa, trangThai, pageable);
+        PagedResponse<DanhMucQuanLyResponse> response = danhMucService.getDSDanhMuc(searchField, searchValue, trangThai, pageable);
         return ResponseEntity.ok(response);
     }
 

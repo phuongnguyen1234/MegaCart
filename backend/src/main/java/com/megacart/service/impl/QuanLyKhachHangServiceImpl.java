@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -33,7 +34,14 @@ public class QuanLyKhachHangServiceImpl implements QuanLyKhachHangService {
     @Transactional(readOnly = true)
     public PagedResponse<HienThiDanhSachKhachHangResponse> getDSKhachHang(String searchField, String searchValue, TrangThaiTaiKhoan trangThai, Pageable pageable) {
         // 1. Tạo Specification để xây dựng câu lệnh WHERE động
-        Specification<KhachHang> spec = timKiemKhachHangSpecification.filterBy(searchField, searchValue, trangThai);
+        Specification<KhachHang> spec;
+
+        // Logic mới: Nếu tìm kiếm theo mã khách hàng, bỏ qua các bộ lọc khác.
+        if ("maKhachHang".equals(searchField) && StringUtils.hasText(searchValue)) {
+            spec = timKiemKhachHangSpecification.filterBy(searchField, searchValue, null);
+        } else {
+            spec = timKiemKhachHangSpecification.filterBy(searchField, searchValue, trangThai);
+        }
 
         // 2. Thực thi truy vấn với các điều kiện lọc và phân trang
         Page<KhachHang> khachHangPage = khachHangRepository.findAll(spec, pageable);

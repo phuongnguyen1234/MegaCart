@@ -15,7 +15,8 @@ import java.util.List;
 
 public interface QuanLySanPhamService {
     PagedResponse<SanPhamQuanLyResponse> getDSSanPham(
-        String tuKhoa,
+        String searchField,
+        String searchValue,
         Integer maDanhMuc,
         TrangThaiSanPham trangThai,
         Pageable pageable

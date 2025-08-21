@@ -11,6 +11,7 @@ import com.megacart.dto.response.PagedResponse;
 import com.megacart.enumeration.TrangThaiDonHang;
 import com.megacart.enumeration.TrangThaiThanhToan;
 import com.megacart.enumeration.TrangThaiTaiKhoan;
+import com.megacart.dto.projection.TongTienDonHangProjection;
 import com.megacart.enumeration.ViTri;
 import com.megacart.exception.ResourceNotFoundException;
 import com.megacart.model.ChiTietDonHang;
@@ -35,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Objects;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -52,8 +54,15 @@ public class QuanLyDonHangServiceImpl implements QuanLyDonHangService {
     @Override
     @Transactional(readOnly = true)
     public PagedResponse<DonHangQuanLyResponse> getDSDonHang(String searchField, String searchValue, TrangThaiDonHang trangThai, LocalDate ngayDat, Pageable pageable) {
-        // Bước 1: Lấy trang danh sách đơn hàng
-        Specification<DonHang> spec = timKiemDonHangSpecification.filterBy(searchField, searchValue, trangThai, ngayDat);
+        // Bước 1: Lấy trang danh sách đơn hàng.
+        // Query này đã được tối ưu bằng @EntityGraph trong DonHangRepository để lấy luôn KhachHang.
+        Specification<DonHang> spec;
+        // Logic mới: Nếu tìm kiếm theo mã đơn hàng, bỏ qua các bộ lọc khác.
+        if ("maDonHang".equals(searchField) && StringUtils.hasText(searchValue)) {
+            spec = timKiemDonHangSpecification.filterBy(searchField, searchValue, null, null);
+        } else {
+            spec = timKiemDonHangSpecification.filterBy(searchField, searchValue, trangThai, ngayDat);
+        }
         Page<DonHang> donHangPage = donHangRepository.findAll(spec, pageable);
 
         List<DonHang> donHangsOnPage = donHangPage.getContent();
@@ -61,31 +70,26 @@ public class QuanLyDonHangServiceImpl implements QuanLyDonHangService {
             return new PagedResponse<>(Collections.emptyList(), donHangPage.getNumber(), donHangPage.getSize(), donHangPage.getTotalElements(), donHangPage.getTotalPages(), null);
         }
 
-        // Bước 2: Lấy tất cả chi tiết đơn hàng cho các đơn hàng trên trang hiện tại trong 1 query
+        // Bước 2: Tối ưu - Lấy tổng tiền cho tất cả đơn hàng trên trang trong 1 query duy nhất
         List<Integer> donHangIds = donHangsOnPage.stream().map(DonHang::getMaDonHang).toList();
-        List<ChiTietDonHang> allDetails = chiTietDonHangRepository.findByDonHang_MaDonHangIn(donHangIds);
-
-        // Nhóm các chi tiết theo mã đơn hàng và tính tổng tiền
-        Map<Integer, Integer> tongTienTheoDonHang = allDetails.stream()
-                .collect(Collectors.groupingBy(
-                        ct -> ct.getDonHang().getMaDonHang(),
-                        Collectors.summingInt(ct -> ct.getDonGia() * ct.getSoLuong())
-                ));
+        Map<Integer, Long> tongTienTheoDonHang = chiTietDonHangRepository.findTongTienByDonHangIds(donHangIds)
+                .stream()
+                .collect(Collectors.toMap(TongTienDonHangProjection::getMaDonHang, TongTienDonHangProjection::getTongTien));
 
         // Bước 3: Ánh xạ sang DTO, sử dụng tổng tiền đã tính toán
         List<DonHangQuanLyResponse> responses = donHangsOnPage.stream()
-                .map(donHang -> mapToDonHangQuanLyResponse(donHang, tongTienTheoDonHang.getOrDefault(donHang.getMaDonHang(), 0)))
+                .map(donHang -> mapToDonHangQuanLyResponse(donHang, tongTienTheoDonHang.getOrDefault(donHang.getMaDonHang(), 0L)))
                 .collect(Collectors.toList());
 
         return new PagedResponse<>(responses, donHangPage.getNumber(), donHangPage.getSize(), donHangPage.getTotalElements(), donHangPage.getTotalPages(), null);
     }
 
-    private DonHangQuanLyResponse mapToDonHangQuanLyResponse(DonHang donHang, int tongTien) {
+    private DonHangQuanLyResponse mapToDonHangQuanLyResponse(DonHang donHang, long tongTien) {
         return DonHangQuanLyResponse.builder()
                 .maDonHang(donHang.getMaDonHang())
                 // Lấy tên người nhận hàng trực tiếp từ đơn hàng để nhất quán
-                .tenKhachHang(donHang.getTenKhachHang())
-                .thoiGianDatHang(donHang.getThoiGianDatHang() != null ? donHang.getThoiGianDatHang().atZone(ZoneId.systemDefault()).toInstant() : null)
+                .tenKhachHang(donHang.getKhachHang() != null ? donHang.getKhachHang().getTenKhachHang() : "Khách vãng lai")
+                .thoiGianDatHang(donHang.getThoiGianDatHang())
                 .trangThai(donHang.getTrangThai())
                 .tongTien(tongTien)
                 .build();
@@ -126,11 +130,12 @@ public class QuanLyDonHangServiceImpl implements QuanLyDonHangService {
                 .tenNguoiNhan(donHang.getTenKhachHang())
                 .sdtNhanHang(donHang.getSdtNhanHang())
                 .diaChiNhanHang(donHang.getDiaChiNhanHang())
-                .thoiGianDatHang(donHang.getThoiGianDatHang() != null ? donHang.getThoiGianDatHang().atZone(ZoneId.systemDefault()).toInstant() : null)
+                .thoiGianDatHang(donHang.getThoiGianDatHang())
                 .hinhThucGiaoHang(donHang.getHinhThucNhanHang())
                 .hinhThucThanhToan(donHang.getHinhThucThanhToan())
                 .trangThai(donHang.getTrangThai())
                 .trangThaiThanhToan(donHang.getTrangThaiThanhToan())
+                .thoiGianThanhToan(donHang.getThoiGianThanhToan())
                 .duKienGiaoHang(donHang.getDuKienGiaoHang())
                 .ghiChu(donHang.getGhiChu())
                 .items(items)
@@ -158,8 +163,13 @@ public class QuanLyDonHangServiceImpl implements QuanLyDonHangService {
         }
 
         // Cập nhật ngày giao hàng dự kiến
-        if (request.getDuKienGiaoHang() != null) {
-            donHang.setDuKienGiaoHang(request.getDuKienGiaoHang());
+        // Chỉ cập nhật và validate nếu giá trị mới thực sự khác với giá trị cũ
+        if (request.getDuKienGiaoHang() != null && !Objects.equals(request.getDuKienGiaoHang(), donHang.getDuKienGiaoHang())) {
+            // Ràng buộc: Không cho phép đặt ngày giao hàng trong quá khứ
+            if (request.getDuKienGiaoHang().isBefore(LocalDateTime.now())) {
+                throw new IllegalArgumentException("Ngày giao hàng dự kiến mới không thể là một ngày trong quá khứ.");
+            }
+             donHang.setDuKienGiaoHang(request.getDuKienGiaoHang());
         }
 
         // Cập nhật ghi chú
@@ -194,6 +204,20 @@ public class QuanLyDonHangServiceImpl implements QuanLyDonHangService {
 
         if (!chuyenDoiHopLe) {
             throw new IllegalArgumentException("Không thể chuyển đơn hàng từ trạng thái '" + trangThaiHienTai + "' sang '" + trangThaiMoi + "'.");
+        }
+
+        // Xử lý trừ kho khi đơn hàng được xác nhận và chuyển đi giao
+        if (trangThaiMoi == TrangThaiDonHang.DANG_GIAO && (trangThaiHienTai == TrangThaiDonHang.CHO_XAC_NHAN || trangThaiHienTai == TrangThaiDonHang.CHO_XU_LY)) {
+            for (ChiTietDonHang chiTiet : donHang.getChiTietDonHangs()) {
+                SanPham sanPham = chiTiet.getSanPham();
+                if (sanPham != null && sanPham.getKho() != null) {
+                    Kho kho = sanPham.getKho();
+                    if (kho.getSoLuong() < chiTiet.getSoLuong()) {
+                        throw new IllegalStateException("Không đủ hàng trong kho cho sản phẩm: " + sanPham.getTenSanPham());
+                    }
+                    kho.setSoLuong(kho.getSoLuong() - chiTiet.getSoLuong());
+                }
+            }
         }
 
         // Xử lý hoàn trả hàng vào kho khi đơn hàng bị hủy
@@ -234,12 +258,19 @@ public class QuanLyDonHangServiceImpl implements QuanLyDonHangService {
             // Điều kiện CỐ ĐỊNH: chỉ lấy đơn hàng đang giao
             jakarta.persistence.criteria.Predicate dangGiaoPredicate = cb.equal(root.get("trangThai"), TrangThaiDonHang.DANG_GIAO);
 
-            // Điều kiện lọc động
+            // Logic mới: Nếu tìm kiếm theo mã, chỉ cần kết hợp với điều kiện đang giao
+            if ("maDonHang".equals(searchField) && StringUtils.hasText(searchValue)) {
+                if (searchValue.matches("\\d+")) {
+                    jakarta.persistence.criteria.Predicate maDonHangPredicate = cb.equal(root.get("maDonHang"), Integer.parseInt(searchValue));
+                    return cb.and(dangGiaoPredicate, maDonHangPredicate);
+                } else {
+                    return cb.disjunction(); // Mã không hợp lệ, trả về rỗng
+                }
+            }
+
+            // Điều kiện lọc động cho các trường khác
             if (StringUtils.hasText(searchField) && StringUtils.hasText(searchValue)) {
                 jakarta.persistence.criteria.Predicate searchPredicate = switch (searchField) {
-                    case "maDonHang" -> searchValue.matches("\\d+")
-                            ? cb.equal(root.get("maDonHang"), Integer.parseInt(searchValue))
-                            : cb.disjunction(); // Luôn false nếu searchValue không phải là số
                     case "tenNhanVienGiaoHang" -> cb.like(cb.lower(root.get("nhanVienGiaoHang").get("hoTen")), "%" + searchValue.toLowerCase() + "%");
                     case "tenNguoiNhan" -> cb.like(cb.lower(root.get("tenKhachHang")), "%" + searchValue.toLowerCase() + "%");
                     case "sdtNhanHang" -> cb.like(root.get("sdtNhanHang"), "%" + searchValue + "%");
@@ -261,8 +292,9 @@ public class QuanLyDonHangServiceImpl implements QuanLyDonHangService {
 
         // Tái sử dụng logic tính tổng tiền hiệu quả
         List<Integer> donHangIds = donHangsOnPage.stream().map(DonHang::getMaDonHang).toList();
-        Map<Integer, Integer> tongTienTheoDonHang = chiTietDonHangRepository.findByDonHang_MaDonHangIn(donHangIds).stream()
-                .collect(Collectors.groupingBy(ct -> ct.getDonHang().getMaDonHang(), Collectors.summingInt(ct -> ct.getDonGia() * ct.getSoLuong())));
+        Map<Integer, Long> tongTienTheoDonHang = chiTietDonHangRepository.findTongTienByDonHangIds(donHangIds)
+                .stream()
+                .collect(Collectors.toMap(TongTienDonHangProjection::getMaDonHang, TongTienDonHangProjection::getTongTien));
 
         // Ánh xạ sang DTO mới
         List<DonHangDangGiaoQuanLyResponse> responses = donHangsOnPage.stream()
@@ -272,7 +304,7 @@ public class QuanLyDonHangServiceImpl implements QuanLyDonHangService {
                         .tenNguoiNhan(donHang.getTenKhachHang())
                         .sdtNhanHang(donHang.getSdtNhanHang())
                         .diaChiNhanHang(donHang.getDiaChiNhanHang())
-                        .tongTien(tongTienTheoDonHang.getOrDefault(donHang.getMaDonHang(), 0))
+                        .tongTien(tongTienTheoDonHang.getOrDefault(donHang.getMaDonHang(), 0L))
                         .trangThaiThanhToan(donHang.getTrangThaiThanhToan())
                         .build())
                 .collect(Collectors.toList());

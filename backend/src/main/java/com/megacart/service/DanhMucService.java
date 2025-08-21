@@ -33,7 +33,7 @@ public interface DanhMucService {
      */
     List<DanhMucOptionResponse> getDanhMucOptionsForFilter();
 
-    PagedResponse<DanhMucQuanLyResponse> getDSDanhMuc(String tuKhoa, TrangThaiDanhMuc trangThai, Pageable pageable);
+    PagedResponse<DanhMucQuanLyResponse> getDSDanhMuc(String searchField, String searchValue, TrangThaiDanhMuc trangThai, Pageable pageable);
 
     DanhMucQuanLyResponse themDanhMuc(ThemDanhMucRequest request);
 

@@ -2,18 +2,23 @@ package com.megacart.repository;
 
 
 import com.megacart.enumeration.NhanSanPham;
+import com.megacart.enumeration.TrangThaiDonHang;
 import com.megacart.enumeration.TrangThaiSanPham;
 import com.megacart.model.SanPham;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import com.megacart.model.AnhMinhHoa;
+import com.megacart.repository.projection.AnhChinhProjection;
 import com.megacart.repository.projection.PriceRangeProjection;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaSpecificationExecutor<SanPham> {
@@ -129,4 +134,36 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaS
      * @return true nếu có ít nhất một sản phẩm khớp, ngược lại là false.
      */
     boolean existsByDanhMuc_MaDanhMucInAndTrangThai(List<Integer> maDanhMucs, TrangThaiSanPham trangThai);
+
+    /**
+     * Lấy danh sách các ảnh chính cho một danh sách các mã sản phẩm.
+     * @param sanPhamIds Danh sách ID của các sản phẩm.
+     * @return Danh sách các AnhMinhHoa là ảnh chính.
+     */
+    // Tối ưu: Sử dụng projection để chỉ lấy các trường cần thiết, tránh lỗi cú pháp và tăng hiệu năng.
+    @Query("SELECT amh.sanPham.maSanPham as maSanPham, amh.duongDan as duongDan FROM AnhMinhHoa amh WHERE amh.sanPham.maSanPham IN :sanPhamIds AND amh.laAnhChinh = true")
+    List<AnhChinhProjection> findAnhMinhHoaChinhProjectionBySanPhamIds(@Param("sanPhamIds") List<Integer> sanPhamIds);
+
+    /**
+     * Gỡ cờ 'banChay' của tất cả các sản phẩm.
+     */
+    @Modifying
+    @Query("UPDATE SanPham sp SET sp.banChay = false WHERE sp.banChay = true")
+    void resetAllBanChayFlags();
+
+    /**
+     * Tìm ID của các sản phẩm bán chạy nhất trong một khoảng thời gian.
+     * @param trangThai Trạng thái đơn hàng (DA_GIAO).
+     * @param startTime Thời gian bắt đầu.
+     * @param pageable Giới hạn số lượng sản phẩm (ví dụ: top 10).
+     * @return Danh sách ID của các sản phẩm bán chạy nhất.
+     */
+    @Query("SELECT ctdh.sanPham.maSanPham FROM ChiTietDonHang ctdh " +
+           "WHERE ctdh.donHang.trangThai = :trangThai AND ctdh.donHang.thoiGianDatHang >= :startTime " +
+           "GROUP BY ctdh.sanPham.maSanPham ORDER BY SUM(ctdh.soLuong) DESC")
+    List<Integer> findTopSellingProductIds(@Param("trangThai") TrangThaiDonHang trangThai, @Param("startTime") LocalDateTime startTime, Pageable pageable);
+
+    @Modifying
+    @Query("UPDATE SanPham sp SET sp.banChay = true WHERE sp.maSanPham IN :productIds")
+    void setBanChayForProductIds(@Param("productIds") List<Integer> productIds);
 }

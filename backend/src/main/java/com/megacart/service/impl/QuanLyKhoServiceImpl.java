@@ -5,6 +5,8 @@ import com.megacart.dto.response.PagedResponse;
 import com.megacart.model.DanhMuc;
 import com.megacart.model.Kho;
 import com.megacart.model.SanPham;
+import com.megacart.repository.projection.AnhChinhProjection;
+import com.megacart.repository.SanPhamRepository;
 import com.megacart.repository.KhoRepository;
 import com.megacart.service.DanhMucService;
 import com.megacart.service.QuanLyKhoService;
@@ -27,7 +29,9 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +40,7 @@ public class QuanLyKhoServiceImpl implements QuanLyKhoService {
 
     private final KhoRepository khoRepository;
     private final DanhMucService danhMucService;
+    private final SanPhamRepository sanPhamRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -48,24 +53,26 @@ public class QuanLyKhoServiceImpl implements QuanLyKhoService {
                 sanPhamFetch
                         .fetch("danhMuc", JoinType.LEFT)
                         .fetch("danhMucCha", JoinType.LEFT);
-                sanPhamFetch.fetch("anhMinhHoas", JoinType.LEFT);
+                // Tối ưu: Bỏ fetch "anhMinhHoas" để tránh data over-fetching
             }
 
             List<Predicate> predicates = new ArrayList<>();
 
-            // Lọc theo trường và giá trị cụ thể
-            if (StringUtils.hasText(searchField) && StringUtils.hasText(searchValue)) {
-                Predicate searchPredicate = switch (searchField) {
-                    case "maSanPham" -> searchValue.matches("\\d+")
-                            ? cb.equal(root.get("maSanPham"), Integer.parseInt(searchValue))
-                            : cb.disjunction(); // Luôn false nếu searchValue không phải là số
-                    case "tenSanPham" -> cb.like(cb.lower(root.get("sanPham").get("tenSanPham")), "%" + searchValue.toLowerCase() + "%");
-                    default -> cb.disjunction(); // Predicate luôn false nếu searchField không hợp lệ
-                };
-                predicates.add(searchPredicate);
+            // Logic mới: Nếu tìm kiếm theo mã sản phẩm, bỏ qua các bộ lọc khác.
+            if ("maSanPham".equals(searchField) && StringUtils.hasText(searchValue)) {
+                if (searchValue.matches("\\d+")) {
+                    predicates.add(cb.equal(root.get("maSanPham"), Integer.parseInt(searchValue)));
+                    return cb.and(predicates.toArray(new Predicate[0]));
+                } else {
+                    return cb.disjunction(); // Mã không hợp lệ, trả về rỗng
+                }
             }
 
-            // Lọc theo danh mục (bao gồm cả danh mục con)
+            // Lọc theo các trường khác nếu không phải tìm theo mã
+            if ("tenSanPham".equals(searchField) && StringUtils.hasText(searchValue)) {
+                predicates.add(cb.like(cb.lower(root.get("sanPham").get("tenSanPham")), "%" + searchValue.toLowerCase() + "%"));
+            }
+
             if (maDanhMuc != null) {
                 List<Integer> categoryIds = danhMucService.getAllSubCategoryIds(maDanhMuc);
                 if (categoryIds != null && !categoryIds.isEmpty()) {
@@ -78,20 +85,37 @@ public class QuanLyKhoServiceImpl implements QuanLyKhoService {
 
         Page<Kho> khoPage = khoRepository.findAll(spec, pageable);
 
-        List<KhoResponse> responses = khoPage.getContent().stream()
-                .map(this::mapToKhoResponse)
+        List<Kho> khosOnPage = khoPage.getContent();
+        if (khosOnPage.isEmpty()) {
+            return new PagedResponse<>(Collections.emptyList(), khoPage.getNumber(), khoPage.getSize(), khoPage.getTotalElements(), khoPage.getTotalPages(), null);
+        }
+
+        // Tối ưu: Lấy tất cả ảnh chính trong 1 query
+        List<Integer> sanPhamIds = khosOnPage.stream()
+                .map(Kho::getMaSanPham)
+                .collect(Collectors.toList());
+        
+        // Thêm bước kiểm tra để tránh lỗi khi sanPhamIds rỗng
+        Map<Integer, String> anhChinhUrlMap;
+        if (sanPhamIds.isEmpty()) {
+            anhChinhUrlMap = Collections.emptyMap();
+        } else {
+            anhChinhUrlMap = sanPhamRepository.findAnhMinhHoaChinhProjectionBySanPhamIds(sanPhamIds)
+                    .stream()
+                    .collect(Collectors.toMap(AnhChinhProjection::getMaSanPham, AnhChinhProjection::getDuongDan));
+        }
+        
+        List<KhoResponse> responses = khosOnPage.stream()
+                .map(kho -> mapToKhoResponse(kho, anhChinhUrlMap.get(kho.getMaSanPham())))
                 .collect(Collectors.toList());
 
         return new PagedResponse<>(responses, khoPage.getNumber(), khoPage.getSize(), khoPage.getTotalElements(), khoPage.getTotalPages(), null);
     }
 
-    private KhoResponse mapToKhoResponse(Kho kho) {
+    private KhoResponse mapToKhoResponse(Kho kho, String anhChinhUrl) {
         SanPham sanPham = kho.getSanPham();
         DanhMuc danhMucCon = sanPham.getDanhMuc();
         DanhMuc danhMucCha = (danhMucCon != null) ? danhMucCon.getDanhMucCha() : null;
-
-        // Lấy URL ảnh chính để hiển thị
-        String anhChinhUrl = ImageUtils.getAnhMinhHoaChinhUrl(sanPham.getAnhMinhHoas());
 
         return KhoResponse.builder()
                 .maSanPham(kho.getMaSanPham())
@@ -152,7 +176,10 @@ public class QuanLyKhoServiceImpl implements QuanLyKhoService {
 
         
         Kho savedKho = khoRepository.save(kho);
-        KhoResponse response = mapToKhoResponse(savedKho);
+        // Lấy URL ảnh chính của sản phẩm tương ứng để truyền vào hàm map
+        String anhChinhUrl = ImageUtils.getAnhMinhHoaChinhUrl(savedKho.getSanPham().getAnhMinhHoas());
+
+        KhoResponse response = mapToKhoResponse(savedKho, anhChinhUrl);
         response.setThongBao("Cập nhật kho thành công.");
         return response;
 
