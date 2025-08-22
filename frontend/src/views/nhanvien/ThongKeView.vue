@@ -6,20 +6,20 @@
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <StatCard
           tieuDe="Doanh thu hôm nay"
-          :giaTri="formatCurrency(thongKeTongQuan?.doanhThu.homNay ?? 0)"
+          :giaTri="formatCurrency(thongKeTongQuan?.doanhThu?.homNay ?? 0)"
           icon="lucide:coins"
           :is-loading="isLoading.tongQuan"
         />
         <StatCard
           tieuDe="Doanh thu tháng này"
-          :giaTri="formatCurrency(thongKeTongQuan?.doanhThu.thangNay ?? 0)"
+          :giaTri="formatCurrency(thongKeTongQuan?.doanhThu?.thangNay ?? 0)"
           icon="lucide:wallet"
           :is-loading="isLoading.tongQuan"
         />
         <StatCard
           tieuDe="Tăng trưởng doanh thu"
           :giaTri="`${
-            thongKeTongQuan?.doanhThu.tangTruongSoVoiThangTruoc ?? 0
+            thongKeTongQuan?.doanhThu?.tangTruongSoVoiThangTruoc ?? 0
           }%`"
           icon="lucide:arrow-up"
           :is-loading="isLoading.tongQuan"
@@ -124,45 +124,47 @@
       <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
         <StatCard
           tieuDe="Đơn hàng hôm nay"
-          :giaTri="thongKeTongQuan?.donHang.homNay?.toString() ?? '0'"
+          :giaTri="thongKeTongQuan?.donHang?.homNay?.toString() ?? '0'"
           icon="lucide:file-text"
           :is-loading="isLoading.tongQuan"
         />
         <StatCard
           tieuDe="Đơn hàng tháng này"
-          :giaTri="thongKeTongQuan?.donHang.thangNay?.toString() ?? '0'"
+          :giaTri="thongKeTongQuan?.donHang?.thangNay?.toString() ?? '0'"
           icon="lucide:calendar"
           :is-loading="isLoading.tongQuan"
         />
         <StatCard
           tieuDe="Tăng trưởng đơn hàng"
           :giaTri="`${
-            thongKeTongQuan?.donHang.tangTruongSoVoiThangTruoc ?? 0
+            thongKeTongQuan?.donHang?.tangTruongSoVoiThangTruoc ?? 0
           }%`"
           icon="lucide:trending-up"
           :is-loading="isLoading.tongQuan"
         />
         <StatCard
           tieuDe="Số đơn đang giao"
-          :giaTri="thongKeTongQuan?.donHang.soDonDangGiao?.toString() ?? '0'"
+          :giaTri="thongKeTongQuan?.donHang?.soDonDangGiao?.toString() ?? '0'"
           icon="lucide:truck"
           :is-loading="isLoading.tongQuan"
         />
       </div>
 
       <!--danh sách 20 đơn hàng gần đây, đang bổ sung API để fetch-->
-      <DataTable
-        :headers="[
-          'Mã đơn hàng',
-          'Khách hàng',
-          'Thời gian đặt',
-          'Trạng thái',
-          'Tổng tiền',
-          '',
-        ]"
-        :rows="donHangGanDayRows"
-        :is-loading="isLoading.donHangGanDay"
-      />
+      <div class="h-96 overflow-y-auto bg-white rounded-2xl shadow">
+        <DataTable
+          :headers="[
+            'Mã đơn hàng',
+            'Khách hàng',
+            'Thời gian đặt',
+            'Trạng thái',
+            'Tổng tiền',
+            '',
+          ]"
+          :rows="donHangGanDayRows"
+          :is-loading="isLoading.donHangGanDay"
+        />
+      </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
         <div class="p-4 bg-white rounded-2xl shadow">
@@ -229,9 +231,11 @@
 
       <!-- Biểu đồ cột top 10 sản phẩm bán chạy -->
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <div class="p-4 bg-white rounded-2xl shadow flex flex-col">
+        <div class="p-4 bg-white rounded-2xl shadow flex flex-col h-80">
           <div>
-            <label class="text-sm font-semibold">Sản phẩm bán chạy</label>
+            <label class="text-sm font-semibold"
+              >Top 10 sản phẩm bán chạy 30 ngày qua</label
+            >
           </div>
           <div class="relative mt-2 h-60">
             <BieuDoCot
@@ -251,13 +255,19 @@
         </div>
 
         <!--danh sách sản phẩm tồn kho cao-->
-        <div class="p-4 bg-white rounded-2xl shadow">
-          <label class="text-sm font-semibold">Sản phẩm còn tồn kho cao</label>
-          <DataTable
-            :headers="['Sản phẩm', 'Tồn kho', 'Đã bán']"
-            :rows="sanPhamTonKhoRows"
-            :is-loading="isLoading.sanPham"
-          />
+        <div class="p-4 bg-white rounded-2xl shadow flex flex-col h-80">
+          <div>
+            <label class="text-sm font-semibold"
+              >Sản phẩm còn tồn kho cao</label
+            >
+          </div>
+          <div class="mt-2 flex-1 overflow-y-auto">
+            <DataTable
+              :headers="['Sản phẩm', 'Tồn kho', 'Đã bán']"
+              :rows="sanPhamTonKhoRows"
+              :is-loading="isLoading.sanPham"
+            />
+          </div>
         </div>
       </div>
     </section>
@@ -370,6 +380,7 @@ import type {
   ChiTietDonHangThangResponse,
   ChiTietSanPhamBanChayResponse,
 } from "@/types/thongke.types";
+import type { DonHangGanDayResponse } from "@/types/thongke.types";
 
 // --- State for loading indicators ---
 const isLoading = reactive({
@@ -401,6 +412,7 @@ const sanPhamBanChay = ref<ChiTietSanPhamBanChayResponse[]>([]); // Top 20 cho m
 const sanPhamTonKhoCao = ref<SanPhamTonKhoResponse[]>([]);
 const chiTietDoanhThuThang = ref<ChiTietDoanhThuThangResponse[]>([]);
 const chiTietDonHangThang = ref<ChiTietDonHangThangResponse[]>([]);
+const donHangGanDay = ref<DonHangGanDayResponse[]>([]);
 
 // --- State for interactivity ---
 const doanhThuNgayPeriod = ref(7);
@@ -423,7 +435,7 @@ const mucTieuHienTai = computed(() => mucTieuDoanhThu.value?.mucTieu ?? 0);
 
 const sanPhamBanChayChartData = computed(() => {
   if (
-    !sanPhamBanChayForChart.value ||
+    !Array.isArray(sanPhamBanChayForChart.value) ||
     sanPhamBanChayForChart.value.length === 0
   ) {
     return null;
@@ -435,30 +447,38 @@ const sanPhamBanChayChartData = computed(() => {
 });
 
 const sanPhamTonKhoRows = computed(() => {
-  return sanPhamTonKhoCao.value.map((item) => [
-    item.tenSanPham,
-    item.soLuongTon.toString(),
-    item.soLuongDaBan.toString(),
-  ]);
+  return Array.isArray(sanPhamTonKhoCao.value)
+    ? sanPhamTonKhoCao.value.map((item) => [
+        item.tenSanPham,
+        item.soLuongTon.toString(),
+        item.soLuongDaBan.toString(),
+      ])
+    : [];
 });
 
 const donHangGanDayRows = computed(() => {
-  /*return donHangGanDay.value.map((donHang) => [
-    donHang.maDonHang,
-    donHang.tenKhachHang,
-    new Date(donHang.thoiGianDat).toLocaleString("vi-VN"),
-    donHang.trangThai,
-    formatCurrency(donHang.tongTien),
-    "", // For action button column
-  ]); */
+  return Array.isArray(donHangGanDay.value)
+    ? donHangGanDay.value.map((donHang) => [
+        donHang.maDonHang.toString(),
+        donHang.tenKhachHang,
+        new Date(donHang.thoiGianDatHang).toLocaleString("vi-VN"),
+        donHang.trangThai.label,
+        formatCurrency(donHang.tongTien),
+        "",
+      ])
+    : [];
 });
 
-const tiLeDonHangLabels = computed(
-  () => tiLeDonHang.value?.map((item) => item.name) ?? []
+const tiLeDonHangLabels = computed(() =>
+  Array.isArray(tiLeDonHang.value)
+    ? tiLeDonHang.value.map((item) => item.label)
+    : []
 );
 
-const tiLeDonHangData = computed(
-  () => tiLeDonHang.value?.map((item) => item.value) ?? []
+const tiLeDonHangData = computed(() =>
+  Array.isArray(tiLeDonHang.value)
+    ? tiLeDonHang.value.map((item) => item.value)
+    : []
 );
 
 const handleUpdateTarget = () => {
@@ -479,9 +499,11 @@ const saveMucTieuMoi = async () => {
         mucTieuMoi: mucTieuMoi.value,
       });
       await fetchMucTieu();
+      closeMucTieuModal();
+    } catch (error) {
+      // Bạn có thể thêm thông báo lỗi cho người dùng ở đây
     } finally {
       isLoading.mucTieu = false;
-      closeMucTieuModal();
     }
   }
 };
@@ -501,8 +523,18 @@ const doanhThuThangModalHeaders = ref([
   "Tăng trưởng",
   "Trung bình mỗi đơn",
 ]);
-const doanhThuThangModalRows = ref<string[][]>([]);
-
+const doanhThuThangModalRows = computed(() => {
+  return Array.isArray(chiTietDoanhThuThang.value)
+    ? chiTietDoanhThuThang.value.map((item) => [
+        item.thang,
+        formatCurrency(item.mucTieu ?? 0),
+        formatCurrency(item.doanhThu ?? 0),
+        `${(item.tiLeDatMucTieu ?? 0).toFixed(2)}%`,
+        `${(item.tangTruong ?? 0).toFixed(2)}%`,
+        formatCurrency(item.trungBinhMoiDon ?? 0),
+      ])
+    : [];
+});
 const openDoanhThuThangModal = async () => {
   isDoanhThuThangModalVisible.value = true;
   await fetchChiTietDoanhThuThang();
@@ -520,8 +552,22 @@ const donHangThangModalHeaders = ref([
   "Đơn giao thành công",
   "Đơn bị hủy",
 ]);
-const donHangThangModalRows = ref<string[][]>([]);
-
+const donHangThangModalRows = computed(() => {
+  return Array.isArray(chiTietDonHangThang.value)
+    ? chiTietDonHangThang.value.map((item) => [
+        item.thang,
+        item.soDonHang.toString(),
+        `${(item.tangTruong ?? 0).toFixed(2)}%`,
+        formatCurrency(item.trungBinhMoiDon),
+        `${item.donGiaoThanhCong.soLuong} (${(
+          item.donGiaoThanhCong.phanTram ?? 0
+        ).toFixed(2)}%)`,
+        `${item.donBiHuy.soLuong} (${(item.donBiHuy.phanTram ?? 0).toFixed(
+          2
+        )}%)`,
+      ])
+    : [];
+});
 const openDonHangThangModal = async () => {
   isDonHangThangModalVisible.value = true;
   await fetchChiTietDonHangThang();
@@ -539,8 +585,18 @@ const sanPhamBanChayModalHeaders = ref([
   "Số lượng/đơn",
   "Số đơn đặt",
 ]);
-const sanPhamBanChayModalRows = ref<string[][]>([]);
-
+const sanPhamBanChayModalRows = computed(() => {
+  return Array.isArray(sanPhamBanChay.value)
+    ? sanPhamBanChay.value.map((item, index) => [
+        (index + 1).toString(),
+        item.maSanPham.toString(),
+        item.tenSanPham,
+        item.soLuongBanRa.toString(),
+        (item.soLuongTrungBinhMoiDon ?? 0).toFixed(2),
+        item.soDonDat.toString(),
+      ])
+    : [];
+});
 const openSanPhamBanChayModal = async () => {
   isSanPhamBanChayModalVisible.value = true;
   // Chỉ fetch dữ liệu chi tiết khi modal được mở lần đầu
@@ -563,7 +619,14 @@ const formatCurrency = (value: number): string => {
 async function fetchThongKeTongQuan() {
   isLoading.tongQuan = true;
   try {
-    thongKeTongQuan.value = await thongKeService.getThongKeTongQuan();
+    const responseData = await thongKeService.getThongKeTongQuan();
+    if (responseData && responseData.doanhThu && responseData.donHang) {
+      thongKeTongQuan.value = responseData;
+    } else {
+      // Dữ liệu không hợp lệ, có thể hiển thị thông báo lỗi
+    }
+  } catch (error: any) {
+    // Xử lý lỗi
   } finally {
     isLoading.tongQuan = false;
   }
@@ -572,7 +635,10 @@ async function fetchThongKeTongQuan() {
 async function fetchDoanhThuTheoNgay(period: number = 7) {
   isLoading.doanhThuNgay = true;
   try {
-    doanhThuTheoNgay.value = await thongKeService.getDoanhThuTheoNgay(period);
+    const data = await thongKeService.getDoanhThuTheoNgay(period);
+    doanhThuTheoNgay.value = data;
+  } catch (error) {
+    // Xử lý lỗi
   } finally {
     isLoading.doanhThuNgay = false;
   }
@@ -581,7 +647,10 @@ async function fetchDoanhThuTheoNgay(period: number = 7) {
 async function fetchDoanhThuTheoThang() {
   isLoading.doanhThuThang = true;
   try {
-    doanhThuTheoThang.value = await thongKeService.getDoanhThuTheoThang();
+    const data = await thongKeService.getDoanhThuTheoThang();
+    doanhThuTheoThang.value = data;
+  } catch (error) {
+    // Xử lý lỗi
   } finally {
     isLoading.doanhThuThang = false;
   }
@@ -590,7 +659,10 @@ async function fetchDoanhThuTheoThang() {
 async function fetchMucTieu() {
   isLoading.mucTieu = true;
   try {
-    mucTieuDoanhThu.value = await thongKeService.getMucTieuDoanhThu();
+    const data = await thongKeService.getMucTieuDoanhThu();
+    mucTieuDoanhThu.value = data;
+  } catch (error) {
+    // Xử lý lỗi
   } finally {
     isLoading.mucTieu = false;
   }
@@ -599,17 +671,38 @@ async function fetchMucTieu() {
 async function fetchDonHangGanDay() {
   isLoading.donHangGanDay = true;
   try {
-    // Giả sử service có phương thức getDonHangGanDay
-    //donHangGanDay.value = await thongKeService.getDonHangGanDay(20);
+    // Gọi service với tham số `limit` là 20, theo đúng API backend
+    donHangGanDay.value = await thongKeService.getDonHangGanDay(20);
+  } catch (error) {
+    // Xử lý lỗi
   } finally {
     isLoading.donHangGanDay = false;
+  }
+}
+
+async function fetchSanPhamData() {
+  isLoading.sanPham = true;
+  try {
+    const [banChay, tonKho] = await Promise.all([
+      thongKeService.getSanPhamBanChay(10),
+      thongKeService.getSanPhamTonKhoCao(),
+    ]);
+    sanPhamBanChayForChart.value = banChay;
+    sanPhamTonKhoCao.value = tonKho;
+  } catch (error) {
+    // Xử lý lỗi
+  } finally {
+    isLoading.sanPham = false;
   }
 }
 
 async function fetchDonHangTheoNgay(period: number = 7) {
   isLoading.donHangNgay = true;
   try {
-    donHangTheoNgay.value = await thongKeService.getDonHangTheoNgay(period);
+    const data = await thongKeService.getDonHangTheoNgay(period);
+    donHangTheoNgay.value = data;
+  } catch (error) {
+    // Xử lý lỗi
   } finally {
     isLoading.donHangNgay = false;
   }
@@ -618,7 +711,10 @@ async function fetchDonHangTheoNgay(period: number = 7) {
 async function fetchDonHangTheoThang() {
   isLoading.donHangThang = true;
   try {
-    donHangTheoThang.value = await thongKeService.getDonHangTheoThang();
+    const data = await thongKeService.getDonHangTheoThang();
+    donHangTheoThang.value = data;
+  } catch (error) {
+    // Xử lý lỗi
   } finally {
     isLoading.donHangThang = false;
   }
@@ -627,7 +723,10 @@ async function fetchDonHangTheoThang() {
 async function fetchTiLeDonHang() {
   isLoading.tiLeDonHang = true;
   try {
-    tiLeDonHang.value = await thongKeService.getTiLeDonHang();
+    const data = await thongKeService.getTiLeDonHang();
+    tiLeDonHang.value = data;
+  } catch (error) {
+    // Xử lý lỗi
   } finally {
     isLoading.tiLeDonHang = false;
   }
@@ -636,15 +735,10 @@ async function fetchTiLeDonHang() {
 async function fetchChiTietDoanhThuThang() {
   isLoading.chiTietDoanhThuThang = true;
   try {
-    chiTietDoanhThuThang.value = await thongKeService.getChiTietDoanhThuThang();
-    doanhThuThangModalRows.value = chiTietDoanhThuThang.value.map((item) => [
-      item.thang,
-      formatCurrency(item.mucTieu),
-      formatCurrency(item.doanhThu),
-      `${item.tiLeDatDoanhThu}%`,
-      item.tangTruong > 0 ? `+${item.tangTruong}%` : `${item.tangTruong}%`,
-      formatCurrency(item.trungBinhMoiDon),
-    ]);
+    const data = await thongKeService.getChiTietDoanhThuThang();
+    chiTietDoanhThuThang.value = data;
+  } catch (error) {
+    // Xử lý lỗi
   } finally {
     isLoading.chiTietDoanhThuThang = false;
   }
@@ -653,58 +747,32 @@ async function fetchChiTietDoanhThuThang() {
 async function fetchChiTietDonHangThang() {
   isLoading.chiTietDonHangThang = true;
   try {
-    chiTietDonHangThang.value = await thongKeService.getChiTietDonHangThang();
-    donHangThangModalRows.value = chiTietDonHangThang.value.map((item) => [
-      item.thang,
-      item.soDonHang.toString(),
-      item.tangTruong > 0 ? `+${item.tangTruong}%` : `${item.tangTruong}%`,
-      formatCurrency(item.trungBinhMoiDon),
-      `${item.donGiaoThanhCong.soLuong} (${item.donGiaoThanhCong.phanTram}%)`,
-      `${item.donBiHuy.soLuong} (${item.donBiHuy.phanTram}%)`,
-    ]);
+    const data = await thongKeService.getChiTietDonHangThang();
+    chiTietDonHangThang.value = data;
+  } catch (error) {
+    // Xử lý lỗi
   } finally {
     isLoading.chiTietDonHangThang = false;
   }
 }
 
-async function fetchChiTietSanPhamBanChay() {
+async function fetchChiTietSanPhamBanChay(page = 0, size = 20) {
   isLoading.chiTietSanPhamBanChay = true;
   try {
-    // Lấy 20 sản phẩm bán chạy nhất cho modal chi tiết
-    const banChayResponse = await thongKeService.getChiTietSanPhamBanChay(20);
-    const chiTietList = banChayResponse.content;
-    sanPhamBanChay.value = chiTietList;
-    sanPhamBanChayModalRows.value = chiTietList.map((item, idx) => [
-      (idx + 1).toString(),
-      item.maSanPham.toString(),
-      item.tenSanPham,
-      item.soLuongBanRa.toString(),
-      item.soLuongTrungBinhMoiDon.toString(),
-      item.soDonDat.toString(),
-    ]);
+    const data = await thongKeService.getChiTietSanPhamBanChay(page, size);
+    sanPhamBanChay.value = data.content;
+  } catch (error) {
+    // Xử lý lỗi
   } finally {
     isLoading.chiTietSanPhamBanChay = false;
   }
 }
 
-async function fetchSanPhamData() {
-  isLoading.sanPham = true;
-  try {
-    // Lấy top 10 (dữ liệu đơn giản) cho biểu đồ và danh sách tồn kho cao
-    const [banChay, tonKho] = await Promise.all([
-      thongKeService.getSanPhamBanChay(10),
-      thongKeService.getSanPhamTonKhoCao(),
-    ]);
-
-    sanPhamBanChayForChart.value = banChay;
-    sanPhamTonKhoCao.value = tonKho;
-  } finally {
-    isLoading.sanPham = false;
-  }
-}
-
 onMounted(() => {
-  Promise.all([
+  // Sử dụng Promise.allSettled để đảm bảo tất cả các yêu cầu API được thực thi
+  // ngay cả khi một trong số chúng thất bại. Điều này giúp giao diện người dùng
+  // hiển thị được những phần dữ liệu tải thành công.
+  Promise.allSettled([
     fetchThongKeTongQuan(),
     fetchDoanhThuTheoNgay(doanhThuNgayPeriod.value),
     fetchDoanhThuTheoThang(),

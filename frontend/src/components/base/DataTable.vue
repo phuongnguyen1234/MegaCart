@@ -34,7 +34,7 @@
             <td
               v-for="(cell, cellIndex) in row"
               :key="cellIndex"
-              class="px-6 py-4 whitespace-nowrap text-base text-gray-500 text-center align-middle"
+              class="px-6 py-4 text-base text-gray-500 text-center align-middle"
             >
               <!-- 
                 Đây là phần quan trọng để tùy chỉnh ô:

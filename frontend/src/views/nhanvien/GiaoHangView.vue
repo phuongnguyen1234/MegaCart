@@ -1,11 +1,7 @@
 <template>
   <div class="flex min-h-screen bg-gray-50">
-    <!-- Side Menu (chế độ tối giản, chỉ hiển thị nút đăng xuất) -->
-    <!-- TheSideMenu is likely part of a layout, but kept here as per original file -->
-    <TheSideMenu variant="minimal" />
-
     <!-- Nội dung chính -->
-    <main class="flex-1 p-4 sm:p-6 ml-[250px]">
+    <main class="flex-1 p-4 sm:p-6">
       <h1 class="text-2xl font-bold text-gray-800 mb-4">Giao hàng</h1>
 
       <!-- Bộ lọc -->

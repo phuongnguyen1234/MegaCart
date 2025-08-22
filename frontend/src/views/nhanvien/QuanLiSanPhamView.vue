@@ -65,8 +65,13 @@
           <img
             :src="value"
             alt="Ảnh sản phẩm"
-            class="w-16 h-16 object-cover rounded border mx-auto"
+            class="w-16 h-16 object-cover rounded shadow mx-auto"
           />
+        </template>
+        <template #cell-2="{ value }">
+          <div class="max-w-xs whitespace-normal break-words">
+            {{ value }}
+          </div>
         </template>
         <template #cell-6="{ value: trangThai }">
           <span

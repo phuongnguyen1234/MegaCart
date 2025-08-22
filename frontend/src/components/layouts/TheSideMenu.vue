@@ -168,7 +168,7 @@
     <div class="p-5 border-t border-gray-700">
       <button
         @click="logout"
-        class="w-full flex items-center justify-center gap-2 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-center transition-colors duration-300"
+        class="cursor-pointer w-full flex items-center justify-center gap-2 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-center transition-colors duration-300"
       >
         <Icon icon="lucide:log-out" class="w-5 h-5" />
         Đăng xuất

@@ -148,7 +148,6 @@ import { useRouter } from "vue-router";
 import { useToast } from "@/composables/useToast";
 import Loading from "@/components/base/Loading.vue";
 import { useAuthStore } from "@/store/auth.store";
-import { decodeJwtPayload } from "@/utils/jwt";
 import { register } from "@/service/taikhoan.service";
 
 const isRegisterPanelActive = ref(false); // false = login visible, true = register visible
@@ -188,28 +187,9 @@ const handleLogin = async () => {
       email: loginEmail.value,
       matKhau: loginPassword.value,
     });
-
-    // Đăng nhập thành công, token đã được lưu trong localStorage bởi authStore
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      // Trường hợp hiếm gặp, nhưng nên xử lý
-      throw new Error("Không tìm thấy token sau khi đăng nhập.");
-    }
-
-    const payload = decodeJwtPayload(token);
-    // Ghi log payload để debug ngay sau khi đăng nhập
-    console.log("Decoded JWT Payload on Login:", payload);
-    // SỬA LỖI: Dùng 'vaiTro' để nhất quán với router guard
-    const userRole = payload?.role;
-
     showToast({ thongBao: "Đăng nhập thành công!", loai: "thanhCong" });
-
-    // Chuyển hướng dựa trên vai trò
-    if (userRole === "ADMIN" || userRole === "NHAN_VIEN") {
-      router.push({ path: "/quan-ly/dashboard" });
-    } else {
-      router.push({ name: "TrangChu" });
-    }
+    // Việc chuyển hướng đã được xử lý bên trong authStore.login()
+    // để tôn trọng tham số `redirect` trên URL.
   } catch (error: any) {
     // Hiển thị lỗi từ API (nếu có) hoặc lỗi chung
     const errorMessage =

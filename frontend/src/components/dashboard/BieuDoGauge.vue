@@ -5,7 +5,9 @@
       <div
         class="absolute inset-0 flex items-end justify-center pb-4 pointer-events-none"
       >
-        <div class="text-xl font-semibold text-gray-800">{{ tienDo }}%</div>
+        <div class="text-xl font-semibold text-gray-800">
+          {{ formattedTienDo }}%
+        </div>
       </div>
     </div>
 
@@ -34,6 +36,8 @@ const props = defineProps<{
   mucTieu: number;
   tienDoHienTai: number;
 }>();
+
+const formattedTienDo = computed(() => props.tienDo.toFixed(2));
 
 /**
  * Trả về mã màu RGB nội suy từ đỏ -> vàng -> xanh

@@ -191,6 +191,7 @@ import { useRoute, useRouter } from "vue-router";
 import { getChiTietSanPham } from "@/service/sanpham.service";
 import { themVaoGioHang } from "@/service/giohang.service";
 import { useCartStore } from "@/store/giohang.store";
+import { useAuthStore } from "@/store/auth.store";
 import {
   TrangThaiTonKhoKey,
   type ChiTietSanPhamResponse,
@@ -201,6 +202,7 @@ const route = useRoute();
 const router = useRouter();
 const { showToast } = useToast();
 const cartStore = useCartStore();
+const authStore = useAuthStore();
 
 const sanPham = ref<ChiTietSanPhamResponse | null>(null);
 const isLoading = ref(true);
@@ -267,6 +269,21 @@ const themVaoGio = async () => {
     return;
   }
   if (!sanPham.value) return;
+
+  // Kiểm tra nếu người dùng chưa đăng nhập
+  if (!authStore.isLoggedIn) {
+    showToast({
+      thongBao: "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.",
+      loai: "loi",
+    });
+    // Chuyển hướng đến trang đăng nhập và lưu lại trang hiện tại để quay về
+    router.push({
+      name: "DangNhap",
+      query: { redirect: router.currentRoute.value.fullPath },
+    });
+    return; // Dừng hàm tại đây
+  }
+
   try {
     const response = await themVaoGioHang({
       maSanPham: sanPham.value.maSanPham,

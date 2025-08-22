@@ -1,4 +1,4 @@
-import axios from "axios";
+import apiClient from "./apiClient";
 import {
   ThongKeTongQuanResponse,
   BieuDoDuongResponse,
@@ -10,84 +10,86 @@ import {
   ChiTietDoanhThuThangResponse,
   ChiTietDonHangThangResponse,
   ChiTietSanPhamBanChayResponse,
+  DonHangGanDayResponse,
 } from "../types/thongke.types";
 import { MessageResponse, PagedResponse } from "../types/api.types";
-
-const BASE_URL = "/api/admin/thong-ke";
+import { ChiTietDonHangQuanLyResponse } from "@/types/donhang.types";
 
 export const thongKeService = {
   getThongKeTongQuan(): Promise<ThongKeTongQuanResponse> {
-    return axios.get(`${BASE_URL}/tong-quan`).then((res) => res.data);
+    return apiClient.get(`/admin/thong-ke/tong-quan`);
   },
 
   getDoanhThuTheoNgay(period = 7): Promise<BieuDoDuongResponse> {
-    return axios
-      .get(`${BASE_URL}/doanh-thu-theo-ngay`, { params: { period } })
-      .then((res) => res.data);
+    return apiClient.get(`/admin/thong-ke/doanh-thu-theo-ngay`, {
+      params: { period },
+    });
   },
 
   getDonHangTheoThang(): Promise<BieuDoDuongResponse> {
-    return axios.get(`${BASE_URL}/don-hang-theo-thang`).then((res) => res.data);
+    return apiClient.get(`/admin/thong-ke/don-hang-theo-thang`);
   },
 
   getMucTieuDoanhThu(): Promise<MucTieuDoanhThuResponse> {
-    return axios.get(`${BASE_URL}/muc-tieu-doanh-thu`).then((res) => res.data);
+    return apiClient.get(`/admin/thong-ke/muc-tieu-doanh-thu`);
   },
 
   capNhatMucTieuDoanhThu(
     request: CapNhatMucTieuDoanhThuRequest
   ): Promise<MessageResponse> {
-    return axios
-      .put(`${BASE_URL}/muc-tieu-doanh-thu`, request)
-      .then((res) => res.data);
+    return apiClient.put(`/admin/thong-ke/muc-tieu-doanh-thu`, request);
   },
 
   getTiLeDonHang(): Promise<BieuDoTronResponse[]> {
-    return axios.get(`${BASE_URL}/ti-le-don-hang`).then((res) => res.data);
+    return apiClient.get(`/admin/thong-ke/ti-le-don-hang`);
   },
 
   getSanPhamBanChay(limit = 10): Promise<SanPhamBanChayResponse[]> {
-    return axios
-      .get(`${BASE_URL}/san-pham-ban-chay`, { params: { limit } })
-      .then((res) => res.data);
+    return apiClient.get(`/admin/thong-ke/san-pham-ban-chay`, {
+      params: { limit },
+    });
   },
 
-  getSanPhamTonKhoCao(limit = 5): Promise<SanPhamTonKhoResponse[]> {
-    return axios
-      .get(`${BASE_URL}/san-pham-ton-kho-cao`, { params: { limit } })
-      .then((res) => res.data);
+  getSanPhamTonKhoCao(limit = 10): Promise<SanPhamTonKhoResponse[]> {
+    return apiClient.get(`/admin/thong-ke/san-pham-ton-kho-cao`, {
+      params: { limit },
+    });
   },
 
   getChiTietDoanhThuThang(): Promise<ChiTietDoanhThuThangResponse[]> {
-    return axios
-      .get(`${BASE_URL}/chi-tiet-doanh-thu-thang`)
-      .then((res) => res.data);
+    return apiClient.get(`/admin/thong-ke/chi-tiet-doanh-thu-thang`);
   },
 
   getDoanhThuTheoThang(): Promise<BieuDoDuongResponse> {
-    return axios
-      .get(`${BASE_URL}/doanh-thu-theo-thang`)
-      .then((res) => res.data);
+    return apiClient.get(`/admin/thong-ke/doanh-thu-theo-thang`);
   },
 
   getDonHangTheoNgay(period = 7): Promise<BieuDoDuongResponse> {
-    return axios
-      .get(`${BASE_URL}/don-hang-theo-ngay`, { params: { period } })
-      .then((res) => res.data);
+    return apiClient.get(`/admin/thong-ke/don-hang-theo-ngay`, {
+      params: { period },
+    });
   },
 
   getChiTietDonHangThang(): Promise<ChiTietDonHangThangResponse[]> {
-    return axios
-      .get(`${BASE_URL}/chi-tiet-don-hang-thang`)
-      .then((res) => res.data);
+    return apiClient.get(`/admin/thong-ke/chi-tiet-don-hang-thang`);
   },
 
   getChiTietSanPhamBanChay(
     page = 0,
     size = 10
   ): Promise<PagedResponse<ChiTietSanPhamBanChayResponse>> {
-    return axios
-      .get(`${BASE_URL}/chi-tiet-san-pham-ban-chay`, { params: { page, size } })
-      .then((res) => res.data);
+    return apiClient.get(`/admin/thong-ke/chi-tiet-san-pham-ban-chay`, {
+      params: { page, size },
+    });
+  },
+
+  getDonHangGanDay(limit = 5): Promise<DonHangGanDayResponse[]> {
+    return apiClient.get(`/admin/thong-ke/don-hang-gan-day`, {
+      params: { limit },
+    });
+  },
+
+  getChiTietDonHang(maDonHang: number): Promise<ChiTietDonHangQuanLyResponse> {
+    return apiClient.get(`/admin/thong-ke/don-hang/${maDonHang}`);
   },
 };

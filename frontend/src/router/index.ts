@@ -171,14 +171,22 @@ const router = createRouter({
     },
     {
       path: "/giao-hang",
-      name: "GiaoHang",
-      component: GiaoHangView,
+      component: AdminLayout,
       meta: {
         requiresAuth: true,
         roles: [VaiTroKey.NHAN_VIEN], // Chỉ cho phép nhân viên
         // Yêu cầu vị trí cụ thể là nhân viên giao hàng
         requiredPosition: [ViTriNhanVienKey.NHAN_VIEN_GIAO_HANG],
+        // Cung cấp thông tin cho AdminLayout để hiển thị menu tối giản
+        menuVariant: "minimal",
       },
+      children: [
+        {
+          path: "",
+          name: "GiaoHang",
+          component: GiaoHangView,
+        },
+      ],
     },
     // --- DYNAMIC ROUTES (PRODUCT/CATEGORY) ---
     // Phải được đặt ở cuối để không ghi đè các route tĩnh ở trên.

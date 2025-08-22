@@ -39,9 +39,13 @@ import {
 import type { SanPhamResponse } from "@/types/sanpham.types";
 import { themVaoGioHang } from "@/service/giohang.service";
 import { useCartStore } from "@/store/giohang.store";
+import { useAuthStore } from "@/store/auth.store";
+import { useRouter } from "vue-router";
 
 const { showToast } = useToast();
 const cartStore = useCartStore();
+const authStore = useAuthStore();
+const router = useRouter();
 
 const dsSanPhamMoi = ref<SanPhamResponse[]>([]);
 const dsBanChay = ref<SanPhamResponse[]>([]);
@@ -81,6 +85,20 @@ const handleThemVaoGioHang = async (payload: {
   sanPham: SanPhamResponse;
   soLuong: number;
 }) => {
+  // Kiểm tra nếu người dùng chưa đăng nhập
+  if (!authStore.isLoggedIn) {
+    dongThemVaoGioHangModal(); // Đóng modal trước khi chuyển hướng
+    showToast({
+      thongBao: "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.",
+      loai: "loi",
+    });
+    // Chuyển hướng đến trang đăng nhập và lưu lại trang hiện tại để quay về
+    router.push({
+      name: "DangNhap",
+      query: { redirect: router.currentRoute.value.fullPath },
+    });
+    return; // Dừng hàm tại đây
+  }
   dongThemVaoGioHangModal();
   try {
     const response = await themVaoGioHang({

@@ -38,8 +38,14 @@
           <img
             :src="value"
             alt="Ảnh sản phẩm"
-            class="w-16 h-16 object-cover rounded border mx-auto"
+            class="w-16 h-16 object-cover rounded shadow mx-auto"
           />
+        </template>
+        <!-- Tùy chỉnh cột Tên sản phẩm (cột thứ 3, index 2) -->
+        <template #cell-2="{ value }">
+          <div class="max-w-xs whitespace-normal break-words">
+            {{ value }}
+          </div>
         </template>
         <!-- Tùy chỉnh cột Số lượng tồn (cột thứ 6, index 5) -->
         <template #cell-5="{ value }">

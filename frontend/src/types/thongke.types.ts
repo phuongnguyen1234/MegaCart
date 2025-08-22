@@ -1,3 +1,5 @@
+import { TrangThaiDonHangObject } from "./donhang.types";
+
 /**
  * Dữ liệu thống kê tổng quan cho trang dashboard.
  * Tương ứng với `ThongKeTongQuanResponse` từ API.
@@ -12,7 +14,7 @@ export interface ThongKeTongQuanResponse {
     homNay: number;
     thangNay: number;
     tangTruongSoVoiThangTruoc?: number;
-    soDonDangGiao?: number;
+    soDonDangGiao: number;
   };
 }
 
@@ -26,7 +28,7 @@ export interface BieuDoDuongResponse {
  * Tương ứng với `BieuDoTronResponse` từ API.
  */
 export interface BieuDoTronResponse {
-  name: string;
+  label: string;
   value: number;
 }
 
@@ -72,11 +74,11 @@ export interface SanPhamTonKhoResponse {
  */
 export interface ChiTietDoanhThuThangResponse {
   thang: string;
-  mucTieu: number;
-  doanhThu: number;
-  tiLeDatDoanhThu: number;
-  tangTruong: number;
-  trungBinhMoiDon: number;
+  mucTieu?: number;
+  doanhThu?: number;
+  tiLeDatMucTieu?: number;
+  tangTruong?: number;
+  trungBinhMoiDon?: number;
 }
 
 /**
@@ -107,4 +109,12 @@ export interface ChiTietSanPhamBanChayResponse {
   soLuongBanRa: number;
   soLuongTrungBinhMoiDon: number;
   soDonDat: number;
+}
+
+export interface DonHangGanDayResponse {
+  maDonHang: number;
+  tenKhachHang: string;
+  thoiGianDatHang: string;
+  trangThai: TrangThaiDonHangObject;
+  tongTien: number;
 }

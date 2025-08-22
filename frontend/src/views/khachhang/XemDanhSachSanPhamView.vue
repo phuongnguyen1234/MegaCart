@@ -99,6 +99,7 @@ import ThemVaoGioHangModal from "@/components/xemsanpham/ThemVaoGioHangModal.vue
 import { useToast } from "@/composables/useToast";
 import { useCartStore } from "@/store/giohang.store";
 import { useDanhMucStore } from "@/store/danhmuc.store";
+import { useAuthStore } from "@/store/auth.store";
 import {
   timKiemVaLocSanPham,
   getSanPhamTheoNhan,
@@ -128,6 +129,7 @@ const router = useRouter();
 const { showToast } = useToast();
 const cartStore = useCartStore();
 const danhMucStore = useDanhMucStore();
+const authStore = useAuthStore();
 
 // --- State for UI ---
 const isFilterVisibleOnMobile = ref(false);
@@ -312,6 +314,21 @@ async function handleAddToCart(payload: {
   sanPham: SanPhamResponse;
   soLuong: number;
 }) {
+  // Kiểm tra nếu người dùng chưa đăng nhập
+  if (!authStore.isLoggedIn) {
+    closeAddToCartModal(); // Đóng modal trước khi chuyển hướng
+    showToast({
+      thongBao: "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.",
+      loai: "loi",
+    });
+    // Chuyển hướng đến trang đăng nhập và lưu lại trang hiện tại để quay về
+    router.push({
+      name: "DangNhap",
+      query: { redirect: router.currentRoute.value.fullPath },
+    });
+    return; // Dừng hàm tại đây
+  }
+
   closeAddToCartModal();
   try {
     const response = await themVaoGioHang({
@@ -437,7 +454,6 @@ watch(
     selectedManufacturer.value = null;
     selectedPrice.value = 0;
     selectedSort.value = "asc";
-    currentPage.value = 0;
 
     // Đồng bộ selectedCategory với route danh mục
     if (route.path.startsWith("/danh-muc")) {
@@ -461,7 +477,13 @@ watch(
       selectedCategory.value = null;
     }
 
-    fetchProducts();
+    // Reset về trang đầu tiên. Watcher của currentPage sẽ xử lý việc gọi API.
+    // Nếu đã ở trang 0, gọi API thủ công.
+    if (currentPage.value !== 0) {
+      currentPage.value = 0;
+    } else {
+      fetchProducts();
+    }
   }
 );
 
@@ -491,14 +513,25 @@ watch(selectedCategory, (newVal, oldVal) => {
     return;
   }
   // Khi user chọn lại filter, refetch như cũ
-  currentPage.value = 0;
-  fetchProducts();
+  // Reset về trang đầu tiên. Watcher của currentPage sẽ xử lý việc gọi API.
+  if (currentPage.value !== 0) {
+    currentPage.value = 0;
+  } else {
+    // Nếu đã ở trang 0, watcher sẽ không chạy, cần gọi thủ công.
+    fetchProducts();
+  }
 });
 
 // Watch các bộ lọc khác (nhà sản xuất, giá, sắp xếp) để tải lại dữ liệu
 watch([selectedManufacturer, selectedPrice, selectedSort], () => {
   // Reset về trang đầu tiên mỗi khi bộ lọc thay đổi
-  currentPage.value = 0;
-  fetchProducts();
+  if (currentPage.value !== 0) {
+    currentPage.value = 0;
+  } else {
+    fetchProducts();
+  }
 });
+
+// Watch trang hiện tại để tải lại dữ liệu khi chuyển trang
+watch(currentPage, fetchProducts);
 </script>
