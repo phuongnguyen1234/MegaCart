@@ -9,5 +9,5 @@ public interface FileStorageService {
 
     CompletableFuture<String> storeFileAsync(MultipartFile file, String subDir);
 
-    void deleteFile(String filePath);
+    void deleteFileAsync(String filePath);
 }

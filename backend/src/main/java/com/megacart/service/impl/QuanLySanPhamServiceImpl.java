@@ -267,8 +267,8 @@ public class QuanLySanPhamServiceImpl implements QuanLySanPhamService {
                 sanPham.getAnhMinhHoas().removeAll(anhCanXoa);
                 // Xóa khỏi DB
                 anhMinhHoaRepository.deleteAll(anhCanXoa);
-                // Xóa khỏi Cloud Storage (có thể làm bất đồng bộ nếu muốn)
-                anhCanXoa.forEach(anh -> fileStorageService.deleteFile(anh.getDuongDan()));
+                // Xóa khỏi Cloud Storage bất đồng bộ để không làm chậm response
+                anhCanXoa.forEach(anh -> fileStorageService.deleteFileAsync(anh.getDuongDan()));
             }
         }
 

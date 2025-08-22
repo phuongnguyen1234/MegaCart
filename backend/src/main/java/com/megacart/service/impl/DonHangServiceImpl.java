@@ -14,6 +14,9 @@ import com.megacart.repository.*;
 import com.megacart.service.DonHangService;
 import com.megacart.utils.ThoiGianGiaoHangUtils;
 import lombok.RequiredArgsConstructor;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import org.springframework.data.jpa.domain.Specification;
 import java.time.LocalTime;
 import java.util.Collections;
 import java.util.ArrayList;
@@ -48,8 +52,42 @@ public class DonHangServiceImpl implements DonHangService {
         LocalDateTime startOfDay = (tuNgay != null) ? tuNgay.atStartOfDay() : null;
         LocalDateTime endOfDay = (denNgay != null) ? denNgay.atTime(LocalTime.MAX) : null;
 
+        // Xây dựng Specification để tạo query động, linh hoạt và chính xác hơn
+        Specification<DonHang> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // Điều kiện bắt buộc: mã khách hàng và trạng thái đơn hàng
+            // Sửa lỗi: Truy cập vào trường ID của KhachHang ('maKhachHang') thay vì 'maTaiKhoan'.
+            // Entity KhachHang không có trường 'maTaiKhoan'.
+            predicates.add(cb.equal(root.get("khachHang").get("maKhachHang"), maKhachHang));
+            predicates.add(cb.equal(root.get("trangThai"), trangThai));
+
+            // Điều kiện tùy chọn: khoảng thời gian
+            if (startOfDay != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("thoiGianDatHang"), startOfDay));
+            }
+            if (endOfDay != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("thoiGianDatHang"), endOfDay));
+            }
+
+            // Điều kiện tìm kiếm theo từ khóa (tuKhoa), chỉ tìm theo mã đơn hàng
+            if (tuKhoa != null && !tuKhoa.trim().isEmpty()) {
+                // Chỉ thực hiện tìm kiếm nếu từ khóa là một chuỗi số hợp lệ
+                if (tuKhoa.matches("\\d+")) {
+                    predicates.add(cb.equal(root.get("maDonHang"), Integer.parseInt(tuKhoa)));
+                } else {
+                    // Nếu từ khóa không phải là số, chúng ta không tìm thấy kết quả nào
+                    // bằng cách thêm một điều kiện luôn sai (ví dụ: WHERE 1=0).
+                    // Điều này đảm bảo không có đơn hàng nào được trả về.
+                    predicates.add(cb.disjunction());
+                }
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
         // Bước 1: Lấy trang danh sách đơn hàng (không kèm chi tiết)
-        Page<DonHang> donHangPage = donHangRepository.findByMaKhachHangAndTrangThaiDonHang(maKhachHang, trangThai, tuKhoa, startOfDay, endOfDay, pageable);
+        Page<DonHang> donHangPage = donHangRepository.findAll(spec, pageable);
 
         List<DonHang> donHangsOnPage = donHangPage.getContent();
         if (donHangsOnPage.isEmpty()) {

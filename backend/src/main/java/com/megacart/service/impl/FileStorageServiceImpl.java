@@ -49,8 +49,9 @@ public class FileStorageServiceImpl implements FileStorageService {
         return CompletableFuture.completedFuture(storeFile(file, subDir));
     }
 
+    @Async
     @Override
-    public void deleteFile(String filePath) {
+    public void deleteFileAsync(String filePath) {
         try {
             // URL từ Cloudinary có dạng: https://res.cloudinary.com/cloud-name/image/upload/v123/sanpham/33/abc.jpg
             // Chúng ta cần trích xuất "public_id" để xóa, nó là phần path không bao gồm version.

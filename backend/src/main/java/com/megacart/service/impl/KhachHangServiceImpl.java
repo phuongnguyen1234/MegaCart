@@ -23,6 +23,9 @@ import com.megacart.service.JwtService;
 import com.megacart.service.KhachHangService;
 import com.megacart.utils.OtpUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -43,6 +46,10 @@ public class KhachHangServiceImpl implements KhachHangService {
     private final EmailService emailService;
     private final JwtService jwtService;
     private final ObjectMapper objectMapper;
+
+    @Lazy // Dùng @Lazy để tránh lỗi circular dependency khi inject service vào chính nó
+    @Autowired
+    private KhachHangService self; // Tự inject để gọi phương thức @Async, tránh vấn đề self-invocation
 
     @Override
     public ThongTinKhachHangResponse getThongTinKhachHang(Integer maKhachHang) {
@@ -191,6 +198,16 @@ public class KhachHangServiceImpl implements KhachHangService {
         }
         maXacThucRepository.save(maXacThuc);
 
+        // Gọi phương thức bất đồng bộ để gửi email
+        // Việc gọi thông qua proxy 'self' đảm bảo @Async được kích hoạt.
+        self.guiOtpThayDoiEmail(taiKhoan.getEmail(), otp);
+
+        return true;
+    }
+
+    @Override
+    @Async // Đánh dấu phương thức này sẽ chạy trên một luồng riêng
+    public void guiOtpThayDoiEmail(String toEmail, String otp) {
         String subject = "Xác nhận thay đổi email tài khoản MegaCart";
         String body = "Chào bạn,\n\n"
                 + "Mã OTP để xác nhận yêu cầu thay đổi email của bạn là: " + otp + "\n\n"
@@ -198,9 +215,7 @@ public class KhachHangServiceImpl implements KhachHangService {
                 + "Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.\n\n"
                 + "Trân trọng,\n"
                 + "Đội ngũ MegaCart";
-        emailService.sendEmail(taiKhoan.getEmail(), subject, body);
-
-        return true;
+        emailService.sendEmail(toEmail, subject, body);
     }
 
     private ThongTinKhachHangResponse mapToThongTinKhachHangResponse(KhachHang khachHang) {

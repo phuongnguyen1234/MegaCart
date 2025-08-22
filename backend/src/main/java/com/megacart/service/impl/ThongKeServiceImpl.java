@@ -332,15 +332,30 @@ public class ThongKeServiceImpl implements ThongKeService {
     @Override
     @Transactional(readOnly = true)
     public List<ChiTietDoanhThuThangResponse> getChiTietDoanhThuThang() {
-        // Lấy 12 tháng gần nhất
-        Pageable top12 = PageRequest.of(0, 12);
-        // 1. Lấy dữ liệu đã được tổng hợp sẵn từ bảng ThongKeThang, sắp xếp theo tháng mới nhất
-        List<ThongKeThang> thongKeList = thongKeThangRepository.findByOrderByNamDescThangDesc(top12).getContent();
+        final int MONTH_PERIOD = 12;
+        YearMonth currentMonth = YearMonth.now();
 
-        // 2. Chuyển đổi sang DTO
-        return thongKeList.stream()
-                .map(this::mapToChiTietDoanhThuThangResponse)
-                .collect(Collectors.toList());
+        // 1. Lấy dữ liệu thô của tối đa 12 tháng gần nhất có dữ liệu
+        Pageable top12 = PageRequest.of(0, MONTH_PERIOD);
+        List<ThongKeThang> thongKeData = thongKeThangRepository.findByOrderByNamDescThangDesc(top12).getContent();
+
+        // 2. Chuyển đổi dữ liệu thô sang Map để tra cứu nhanh (Key: YearMonth, Value: ThongKeThang)
+        Map<YearMonth, ThongKeThang> thongKeMap = thongKeData.stream()
+                .collect(Collectors.toMap(
+                        tk -> YearMonth.of(tk.getNam(), tk.getThang()),
+                        tk -> tk
+                ));
+
+        // 3. Tạo danh sách 12 tháng gần nhất và điền dữ liệu (tháng mới nhất lên đầu)
+        List<ChiTietDoanhThuThangResponse> result = new ArrayList<>();
+        for (int i = 0; i < MONTH_PERIOD; i++) {
+            YearMonth month = currentMonth.minusMonths(i);
+            ThongKeThang thongKe = thongKeMap.get(month);
+
+            result.add(thongKe != null ? mapToChiTietDoanhThuThangResponse(thongKe)
+                    : createDefaultChiTietDoanhThuThangResponse(month));
+        }
+        return result;
     }
 
     private ChiTietDoanhThuThangResponse mapToChiTietDoanhThuThangResponse(ThongKeThang thongKe) {
@@ -362,6 +377,19 @@ public class ThongKeServiceImpl implements ThongKeService {
                 .trungBinhMoiDon(thongKe.getTrungBinhMoiDon())
                 .build();
     }
+
+    private ChiTietDoanhThuThangResponse createDefaultChiTietDoanhThuThangResponse(YearMonth month) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/yyyy");
+        return ChiTietDoanhThuThangResponse.builder()
+                .thang(month.format(formatter))
+                .mucTieu(0)
+                .doanhThu(0)
+                .tiLeDatMucTieu(0.0) // Trả về 0.0 thay vì null
+                .tangTruong(0.0) // Trả về 0.0 thay vì null
+                .trungBinhMoiDon(BigDecimal.ZERO)
+                .build();
+    }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -439,15 +467,30 @@ public class ThongKeServiceImpl implements ThongKeService {
     @Override
     @Transactional(readOnly = true)
     public List<ChiTietDonHangThangResponse> getChiTietDonHangThang() {
-        // Lấy 12 tháng gần nhất
-        Pageable top12 = PageRequest.of(0, 12);
-        // 1. Lấy dữ liệu đã được tổng hợp sẵn từ bảng ThongKeThang, sắp xếp theo tháng mới nhất
-        List<ThongKeThang> thongKeList = thongKeThangRepository.findByOrderByNamDescThangDesc(top12).getContent();
+        final int MONTH_PERIOD = 12;
+        YearMonth currentMonth = YearMonth.now();
 
-        // 2. Chuyển đổi sang DTO
-        return thongKeList.stream()
-                .map(this::mapToChiTietDonHangThangResponse)
-                .collect(Collectors.toList());
+        // 1. Lấy dữ liệu thô của tối đa 12 tháng gần nhất có dữ liệu
+        Pageable top12 = PageRequest.of(0, MONTH_PERIOD);
+        List<ThongKeThang> thongKeData = thongKeThangRepository.findByOrderByNamDescThangDesc(top12).getContent();
+
+        // 2. Chuyển đổi dữ liệu thô sang Map để tra cứu nhanh (Key: YearMonth, Value: ThongKeThang)
+        Map<YearMonth, ThongKeThang> thongKeMap = thongKeData.stream()
+                .collect(Collectors.toMap(
+                        tk -> YearMonth.of(tk.getNam(), tk.getThang()),
+                        tk -> tk
+                ));
+
+        // 3. Tạo danh sách 12 tháng gần nhất và điền dữ liệu (tháng mới nhất lên đầu)
+        List<ChiTietDonHangThangResponse> result = new ArrayList<>();
+        for (int i = 0; i < MONTH_PERIOD; i++) {
+            YearMonth month = currentMonth.minusMonths(i);
+            ThongKeThang thongKe = thongKeMap.get(month);
+
+            result.add(thongKe != null ? mapToChiTietDonHangThangResponse(thongKe)
+                    : createDefaultChiTietDonHangThangResponse(month));
+        }
+        return result;
     }
 
     private ChiTietDonHangThangResponse mapToChiTietDonHangThangResponse(ThongKeThang thongKe) {
@@ -476,6 +519,23 @@ public class ThongKeServiceImpl implements ThongKeService {
                 .trungBinhMoiDon(thongKe.getTrungBinhMoiDon())
                 .donGiaoThanhCong(donGiaoThanhCong)
                 .donBiHuy(donBiHuy)
+                .build();
+    }
+
+    private ChiTietDonHangThangResponse createDefaultChiTietDonHangThangResponse(YearMonth month) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/yyyy");
+        return ChiTietDonHangThangResponse.builder()
+                .thang(month.format(formatter))
+                .soDonHang(0)
+                .tangTruong(0.0) // Trả về 0.0 thay vì null
+                .trungBinhMoiDon(BigDecimal.ZERO)
+                // Khởi tạo các đối tượng lồng nhau với giá trị mặc định
+                .donGiaoThanhCong(ChiTietDonHangThangResponse.ThongKeTiLe.builder()
+                        .soLuong(0)
+                        .phanTram(0.0).build())
+                .donBiHuy(ChiTietDonHangThangResponse.ThongKeTiLe.builder()
+                        .soLuong(0)
+                        .phanTram(0.0).build())
                 .build();
     }
 
