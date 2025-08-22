@@ -157,7 +157,7 @@
 
           <div class="mt-6 text-center">
             <button
-              class="bg-gray-800 text-white px-6 py-2 rounded hover:bg-gray-700 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
+              class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
               :disabled="selectedItems.size === 0"
               @click="handleDatHang"
             >

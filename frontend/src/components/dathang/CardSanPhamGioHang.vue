@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative flex items-center gap-4 rounded-lg border bg-white p-4 shadow-sm transition-all"
+    class="relative flex items-center gap-4 rounded-lg bg-white p-4 shadow-sm transition-all"
     :class="{ 'opacity-60 bg-gray-50': disabled }"
   >
     <input

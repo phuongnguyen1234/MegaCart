@@ -39,14 +39,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
+import banner1 from "@/assets/images/banner1.jpg"; // Thay thế bằng tên tệp thực tế của bạn
+import banner2 from "@/assets/images/banner2.jpg";
+import banner3 from "@/assets/images/banner3.jpg";
+import banner4 from "@/assets/images/banner4.jpg";
+import banner5 from "@/assets/images/banner5.jpg";
 
-const images = [
-  "https://picsum.photos/id/1015/1200/300",
-  "https://picsum.photos/id/1016/1200/300",
-  "https://picsum.photos/id/1018/1200/300",
-  "https://picsum.photos/id/1020/1200/300",
-  "https://picsum.photos/id/1024/1200/300",
-];
+const images = [banner1, banner2, banner3, banner4, banner5]; // Thêm các ảnh đã import vào đây
 
 const currentIndex = ref(0);
 let intervalId: ReturnType<typeof setInterval>;
