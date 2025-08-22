@@ -305,7 +305,7 @@ const sendOTP = async () => {
   }
 
   await handleApiCall(
-    () => guiEmailQuenMatKhau(email.value),
+    () => guiEmailQuenMatKhau({ email: email.value }),
     (response) => {
       showToast({
         thongBao: response.message || "Mã OTP đã được gửi.",
@@ -321,7 +321,7 @@ const resendOTP = async () => {
   if (resendTimer.value > 0) return;
 
   await handleApiCall(
-    () => guiEmailQuenMatKhau(email.value),
+    () => guiEmailQuenMatKhau({ email: email.value }),
     (response) => {
       showToast({
         thongBao: response.message || "Mã OTP đã được gửi lại.",
@@ -339,7 +339,7 @@ const verifyOTP = async () => {
   }
 
   await handleApiCall(
-    () => xacThucOtp(email.value, otp.value),
+    () => xacThucOtp({ email: email.value, otp: otp.value }),
     (response) => {
       showToast({
         thongBao: response.message || "Xác thực OTP thành công.",
@@ -366,7 +366,12 @@ const resetPassword = async () => {
   }
 
   await handleApiCall(
-    () => datLaiMatKhau(email.value, otp.value, newPassword.value),
+    () =>
+      datLaiMatKhau({
+        email: email.value,
+        otp: otp.value,
+        matKhauMoi: newPassword.value,
+      }),
     (response) => {
       showToast({
         thongBao: response.message || "Đặt lại mật khẩu thành công!",

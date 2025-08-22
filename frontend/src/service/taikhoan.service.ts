@@ -11,6 +11,7 @@ import type {
   XacNhanDoiEmailRequest,
   XacThucOtpRequest,
 } from "@/types/taikhoan.types";
+import { MessageResponse } from "@/types/api.types";
 
 // --- Service Functions ---
 
@@ -32,9 +33,9 @@ export const login = (data: LoginRequest): Promise<AuthResponse> => {
 /**
  * Gửi yêu cầu đăng ký đến API.
  * @param data - Thông tin đăng ký của người dùng (email, mật khẩu).
- * @returns Promise<void>
+ * @returns Promise chứa JWT.
  */
-export const register = (data: RegisterRequest): Promise<void> => {
+export const register = (data: RegisterRequest): Promise<AuthResponse> => {
   if (!data.email || !data.matKhau) {
     return Promise.reject(new Error("Email và mật khẩu không được để trống."));
   }
@@ -44,38 +45,46 @@ export const register = (data: RegisterRequest): Promise<void> => {
 
 /**
  * Gửi yêu cầu đăng xuất đến API.
- * @returns Promise<void>
+ * @returns Promise chứa thông báo từ server.
  */
-export const logout = (): Promise<void> => {
+export const logout = (): Promise<MessageResponse> => {
   return apiClient.post("/auth/dang-xuat");
 };
 
 /**
  * Gửi email yêu cầu đặt lại mật khẩu.
  * @param data - Dữ liệu chứa email của người dùng.
- * @returns Promise<void>
+ * @returns Promise chứa thông báo từ server.
  */
 export const guiEmailQuenMatKhau = (
   data: GuiEmailQuenMatKhauRequest
-): Promise<void> => {
-  return apiClient.post("/auth/quen-mat-khau", data);
+): Promise<MessageResponse> => {
+  return apiClient.post("/auth/quen-mat-khau", data, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 };
 
 /**
  * Xác thực mã OTP.
  * @param data - Dữ liệu chứa email và mã OTP.
- * @returns Promise<void>
+ * @returns Promise chứa thông báo từ server.
  */
-export const xacThucOtp = (data: XacThucOtpRequest): Promise<void> => {
+export const xacThucOtp = (
+  data: XacThucOtpRequest
+): Promise<MessageResponse> => {
   return apiClient.post("/auth/xac-thuc-otp", data);
 };
 
 /**
  * Đặt lại mật khẩu mới sau khi đã xác thực OTP.
  * @param data - Dữ liệu chứa email, OTP và mật khẩu mới.
- * @returns Promise<void>
+ * @returns Promise chứa thông báo từ server.
  */
-export const datLaiMatKhau = (data: DatLaiMatKhauRequest): Promise<void> => {
+export const datLaiMatKhau = (
+  data: DatLaiMatKhauRequest
+): Promise<MessageResponse> => {
   return apiClient.post("/auth/dat-lai-mat-khau", data);
 };
 
