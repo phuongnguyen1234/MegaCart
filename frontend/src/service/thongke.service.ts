@@ -88,8 +88,10 @@ export const thongKeService = {
       params: { limit },
     });
   },
+};
 
-  getChiTietDonHang(maDonHang: number): Promise<ChiTietDonHangQuanLyResponse> {
-    return apiClient.get(`/admin/thong-ke/don-hang/${maDonHang}`);
-  },
+export const getChiTietDonHang = (
+  maDonHang: number
+): Promise<ChiTietDonHangQuanLyResponse> => {
+  return apiClient.get(`/admin/thong-ke/don-hang/${maDonHang}`);
 };

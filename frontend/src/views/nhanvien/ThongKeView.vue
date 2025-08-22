@@ -5,23 +5,26 @@
       <h2 class="text-xl font-bold text-gray-800 mb-4">Doanh thu</h2>
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <StatCard
-          tieuDe="Doanh thu hôm nay"
+          :tieuDe="`Doanh thu hôm nay (${formattedToday})`"
           :giaTri="formatCurrency(thongKeTongQuan?.doanhThu?.homNay ?? 0)"
           icon="lucide:coins"
           :is-loading="isLoading.tongQuan"
         />
         <StatCard
-          tieuDe="Doanh thu tháng này"
+          :tieuDe="`Doanh thu tháng này (${formattedThisMonth})`"
           :giaTri="formatCurrency(thongKeTongQuan?.doanhThu?.thangNay ?? 0)"
           icon="lucide:wallet"
           :is-loading="isLoading.tongQuan"
         />
         <StatCard
           tieuDe="Tăng trưởng doanh thu"
-          :giaTri="`${
-            thongKeTongQuan?.doanhThu?.tangTruongSoVoiThangTruoc ?? 0
-          }%`"
-          icon="lucide:arrow-up"
+          :giaTri="`${tangTruongDoanhThu}%`"
+          :icon="
+            tangTruongDoanhThu > 0 ? 'lucide:arrow-up' : 'lucide:arrow-down'
+          "
+          :giaTriClass="
+            tangTruongDoanhThu > 0 ? 'text-green-600' : 'text-red-600'
+          "
           :is-loading="isLoading.tongQuan"
         />
       </div>
@@ -123,23 +126,28 @@
       <h2 class="text-xl font-bold text-gray-800 mb-4">Đơn hàng</h2>
       <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
         <StatCard
-          tieuDe="Đơn hàng hôm nay"
+          :tieuDe="`Đơn hàng hôm nay (${formattedToday})`"
           :giaTri="thongKeTongQuan?.donHang?.homNay?.toString() ?? '0'"
           icon="lucide:file-text"
           :is-loading="isLoading.tongQuan"
         />
         <StatCard
-          tieuDe="Đơn hàng tháng này"
+          :tieuDe="`Đơn hàng tháng này (${formattedThisMonth})`"
           :giaTri="thongKeTongQuan?.donHang?.thangNay?.toString() ?? '0'"
           icon="lucide:calendar"
           :is-loading="isLoading.tongQuan"
         />
         <StatCard
           tieuDe="Tăng trưởng đơn hàng"
-          :giaTri="`${
-            thongKeTongQuan?.donHang?.tangTruongSoVoiThangTruoc ?? 0
-          }%`"
-          icon="lucide:trending-up"
+          :giaTri="`${tangTruongDonHang}%`"
+          :icon="
+            tangTruongDonHang > 0
+              ? 'lucide:trending-up'
+              : 'lucide:trending-down'
+          "
+          :giaTriClass="
+            tangTruongDonHang > 0 ? 'text-green-600' : 'text-red-600'
+          "
           :is-loading="isLoading.tongQuan"
         />
         <StatCard
@@ -159,11 +167,32 @@
             'Thời gian đặt',
             'Trạng thái',
             'Tổng tiền',
-            '',
+            'Hành động',
           ]"
           :rows="donHangGanDayRows"
           :is-loading="isLoading.donHangGanDay"
-        />
+        >
+          <!-- Sử dụng slot để tùy chỉnh cột "Trạng thái" (index 3) -->
+          <template #cell-3="{ value }">
+            <span
+              :class="[
+                'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                getTrangThaiClass(value.value),
+              ]"
+            >
+              {{ value.label }}
+            </span>
+          </template>
+          <!-- Sử dụng slot để tùy chỉnh cột "Hành động" (index 5) -->
+          <template #cell-5="{ row }">
+            <button
+              @click="openChiTietDonHangModal(parseInt(row[0]))"
+              class="text-sm font-medium text-blue-600 hover:underline"
+            >
+              Xem
+            </button>
+          </template>
+        </DataTable>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
@@ -231,13 +260,13 @@
 
       <!-- Biểu đồ cột top 10 sản phẩm bán chạy -->
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <div class="p-4 bg-white rounded-2xl shadow flex flex-col h-80">
+        <div class="p-4 bg-white rounded-2xl shadow flex flex-col h-100">
           <div>
             <label class="text-sm font-semibold"
               >Top 10 sản phẩm bán chạy 30 ngày qua</label
             >
           </div>
-          <div class="relative mt-2 h-60">
+          <div class="relative mt-2 h-full">
             <BieuDoCot
               v-if="!isLoading.sanPham && sanPhamBanChayChartData"
               :labels="sanPhamBanChayChartData.labels"
@@ -255,7 +284,7 @@
         </div>
 
         <!--danh sách sản phẩm tồn kho cao-->
-        <div class="p-4 bg-white rounded-2xl shadow flex flex-col h-80">
+        <div class="p-4 bg-white rounded-2xl shadow flex flex-col h-100">
           <div>
             <label class="text-sm font-semibold"
               >Sản phẩm còn tồn kho cao</label
@@ -263,7 +292,7 @@
           </div>
           <div class="mt-2 flex-1 overflow-y-auto">
             <DataTable
-              :headers="['Sản phẩm', 'Tồn kho', 'Đã bán']"
+              :headers="['STT', 'Sản phẩm', 'Tồn kho', 'Đã bán']"
               :rows="sanPhamTonKhoRows"
               :is-loading="isLoading.sanPham"
             />
@@ -355,6 +384,14 @@
         </div>
       </template>
     </BaseModal>
+
+    <!-- Modal Chi tiết Đơn hàng (Read-only) -->
+    <ChiTietDonHangModal
+      v-if="selectedDonHangId"
+      :visible="isChiTietDonHangModalVisible"
+      :ma-don-hang="selectedDonHangId"
+      @close="closeChiTietDonHangModal"
+    />
   </div>
 </template>
 
@@ -367,6 +404,7 @@ import BieuDoCot from "@/components/dashboard/BieuDoCot.vue";
 import BieuDoDuong from "@/components/dashboard/BieuDoDuong.vue";
 import BieuDoTron from "@/components/dashboard/BieuDoTron.vue";
 import BaseModal from "@/components/base/modals/BaseModal.vue";
+import ChiTietDonHangModal from "@/components/dashboard/ChiTietDonHangModal.vue";
 
 import { thongKeService } from "@/service/thongke.service";
 import type {
@@ -380,7 +418,20 @@ import type {
   ChiTietDonHangThangResponse,
   ChiTietSanPhamBanChayResponse,
 } from "@/types/thongke.types";
+import { TrangThaiDonHangKey } from "@/types/donhang.types";
 import type { DonHangGanDayResponse } from "@/types/thongke.types";
+
+// --- Helpers ---
+const formattedToday = new Intl.DateTimeFormat("vi-VN", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+}).format(new Date());
+
+const formattedThisMonth = new Intl.DateTimeFormat("vi-VN", {
+  month: "numeric",
+  year: "numeric",
+}).format(new Date());
 
 // --- State for loading indicators ---
 const isLoading = reactive({
@@ -419,6 +470,19 @@ const doanhThuNgayPeriod = ref(7);
 const donHangNgayPeriod = ref(7);
 
 // --- Logic cho menu dropdown "Mục tiêu doanh thu" ---
+const isChiTietDonHangModalVisible = ref(false);
+const selectedDonHangId = ref<number | null>(null);
+
+const openChiTietDonHangModal = (maDonHang: number) => {
+  selectedDonHangId.value = maDonHang;
+  isChiTietDonHangModalVisible.value = true;
+};
+
+const closeChiTietDonHangModal = () => {
+  isChiTietDonHangModalVisible.value = false;
+  selectedDonHangId.value = null; // Reset để modal có thể được tạo lại
+};
+
 const isMenuOpen = ref(false);
 const menuRef = ref<HTMLElement | null>(null);
 const isMucTieuModalVisible = ref(false);
@@ -430,6 +494,14 @@ const tienDoPhanTram = computed(() => {
   }
   return (mucTieuDoanhThu.value.thucTe / mucTieuDoanhThu.value.mucTieu) * 100;
 });
+
+const tangTruongDoanhThu = computed(
+  () => thongKeTongQuan.value?.doanhThu?.tangTruongSoVoiThangTruoc ?? 0
+);
+
+const tangTruongDonHang = computed(
+  () => thongKeTongQuan.value?.donHang?.tangTruongSoVoiThangTruoc ?? 0
+);
 
 const mucTieuHienTai = computed(() => mucTieuDoanhThu.value?.mucTieu ?? 0);
 
@@ -448,7 +520,8 @@ const sanPhamBanChayChartData = computed(() => {
 
 const sanPhamTonKhoRows = computed(() => {
   return Array.isArray(sanPhamTonKhoCao.value)
-    ? sanPhamTonKhoCao.value.map((item) => [
+    ? sanPhamTonKhoCao.value.map((item, index) => [
+        (index + 1).toString(),
         item.tenSanPham,
         item.soLuongTon.toString(),
         item.soLuongDaBan.toString(),
@@ -462,9 +535,9 @@ const donHangGanDayRows = computed(() => {
         donHang.maDonHang.toString(),
         donHang.tenKhachHang,
         new Date(donHang.thoiGianDatHang).toLocaleString("vi-VN"),
-        donHang.trangThai.label,
+        donHang.trangThai, // Truyền cả object trạng thái để slot có thể sử dụng
         formatCurrency(donHang.tongTien),
-        "",
+        "", // Placeholder cho cột hành động, sẽ được thay thế bởi slot
       ])
     : [];
 });
@@ -480,6 +553,23 @@ const tiLeDonHangData = computed(() =>
     ? tiLeDonHang.value.map((item) => item.value)
     : []
 );
+
+const getTrangThaiClass = (trangThaiKey: TrangThaiDonHangKey): string => {
+  switch (trangThaiKey) {
+    case TrangThaiDonHangKey.CHO_XAC_NHAN:
+      return "bg-yellow-100 text-yellow-800";
+    case TrangThaiDonHangKey.CHO_XU_LY:
+      return "bg-blue-100 text-blue-800";
+    case TrangThaiDonHangKey.DANG_GIAO:
+      return "bg-indigo-100 text-indigo-800";
+    case TrangThaiDonHangKey.DA_GIAO:
+      return "bg-green-100 text-green-800";
+    case TrangThaiDonHangKey.DA_HUY:
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
 
 const handleUpdateTarget = () => {
   mucTieuMoi.value = mucTieuDoanhThu.value?.mucTieu ?? 0;

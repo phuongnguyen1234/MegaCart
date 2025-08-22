@@ -65,7 +65,6 @@ import CardGiaoHang from "@/components/giaohang/CardGiaoHang.vue";
 import CapNhatGiaoHangModal from "@/components/giaohang/CapNhatGiaoHangModal.vue";
 import PhanTrang from "@/components/base/PhanTrang.vue";
 import ThanhTimKiem from "@/components/base/ThanhTimKiem.vue";
-import TheSideMenu from "@/components/layouts/TheSideMenu.vue";
 import { useToast } from "@/composables/useToast";
 import {
   getDSDonHangCanGiao,
