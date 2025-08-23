@@ -78,7 +78,7 @@
               {{ sanPham.tenSanPham }}
             </h1>
             <p class="text-2xl font-bold text-red-600 mt-2">
-              {{ dinhDangTien(sanPham.donGia) }}
+              {{ formatCurrency(sanPham.donGia) }}
             </p>
 
             <div class="mt-4 pt-4 border-t space-y-3 text-gray-600">
@@ -135,7 +135,7 @@
                 <button
                   @click="giamSoLuong"
                   :disabled="isOutOfStock || soLuong === 1"
-                  class="w-9 h-9 flex items-center justify-center rounded-full bg-blue-200 text-blue-800 text-lg hover:bg-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+                  class="w-9 h-9 flex items-center justify-center rounded-full bg-blue-600 text-white text-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
                 >
                   −
                 </button>
@@ -146,7 +146,7 @@
                 <button
                   @click="tangSoLuong"
                   :disabled="isOutOfStock"
-                  class="w-9 h-9 flex items-center justify-center rounded-full bg-blue-200 text-blue-800 text-lg hover:bg-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+                  class="w-9 h-9 flex items-center justify-center rounded-full bg-blue-600 text-white text-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
                 >
                   +
                 </button>
@@ -157,7 +157,7 @@
             <div class="border-t pt-3 flex items-baseline justify-between">
               <p class="font-medium text-gray-700">Tạm tính:</p>
               <p class="text-xl font-bold text-gray-800">
-                {{ dinhDangTien(tamTinh) }}
+                {{ formatCurrency(tamTinh) }}
               </p>
             </div>
 
@@ -193,6 +193,7 @@ import {
   type ChiTietSanPhamResponse,
 } from "@/types/sanpham.types";
 import { AxiosError } from "axios";
+import { formatCurrency } from "@/utils/formatters";
 
 const route = useRoute();
 const router = useRouter();
@@ -209,8 +210,6 @@ const selectedImage = ref("");
 const isOutOfStock = computed(
   () => sanPham.value?.trangThaiTonKho.value === TrangThaiTonKhoKey.HET_HANG
 );
-
-const dinhDangTien = (val: number) => val.toLocaleString("vi-VN") + " VND";
 
 const fetchSanPham = async () => {
   const maSanPham = Number(route.params.maSanPham);

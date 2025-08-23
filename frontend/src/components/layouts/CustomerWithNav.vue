@@ -6,6 +6,7 @@
       <slot />
     </main>
     <TheFooter />
+    <ScrollToTop />
   </div>
 </template>
 
@@ -13,4 +14,5 @@
 import TheHeader from "@/components/layouts/TheHeader.vue";
 import TheNavBar from "@/components/layouts/TheNavBar.vue";
 import TheFooter from "@/components/layouts/TheFooter.vue";
+import ScrollToTop from "@/components/base/ScrollToTop.vue";
 </script>

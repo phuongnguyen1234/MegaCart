@@ -61,41 +61,56 @@
         ></i>
       </button>
       <transition name="slide-fade">
-        <div v-if="isOpen.donGia" class="px-4 py-3 space-y-3 bg-white">
-          <p class="text-gray-700" v-if="khoangGia && khoangGia.max > 0">
-            Đến
-            <strong class="font-semibold text-blue-600"
-              >{{ modelDonGia.toLocaleString() }} VND</strong
+        <div v-if="isOpen.donGia" class="px-4 py-3 space-y-4 bg-white">
+          <!-- Khoảng giá -->
+          <div v-if="khoangGia && khoangGia.max > 0">
+            <label class="block font-medium text-gray-800">Khoảng giá</label>
+            <p class="text-gray-700 mt-1">
+              Từ
+              <strong class="font-semibold text-blue-600"
+                >{{ khoangGia.min.toLocaleString() }} VND</strong
+              >
+              đến
+              <strong class="font-semibold text-blue-600"
+                >{{ localDonGia.toLocaleString() }} VND</strong
+              >
+            </p>
+            <input
+              type="range"
+              v-model="localDonGia"
+              :min="khoangGia.min"
+              :max="khoangGia.max"
+              :step="donGiaStep"
+              @change="updateDonGiaModel"
+              class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600 mt-2"
+            />
+          </div>
+
+          <!-- Sắp xếp -->
+          <div>
+            <label class="block font-medium text-gray-800"
+              >Sắp xếp đơn giá</label
             >
-          </p>
-          <input
-            v-if="khoangGia && khoangGia.max > 0"
-            type="range"
-            v-model="modelDonGia"
-            :min="khoangGia.min"
-            :max="khoangGia.max"
-            :step="(khoangGia.max - khoangGia.min) / 200"
-            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-          />
-          <div class="flex items-center gap-4 pt-2">
-            <label class="flex items-center gap-1.5 cursor-pointer">
-              <input
-                type="radio"
-                value="asc"
-                v-model="modelSapXep"
-                class="text-blue-600 focus:ring-blue-500"
-              />
-              Tăng dần
-            </label>
-            <label class="flex items-center gap-1.5 cursor-pointer">
-              <input
-                type="radio"
-                value="desc"
-                v-model="modelSapXep"
-                class="text-blue-600 focus:ring-blue-500"
-              />
-              Giảm dần
-            </label>
+            <div class="flex items-center gap-4 pt-2">
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="radio"
+                  value="asc"
+                  v-model="modelSapXep"
+                  class="text-blue-600 focus:ring-blue-500"
+                />
+                Tăng dần
+              </label>
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="radio"
+                  value="desc"
+                  v-model="modelSapXep"
+                  class="text-blue-600 focus:ring-blue-500"
+                />
+                Giảm dần
+              </label>
+            </div>
           </div>
         </div>
       </transition>
@@ -150,10 +165,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed, watch } from "vue";
 import type { FilterOption, KhoangGia } from "@/types/filter.types";
 
-defineProps<{
+const props = defineProps<{
   danhMucOption: FilterOption[];
   nhaSanXuatOption: string[];
   khoangGia?: KhoangGia;
@@ -165,10 +180,50 @@ const modelNhaSanXuat = defineModel<string | null>("nhaSanXuat");
 const modelDonGia = defineModel<number>("donGia", { default: 0 });
 const modelSapXep = defineModel<"asc" | "desc">("sapXep");
 
+// State nội bộ cho thanh trượt để cập nhật UI ngay lập tức
+const localDonGia = ref(modelDonGia.value);
+
+// Cập nhật model của component cha chỉ khi người dùng thả chuột (kết thúc kéo).
+// Sự kiện @change trên input[type=range] sẽ gọi hàm này.
+function updateDonGiaModel() {
+  modelDonGia.value = localDonGia.value;
+}
+
+// Đồng bộ state nội bộ nếu model từ cha thay đổi (ví dụ: nút reset filter)
+watch(modelDonGia, (newModelValue) => {
+  if (newModelValue !== localDonGia.value) {
+    localDonGia.value = newModelValue;
+  }
+});
+
 const isOpen = ref({
   danhMuc: true,
   donGia: true,
   nhaSanXuat: true,
+});
+
+// Khi khoangGia được truyền vào, đặt giá trị mặc định cho thanh trượt là giá trị max
+// để tránh hiển thị "đến 0" khi mới tải.
+watch(
+  () => props.khoangGia,
+  (newKhoangGia) => {
+    if (newKhoangGia && newKhoangGia.max > 0 && localDonGia.value === 0) {
+      // Cập nhật cả model cha và state nội bộ để đồng bộ khi khởi tạo
+      localDonGia.value = newKhoangGia.max;
+      modelDonGia.value = newKhoangGia.max;
+    }
+  },
+  { immediate: true }
+);
+
+const donGiaStep = computed(() => {
+  if (!props.khoangGia || props.khoangGia.max <= 0) {
+    return 1; // Giá trị mặc định nếu không có khoảng giá
+  }
+  if (props.khoangGia.max <= 1000000) {
+    return 1000;
+  }
+  return 10000;
 });
 
 function toggle(section: keyof typeof isOpen.value) {

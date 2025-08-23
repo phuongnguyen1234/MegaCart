@@ -4,7 +4,7 @@
     <button
       @click="chuyenTrang(trangHienTai - 1)"
       :disabled="trangHienTai === 0"
-      class="px-3 py-1 mx-1 rounded-md text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200"
+      class="font-semibold cursor-pointer px-3 py-1 mx-1 rounded-full text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-200"
     >
       <
     </button>
@@ -15,10 +15,10 @@
       :key="trang"
       @click="chuyenTrang(trang - 1)"
       :class="[
-        'px-3 py-1 mx-1 rounded-md',
+        'px-3 py-1 mx-1 rounded-full cursor-pointer',
         trangHienTai === trang - 1
           ? 'bg-blue-600 text-white'
-          : 'text-gray-700 hover:bg-gray-200',
+          : 'text-blue-700 hover:bg-blue-200 font-semibold',
       ]"
     >
       {{ trang }}
@@ -28,7 +28,7 @@
     <button
       @click="chuyenTrang(trangHienTai + 1)"
       :disabled="trangHienTai === tongSoTrang - 1"
-      class="px-3 py-1 mx-1 rounded-md text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200"
+      class="font-semibold cursor-pointer px-3 py-1 mx-1 rounded-full text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-200"
     >
       >
     </button>

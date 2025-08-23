@@ -24,21 +24,21 @@
         />
         <div class="flex-1">
           <div class="font-semibold">{{ sanPham?.tenSanPham }}</div>
-          <div v-if="sanPham" class="text-sm text-gray-500">
+          <div v-if="sanPham" class="text-m text-gray-500">
             {{ sanPham.donGia.toLocaleString() }} VND/{{ sanPham.donVi }}
           </div>
 
           <!-- Bộ chọn số lượng -->
           <div class="flex items-center mt-2 gap-3">
             <button
-              class="cursor-pointer w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 text-black"
+              class="cursor-pointer w-6 h-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white"
               @click="giamSoLuong"
             >
               −
             </button>
-            <span class="w-6 text-center">{{ soLuong }}</span>
+            <span class="w-6 text-center font-semibold">{{ soLuong }}</span>
             <button
-              class="cursor-pointer w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 text-black"
+              class="cursor-pointer w-6 h-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white"
               @click="tangSoLuong"
             >
               +
@@ -48,7 +48,7 @@
       </div>
 
       <!-- Tạm tính -->
-      <div class="mt-4 text-left font-semibold">
+      <div class="mt-4 text-left font-semibold text-xl">
         Tạm tính: {{ tamTinh.toLocaleString() }} VND
       </div>
 
