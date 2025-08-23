@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-start gap-4 rounded-lg border bg-white p-3 shadow-sm">
+  <div class="flex items-start gap-4 rounded-lg bg-white p-3 shadow">
     <!-- Hình ảnh -->
     <component
       :is="isManagementMode ? 'div' : 'router-link'"

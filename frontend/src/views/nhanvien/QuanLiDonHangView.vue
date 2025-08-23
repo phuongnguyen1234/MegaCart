@@ -3,7 +3,9 @@
     <h1 class="text-2xl font-bold mb-4">Đơn hàng</h1>
 
     <!-- Bộ lọc -->
-    <div class="flex flex-wrap items-end gap-4 mb-4">
+    <div
+      class="flex flex-wrap items-end gap-4 mb-4 bg-white p-4 rounded-lg shadow"
+    >
       <!-- Ngày đặt -->
       <div>
         <label for="ngay-dat" class="block text-sm font-medium text-gray-700">
@@ -50,63 +52,35 @@
     <p class="mb-2 text-base text-gray-600">{{ thongTinHienThi }}</p>
 
     <!-- Bảng -->
-    <div class="overflow-x-auto shadow-md sm:rounded-lg">
-      <table class="w-full text-base text-left text-gray-500">
-        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-          <tr>
-            <th
-              v-for="header in headers"
-              :key="header"
-              scope="col"
-              class="px-6 py-3"
-            >
-              {{ header }}
-            </th>
-            <th scope="col" class="px-6 py-3 text-right">Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="donHangHienThi.length === 0">
-            <td :colspan="headers.length + 1" class="text-center py-10">
-              Không có đơn hàng nào phù hợp.
-            </td>
-          </tr>
-          <tr
-            v-for="donHang in donHangHienThi"
-            :key="donHang.maDonHang"
-            class="bg-white border-b hover:bg-gray-50"
-          >
-            <td class="px-6 py-4 font-medium text-gray-900">
-              #{{ donHang.maDonHang }}
-            </td>
-            <td class="px-6 py-4">{{ donHang.tenKhachHang }}</td>
-            <td class="px-6 py-4">
-              {{ formatDateTimeLocal(donHang.thoiGianDatHang) }}
-            </td>
-            <td class="px-6 py-4">
-              <span
-                :class="[
-                  'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                  getTrangThaiClass(donHang.trangThai.value),
-                ]"
-              >
-                {{ donHang.trangThai.label }}
-              </span>
-            </td>
-            <td class="px-6 py-4">{{ formatCurrency(donHang.tongTien) }}</td>
-            <td class="px-6 py-4 text-right">
-              <button
-                @click="openModal(donHang)"
-                class="text-gray-500 hover:text-blue-600 transition-colors duration-200"
-                title="Xem chi tiết"
-              >
-                <i class="fi fi-rr-eye text-lg align-middle"></i>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <DataTable :headers="tableHeaders" :rows="tableRows">
+      <!-- Tùy chỉnh cột Mã đơn hàng để giữ style gốc -->
+      <template #cell-0="{ value }">
+        <span class="font-medium text-gray-900">{{ value }}</span>
+      </template>
+
+      <!-- Tùy chỉnh cột Trạng thái -->
+      <template #cell-3="{ value }">
+        <span
+          :class="[
+            'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+            getTrangThaiClass(value.value),
+          ]"
+        >
+          {{ value.label }}
+        </span>
+      </template>
+
+      <!-- Tùy chỉnh cột Hành động -->
+      <template #cell-5="{ value }">
+        <button
+          @click="openModal(value)"
+          class="text-gray-500 hover:text-blue-600 transition-colors duration-200"
+          title="Xem chi tiết"
+        >
+          <i class="fi fi-rr-eye text-lg align-middle"></i>
+        </button>
+      </template>
+    </DataTable>
 
     <!-- Phân trang -->
     <div class="mt-4 flex justify-center">
@@ -133,6 +107,7 @@
 import PhanTrang from "@/components/base/PhanTrang.vue";
 import ChiTietDonHangQLyModal from "@/components/quanlidonhang/ChiTietDonHangQLyModal.vue";
 import ThanhTimKiem from "@/components/base/ThanhTimKiem.vue";
+import DataTable from "@/components/base/DataTable.vue";
 import { ref, computed, watch } from "vue";
 import {
   DonHangQuanLyResponse,
@@ -275,23 +250,24 @@ watch(loaiTimKiem, (newLoai) => {
 fetchDonHang();
 
 // --- Header bảng ---
-const headers = [
+const tableHeaders = [
   "Mã đơn hàng",
   "Tên người nhận",
   "Thời gian đặt",
   "Trạng thái",
   "Tổng tiền",
+  "Hành động",
 ];
 
 // --- Định dạng dữ liệu ---
 const getTrangThaiClass = (trangThaiKey: TrangThaiDonHangKey): string => {
   switch (trangThaiKey) {
     case TrangThaiDonHangKey.CHO_XAC_NHAN:
-      return "bg-yellow-100 text-yellow-800";
+      return "bg-orange-100 text-orange-800";
     case TrangThaiDonHangKey.CHO_XU_LY:
-      return "bg-blue-100 text-blue-800";
+      return "bg-yellow-100 text-yellow-800";
     case TrangThaiDonHangKey.DANG_GIAO:
-      return "bg-indigo-100 text-indigo-800";
+      return "bg-blue-100 text-blue-800";
     case TrangThaiDonHangKey.DA_GIAO:
       return "bg-green-100 text-green-800";
     case TrangThaiDonHangKey.DA_HUY:
@@ -311,7 +287,20 @@ const thongTinHienThi = computed(() => {
 });
 
 // --- Dữ liệu hiển thị bảng ---
-const donHangHienThi = computed(() => danhSachDonHang.value ?? []);
+const donHangHienThi = computed<DonHangQuanLyResponse[]>(
+  () => danhSachDonHang.value ?? []
+);
+
+const tableRows = computed(() =>
+  donHangHienThi.value.map((donHang) => [
+    `#${donHang.maDonHang}`,
+    donHang.tenKhachHang,
+    formatDateTimeLocal(donHang.thoiGianDatHang),
+    donHang.trangThai, // Pass object for status slot
+    formatCurrency(donHang.tongTien),
+    donHang, // Pass object for action slot
+  ])
+);
 
 // --- Modal hiển thị chi tiết đơn hàng ---
 const isModalVisible = ref(false);

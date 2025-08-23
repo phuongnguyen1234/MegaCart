@@ -7,13 +7,13 @@
     <div class="absolute top-2 left-2 z-10 flex flex-col items-start gap-y-1.5">
       <span
         v-if="sanPham.nhan"
-        class="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded"
+        class="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full"
       >
         {{ sanPham.nhan.label }}
       </span>
       <span
         v-if="sanPham.banChay"
-        class="bg-orange-400 text-white text-xs font-semibold px-2 py-0.5 rounded"
+        class="bg-orange-400 text-white text-xs font-semibold px-2 py-0.5 rounded-full"
       >
         Bán chạy
       </span>
@@ -38,7 +38,7 @@
       <button
         v-if="!isOutOfStock"
         @click.stop="onAdd"
-        class="absolute bottom-2 right-2 bg-blue-600 text-white px-3 py-1.5 text-xs font-semibold rounded-full flex items-center shadow-md hover:bg-blue-700 transition-opacity opacity-0 group-hover:opacity-100"
+        class="cursor-pointer absolute bottom-2 right-2 bg-blue-600 text-white px-3 py-1.5 text-xs font-semibold rounded-full flex items-center shadow-md hover:bg-blue-700 transition-opacity opacity-0 group-hover:opacity-100"
       >
         <span class="select-none mr-1 text-sm font-bold">+</span> Thêm
       </button>

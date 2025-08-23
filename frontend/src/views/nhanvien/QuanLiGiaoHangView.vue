@@ -3,7 +3,9 @@
     <h1 class="text-2xl font-bold mb-4">Quản lí giao hàng</h1>
 
     <!-- Bộ lọc -->
-    <div class="flex flex-wrap items-end gap-4 mb-4">
+    <div
+      class="flex flex-wrap items-end gap-4 mb-4 bg-white p-4 rounded-lg shadow"
+    >
       <!-- Tìm kiếm -->
       <ThanhTimKiem
         :ds-tieu-chi="[

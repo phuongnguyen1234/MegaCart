@@ -78,7 +78,7 @@
     <!-- Nút xóa -->
     <button
       @click="$emit('xoa')"
-      class="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm ring-1 ring-inset ring-gray-200 hover:bg-gray-100 hover:text-red-600"
+      class="cursor-pointer absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm ring-1 ring-inset ring-gray-200 hover:bg-gray-100 hover:text-red-600"
       aria-label="Xóa sản phẩm"
     >
       <i class="fi fi-rr-trash text-sm"></i>

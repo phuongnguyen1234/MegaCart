@@ -1,7 +1,7 @@
 <template>
   <Overlay :visible="visible" z-index="z-[1002]" @close="$emit('close')">
     <div
-      class="bg-white max-h-[90vh] rounded-lg shadow-xl relative p-4 flex flex-col"
+      class="bg-gray-50 max-h-[90vh] rounded-lg shadow-xl relative p-4 flex flex-col"
       :class="widthClass"
     >
       <!-- Nút đóng -->

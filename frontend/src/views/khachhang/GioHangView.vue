@@ -40,7 +40,7 @@
               <input
                 type="checkbox"
                 v-model="chonTatCa"
-                class="cursor-pointer"
+                class="cursor-pointer accent-blue-500"
               />
               Chọn tất cả
             </label>
@@ -78,33 +78,41 @@
           </h2>
 
           <div class="mb-3">
-            <label class="block font-medium mb-1">Tên người nhận</label>
+            <label class="flex items-center font-medium mb-1">
+              <i class="fi fi-rr-user w-5 mr-2"></i>
+              <span>Tên người nhận</span>
+            </label>
             <input
               type="text"
               v-model="thongTinGiaoHangForm.tenNguoiNhan"
-              class="w-full border rounded px-3 py-2 disabled:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed"
+              class="w-full border border-gray-300 rounded px-3 py-2 bg-white disabled:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               :disabled="suDungThongTinMacDinh"
             />
           </div>
 
           <div class="mb-3">
-            <label class="block font-medium mb-1">Địa chỉ nhận hàng</label>
-            <input
-              type="text"
+            <label class="flex items-center font-medium mb-1">
+              <i class="fi fi-rr-marker w-5 mr-2"></i>
+              <span>Địa chỉ nhận hàng</span>
+            </label>
+            <textarea
               v-model="thongTinGiaoHangForm.diaChi"
-              class="w-full border rounded px-3 py-2 disabled:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed"
+              rows="3"
+              class="w-full border border-gray-300 rounded px-3 py-2 bg-white disabled:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
               :disabled="suDungThongTinMacDinh"
-            />
+            >
+            </textarea>
           </div>
 
           <div class="mb-3">
-            <label class="block font-medium mb-1"
-              >Số điện thoại nhận hàng</label
-            >
+            <label class="flex items-center font-medium mb-1">
+              <i class="fi fi-rr-phone-call w-5 mr-2"></i>
+              <span>Số điện thoại nhận hàng</span>
+            </label>
             <input
               type="text"
               v-model="thongTinGiaoHangForm.soDienThoai"
-              class="w-full border rounded px-3 py-2 disabled:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed"
+              class="w-full border border-gray-300 rounded px-3 py-2 bg-white disabled:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               :disabled="suDungThongTinMacDinh"
             />
           </div>
@@ -114,7 +122,7 @@
               type="checkbox"
               id="sudungtk"
               v-model="suDungThongTinMacDinh"
-              class="mr-2 cursor-pointer"
+              class="mr-2 cursor-pointer accent-blue-500"
               @change="toggleSuDungThongTinMacDinh"
             />
             <label for="sudungtk" class="cursor-pointer"
@@ -123,10 +131,13 @@
           </div>
 
           <div class="mb-3">
-            <label class="block font-medium mb-1">Hình thức nhận hàng</label>
+            <label class="flex items-center font-medium mb-1">
+              <i class="fi fi-rr-truck-side w-5 mr-2"></i>
+              <span>Hình thức nhận hàng</span>
+            </label>
             <select
               v-model="hinhThucNhanHang"
-              class="w-full border rounded px-3 py-2 cursor-pointer bg-white"
+              class="w-full border border-gray-300 rounded px-3 py-2 cursor-pointer bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             >
               <option :value="HinhThucNhanHangRequest.GIAO_HANG_TAN_NHA">
                 Giao hàng tận nhà
@@ -135,10 +146,13 @@
           </div>
 
           <div class="mb-3">
-            <label class="block font-medium mb-1">Hình thức thanh toán</label>
+            <label class="flex items-center font-medium mb-1">
+              <i class="fi fi-rr-credit-card w-5 mr-2"></i>
+              <span>Hình thức thanh toán</span>
+            </label>
             <select
               v-model="hinhThucThanhToan"
-              class="w-full border rounded px-3 py-2 cursor-pointer bg-white"
+              class="w-full border border-gray-300 rounded px-3 py-2 cursor-pointer bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             >
               <option
                 :value="HinhThucThanhToanRequest.THANH_TOAN_KHI_NHAN_HANG"
@@ -173,14 +187,12 @@
         class="flex flex-col items-center justify-center text-center py-16"
       >
         <i class="fi fi-rr-shopping-cart text-8xl text-gray-300 mb-4"></i>
-        <h3 class="text-xl font-semibold text-gray-700 mb-4">
-          Giỏ hàng hiện đang trống
-        </h3>
+        <h3 class="text-xl font-semibold mb-4">Giỏ hàng hiện đang trống</h3>
         <button
           @click="goToHome"
-          class="bg-gray-800 text-white px-6 py-2 rounded hover:bg-gray-700"
+          class="px-6 py-2 rounded text-white bg-blue-600 hover:bg-blue-700 cursor-pointer"
         >
-          Quay về trang chủ
+          Quay về Trang chủ
         </button>
       </div>
     </div>

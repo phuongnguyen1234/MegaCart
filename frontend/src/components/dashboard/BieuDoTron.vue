@@ -24,8 +24,8 @@ const chartData = computed(() => ({
       label: "Tỉ lệ",
       // Cập nhật bảng màu để phù hợp với 5 trạng thái đơn hàng
       backgroundColor: [
-        colors.yellow[400], // Chờ xác nhận
-        colors.orange[400], // Chờ xử lí
+        colors.orange[400], // Chờ xác nhận
+        colors.yellow[400], // Chờ xử lí
         colors.sky[400], // Đang giao
         colors.green[500], // Đã giao
         colors.red[500], // Đã hủy

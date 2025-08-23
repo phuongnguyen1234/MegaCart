@@ -1,6 +1,6 @@
 <template>
   <div
-    class="border rounded-lg p-4 flex flex-col sm:flex-row justify-between gap-4 bg-white shadow-sm hover:shadow-md transition-shadow"
+    class="rounded-lg p-4 flex flex-col sm:flex-row justify-between gap-4 bg-white shadow-sm hover:shadow-md transition-shadow"
   >
     <!-- Left Section: Product Info -->
     <div class="flex items-start gap-4 flex-1">
@@ -53,7 +53,7 @@
           {{ formattedDate }}
         </div>
         <button
-          class="text-blue-600 hover:underline font-semibold mt-2 text-sm"
+          class="cursor-pointer text-blue-600 hover:underline font-semibold mt-2 text-sm"
           @click.stop="$emit('xemChiTiet')"
         >
           Xem chi tiết

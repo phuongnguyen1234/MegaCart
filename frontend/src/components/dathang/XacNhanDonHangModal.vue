@@ -37,10 +37,10 @@
       </div>
       <div class="flex items-start gap-2">
         <i class="fi fi-rr-marker mt-1"></i>
-        <span><strong>Địa chỉ:</strong> {{ thongTin.diaChi }}</span>
+        <span><strong>Địa chỉ nhận hàng:</strong> {{ thongTin.diaChi }}</span>
       </div>
       <div class="flex items-start gap-2">
-        <i class="fi fi-rr-delivery-truck mt-1"></i>
+        <i class="fi fi-rr-truck-side mt-1"></i>
         <span
           ><strong>Hình thức giao hàng:</strong> {{ thongTin.giaoHang }}</span
         >

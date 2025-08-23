@@ -36,12 +36,14 @@
       <!-- Danh sách sản phẩm -->
       <div
         ref="containerRef"
-        class="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+        class="grid grid-flow-col auto-cols-[100%] sm:auto-cols-[calc(50%-0.5rem)] md:auto-cols-[calc(33.333333%-0.666667rem)] lg:auto-cols-[calc(25%-0.75rem)] gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [-webkit-scrollbar]:hidden"
+        @scroll.passive="updateScrollState"
       >
         <CardSanPham
-          v-for="sanPham in pagedProducts"
+          v-for="sanPham in dsSanPham"
           :key="sanPham.maSanPham"
           :sanPham="sanPham"
+          class="snap-start"
           @mo-modal-them="$emit('themVaoGioHang', sanPham)"
         />
       </div>
@@ -54,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import CardSanPham from "@/components/base/card/CardSanPham.vue";
 import type { SanPhamResponse } from "@/types/sanpham.types";
 
@@ -67,50 +69,54 @@ const props = defineProps<{
 defineEmits<{ (e: "themVaoGioHang", product: SanPhamResponse): void }>();
 
 const containerRef = ref<HTMLElement | null>(null);
-const kichThuocTrang = ref(4);
-const trangHienTai = ref(0);
+const canScrollLeft = ref(false);
+const canScrollRight = ref(false);
 
-const tinhKichThuocTrang = () => {
-  const chieuRong = containerRef.value?.clientWidth || window.innerWidth;
-  if (chieuRong >= 1024) kichThuocTrang.value = 4; // lg
-  else if (chieuRong >= 768) kichThuocTrang.value = 3; // md
-  else if (chieuRong >= 640) kichThuocTrang.value = 2; // sm
-  else kichThuocTrang.value = 1;
+const scrollLeft = () => {
+  if (containerRef.value) {
+    containerRef.value.scrollBy({
+      left: -containerRef.value.clientWidth,
+      behavior: "smooth",
+    });
+  }
+};
+const scrollRight = () => {
+  if (containerRef.value) {
+    containerRef.value.scrollBy({
+      left: containerRef.value.clientWidth,
+      behavior: "smooth",
+    });
+  }
 };
 
+const updateScrollState = () => {
+  if (!containerRef.value) return;
+  const { scrollLeft, scrollWidth, clientWidth } = containerRef.value;
+  // Thêm một khoảng sai số nhỏ để xử lý các giá trị thập phân
+  const tolerance = 1;
+  canScrollLeft.value = scrollLeft > tolerance;
+  canScrollRight.value = scrollLeft < scrollWidth - clientWidth - tolerance;
+};
+
+let resizeObserver: ResizeObserver;
+
 onMounted(() => {
-  tinhKichThuocTrang();
-  window.addEventListener("resize", tinhKichThuocTrang);
+  const container = containerRef.value;
+  if (container) {
+    updateScrollState();
+    container.addEventListener("scroll", updateScrollState, { passive: true });
+    resizeObserver = new ResizeObserver(updateScrollState);
+    resizeObserver.observe(container);
+  }
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("resize", tinhKichThuocTrang);
+  const container = containerRef.value;
+  if (container) {
+    container.removeEventListener("scroll", updateScrollState);
+  }
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
 });
-
-watch(kichThuocTrang, () => {
-  trangHienTai.value = 0; // reset page when screen changes
-});
-
-const totalPages = computed(() =>
-  Math.ceil(props.dsSanPham.length / kichThuocTrang.value)
-);
-
-const pagedProducts = computed(() =>
-  props.dsSanPham.slice(
-    trangHienTai.value * kichThuocTrang.value,
-    (trangHienTai.value + 1) * kichThuocTrang.value
-  )
-);
-
-const canScrollLeft = computed(() => trangHienTai.value > 0);
-const canScrollRight = computed(
-  () => trangHienTai.value < totalPages.value - 1
-);
-
-const scrollLeft = () => {
-  if (canScrollLeft.value) trangHienTai.value--;
-};
-const scrollRight = () => {
-  if (canScrollRight.value) trangHienTai.value++;
-};
 </script>

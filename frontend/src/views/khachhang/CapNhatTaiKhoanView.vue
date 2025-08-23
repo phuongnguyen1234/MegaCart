@@ -12,12 +12,14 @@
         >. Vui lòng nhập mã OTP để xác nhận thay đổi.
       </p>
       <div>
-        <label for="otp" class="block font-medium mb-1">Mã OTP:</label>
+        <label for="otp" class="block font-medium mb-1 text-black"
+          >Mã OTP:</label
+        >
         <input
           id="otp"
           v-model="otp"
           type="text"
-          class="w-full border rounded px-3 py-2"
+          class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Nhập mã OTP"
         />
       </div>
@@ -48,58 +50,68 @@
       <h2 class="text-xl font-bold mb-4">Thông tin khách hàng</h2>
 
       <div class="mb-4">
-        <label class="flex items-center font-medium mb-1" for="hoTen">
-          <i class="fi fi-rr-user w-5 text-center mr-2 text-gray-500"></i>
+        <label
+          class="flex items-center font-medium mb-1 text-black"
+          for="hoTen"
+        >
+          <i class="fi fi-rr-user w-5 text-center mr-2"></i>
           Họ tên:
         </label>
         <input
           id="hoTen"
           v-model="tenKhachHang"
           type="text"
-          class="w-full border rounded px-3 py-2"
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
 
       <div class="mb-6">
-        <label class="flex items-center font-medium mb-1" for="email">
-          <i class="fi fi-rr-envelope w-5 text-center mr-2 text-gray-500"></i>
+        <label
+          class="flex items-center font-medium mb-1 text-black"
+          for="email"
+        >
+          <i class="fi fi-rr-envelope w-5 text-center mr-2"></i>
           Email:
         </label>
         <input
           id="email"
           v-model="email"
           type="email"
-          class="w-full border rounded px-3 py-2"
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
 
       <h2 class="text-xl font-bold mb-4">Thông tin giao hàng</h2>
 
       <div class="mb-4">
-        <label class="flex items-center font-medium mb-1" for="diaChi">
-          <i
-            class="fi fi-rs-house-chimney w-5 text-center mr-2 text-gray-500"
-          ></i>
+        <label
+          class="flex items-center font-medium mb-1 text-black"
+          for="diaChi"
+        >
+          <i class="fi fi-rr-home w-5 text-center mr-2"></i>
           Địa chỉ:
         </label>
         <textarea
           id="diaChi"
           v-model="diaChi"
           rows="3"
-          class="w-full border rounded px-3 py-2"
+          class="resize-none w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
         ></textarea>
       </div>
 
       <div class="mb-6">
-        <label class="flex items-center font-medium mb-1" for="soDienThoai">
-          <i class="fi fi-rr-phone-call w-5 text-center mr-2 text-gray-500"></i>
+        <label
+          class="flex items-center font-medium mb-1 text-black"
+          for="soDienThoai"
+        >
+          <i class="fi fi-rr-phone-call w-5 text-center mr-2"></i>
           Số điện thoại:
         </label>
         <input
           id="soDienThoai"
           v-model="soDienThoai"
           type="text"
-          class="w-full border rounded px-3 py-2"
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
 
@@ -134,7 +146,6 @@ import {
 import type {
   // Types are now in a dedicated file
   CapNhatHoSoRequest,
-  CapNhatHoSoResponse,
   AuthResponse,
   XacNhanDoiEmailRequest,
 } from "@/types/taikhoan.types";

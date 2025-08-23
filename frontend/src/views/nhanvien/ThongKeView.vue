@@ -557,11 +557,11 @@ const tiLeDonHangData = computed(() =>
 const getTrangThaiClass = (trangThaiKey: TrangThaiDonHangKey): string => {
   switch (trangThaiKey) {
     case TrangThaiDonHangKey.CHO_XAC_NHAN:
-      return "bg-yellow-100 text-yellow-800";
+      return "bg-orange-100 text-orange-800";
     case TrangThaiDonHangKey.CHO_XU_LY:
-      return "bg-blue-100 text-blue-800";
+      return "bg-yellow-100 text-yellow-800";
     case TrangThaiDonHangKey.DANG_GIAO:
-      return "bg-indigo-100 text-indigo-800";
+      return "bg-blue-100 text-blue-800";
     case TrangThaiDonHangKey.DA_GIAO:
       return "bg-green-100 text-green-800";
     case TrangThaiDonHangKey.DA_HUY:

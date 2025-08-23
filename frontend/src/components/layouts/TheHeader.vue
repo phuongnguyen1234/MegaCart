@@ -256,41 +256,24 @@ const removeDiacritics = (str: string) => {
  */
 const highlightMatch = (text: string) => {
   const query = searchQuery.value.trim();
-  if (!query) return text;
-
-  // Chuẩn hóa truy vấn
-  const normalizedQuery = removeDiacritics(query).toLowerCase();
-
-  if (!normalizedQuery) return text;
-
-  // Regex để escape ký tự đặc biệt
-  const escapedQuery = normalizedQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(escapedQuery, "gi");
-
-  let result = "";
-  let lastIndex = 0;
-
-  // Duyệt từng ký tự trong text gốc, nhưng so khớp bằng normalizedText
-  const normalizedText = removeDiacritics(text).toLowerCase();
-
-  let match;
-  while ((match = regex.exec(normalizedText)) !== null) {
-    const start = match.index;
-    const end = start + match[0].length;
-
-    // Thêm phần trước đoạn match
-    result += text.slice(lastIndex, start);
-
-    // Thêm phần match được bôi đậm
-    result += `<strong>${text.slice(start, end)}</strong>`;
-
-    lastIndex = end;
+  if (!query) {
+    return text;
   }
 
-  // Thêm phần còn lại
-  result += text.slice(lastIndex);
+  const normalizedQuery = removeDiacritics(query).toLowerCase();
+  const normalizedText = removeDiacritics(text).toLowerCase();
 
-  return result;
+  // Chỉ in đậm nếu chuỗi gợi ý BẮT ĐẦU bằng chuỗi tìm kiếm (không phân biệt hoa/thường/dấu)
+  if (normalizedText.startsWith(normalizedQuery)) {
+    // Lấy độ dài của chuỗi tìm kiếm gốc để cắt chuỗi gợi ý gốc
+    const matchLength = query.length;
+    const matchedPart = text.slice(0, matchLength);
+    const restPart = text.slice(matchLength);
+    return `<strong>${matchedPart}</strong>${restPart}`;
+  }
+
+  // Nếu không khớp, trả về chuỗi gốc
+  return text;
 };
 
 const handleClickOutside = (event: MouseEvent) => {
@@ -311,6 +294,8 @@ const handleClickOutside = (event: MouseEvent) => {
 };
 
 onMounted(() => {
+  // Lấy số lượng giỏ hàng khi component được mount
+  cartStore.fetchCartCount();
   document.addEventListener("mousedown", handleClickOutside);
 });
 

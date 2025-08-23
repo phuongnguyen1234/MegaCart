@@ -22,11 +22,11 @@
           <button
             v-for="trangThai in trangThaiList"
             :key="trangThai.value"
-            class="relative px-4 py-2 -mb-px text-sm font-medium transition-colors duration-200 shrink-0"
+            class="cursor-pointer relative px-4 py-2 text-sm font-semibold transition-colors duration-200 shrink-0"
             :class="[
               trangThaiDangChon === trangThai.value
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-500 hover:text-blue-600',
+                ? `border-b-2 ${trangThai.activeClass}`
+                : `text-gray-500 ${trangThai.hoverClass}`,
             ]"
             @click="trangThaiDangChon = trangThai.value"
           >
@@ -112,11 +112,36 @@ const denNgay = ref<string | undefined>(getISODateString(new Date()));
 const tuKhoa = ref(""); // Dùng cho tìm kiếm theo mã đơn hàng hoặc tên sản phẩm
 
 const trangThaiList = [
-  { label: "Chờ xác nhận", value: TrangThaiDonHangFilter.CHO_XAC_NHAN },
-  { label: "Chờ xử lý", value: TrangThaiDonHangFilter.CHO_XU_LY },
-  { label: "Đang giao", value: TrangThaiDonHangFilter.DANG_GIAO },
-  { label: "Đã giao", value: TrangThaiDonHangFilter.DA_GIAO },
-  { label: "Đã huỷ", value: TrangThaiDonHangFilter.DA_HUY },
+  {
+    label: "Chờ xác nhận",
+    value: TrangThaiDonHangFilter.CHO_XAC_NHAN,
+    activeClass: "border-orange-500 text-orange-600",
+    hoverClass: "hover:text-orange-600",
+  },
+  {
+    label: "Chờ xử lý",
+    value: TrangThaiDonHangFilter.CHO_XU_LY,
+    activeClass: "border-yellow-500 text-yellow-600",
+    hoverClass: "hover:text-yellow-600",
+  },
+  {
+    label: "Đang giao",
+    value: TrangThaiDonHangFilter.DANG_GIAO,
+    activeClass: "border-blue-600 text-blue-600",
+    hoverClass: "hover:text-blue-600",
+  },
+  {
+    label: "Đã giao",
+    value: TrangThaiDonHangFilter.DA_GIAO,
+    activeClass: "border-green-600 text-green-600",
+    hoverClass: "hover:text-green-600",
+  },
+  {
+    label: "Đã huỷ",
+    value: TrangThaiDonHangFilter.DA_HUY,
+    activeClass: "border-red-600 text-red-600",
+    hoverClass: "hover:text-red-600",
+  },
 ];
 const trangThaiDangChon = ref<TrangThaiDonHangFilter>(
   TrangThaiDonHangFilter.CHO_XAC_NHAN

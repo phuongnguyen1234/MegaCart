@@ -12,13 +12,9 @@
       <!-- Error State -->
       <div v-else-if="error" class="text-center py-20">
         <p class="text-xl text-red-500 font-semibold">{{ error }}</p>
-        <p v-if="isRedirecting" class="mt-2 text-gray-600">
-          Sẽ tự động chuyển về trang chủ sau 3 giây...
-        </p>
         <router-link
-          v-else
           to="/"
-          class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          class="mt-6 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
           Quay về Trang chủ
         </router-link>
@@ -43,7 +39,7 @@
               />
               <!-- Labels container -->
               <div
-                class="absolute top-3 right-3 flex flex-col items-end gap-y-2"
+                class="absolute top-3 left-3 flex flex-col items-start gap-y-2"
               >
                 <span
                   v-if="sanPham.nhan"
@@ -138,13 +134,13 @@
               <div class="flex items-center gap-3">
                 <button
                   @click="giamSoLuong"
-                  :disabled="isOutOfStock"
+                  :disabled="isOutOfStock || soLuong === 1"
                   class="w-9 h-9 flex items-center justify-center rounded-full bg-blue-200 text-blue-800 text-lg hover:bg-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
                 >
                   −
                 </button>
                 <span
-                  class="min-w-[32px] text-center font-semibold text-gray-800"
+                  class="min-w-[32px] text-center font-semibold text-gray-800 text-lg"
                   >{{ soLuong }}</span
                 >
                 <button
@@ -158,9 +154,9 @@
             </div>
 
             <!-- Tạm tính -->
-            <div class="border-t pt-3">
+            <div class="border-t pt-3 flex items-baseline justify-between">
               <p class="font-medium text-gray-700">Tạm tính:</p>
-              <p class="text-2xl font-bold text-red-600">
+              <p class="text-xl font-bold text-gray-800">
                 {{ dinhDangTien(tamTinh) }}
               </p>
             </div>
@@ -207,7 +203,6 @@ const authStore = useAuthStore();
 const sanPham = ref<ChiTietSanPhamResponse | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
-const isRedirecting = ref(false);
 
 const selectedImage = ref("");
 
@@ -237,10 +232,6 @@ const fetchSanPham = async () => {
   } catch (err) {
     if (err instanceof AxiosError && err.response?.status === 404) {
       error.value = "Sản phẩm không tồn tại hoặc đã bị xóa.";
-      isRedirecting.value = true;
-      setTimeout(() => {
-        router.push("/");
-      }, 3000);
     } else {
       console.error("Lỗi khi tải chi tiết sản phẩm:", err);
       error.value = "Không thể tải dữ liệu sản phẩm. Vui lòng thử lại.";
