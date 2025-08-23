@@ -11,4 +11,7 @@ public interface KhachHangService {
     CapNhatHoSoResponse capNhatHoSo(Integer maKhachHang, CapNhatHoSoRequest request);
 
     AuthResponse xacNhanDoiEmail(Integer maKhachHang, String otp);
+
+    void guiOtpThayDoiEmail(String toEmail, String otp);
+
 }
