@@ -2,7 +2,7 @@ import apiClient from "./apiClient";
 import type {
   AuthResponse,
   CapNhatHoSoResponse,
-  CapNhatTaiKhoanRequest,
+  CapNhatHoSoRequest,
   DatLaiMatKhauRequest,
   GuiEmailQuenMatKhauRequest,
   LoginRequest,
@@ -102,7 +102,7 @@ export const layThongTinTaiKhoan = (): Promise<ThongTinTaiKhoanKhachHang> => {
  * @returns Promise chứa thông báo và trạng thái thay đổi email.
  */
 export const capNhatTaiKhoan = (
-  data: CapNhatTaiKhoanRequest
+  data: CapNhatHoSoRequest
 ): Promise<CapNhatHoSoResponse> => {
   return apiClient.patch("/khach-hang/cap-nhat-thong-tin", data);
 };

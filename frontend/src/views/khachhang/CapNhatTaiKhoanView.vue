@@ -31,11 +31,11 @@
           </button>
           <button
             @click="handleConfirmEmailChange"
-            :disabled="isLoading"
+            :disabled="isConfirmingOtp"
             class="px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
           >
             <span
-              v-if="isLoading"
+              v-if="isConfirmingOtp"
               class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"
             ></span>
             Xác nhận
@@ -106,11 +106,11 @@
       <div class="flex justify-center">
         <button
           @click="luuThayDoi"
-          :disabled="isLoading"
+          :disabled="isSavingProfile"
           class="cursor-pointer bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[150px]"
         >
           <span
-            v-if="isLoading"
+            v-if="isSavingProfile"
             class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"
           ></span>
           Lưu thay đổi
@@ -132,85 +132,132 @@ import {
   xacNhanDoiEmail,
 } from "@/service/taikhoan.service";
 import type {
-  User,
+  // Types are now in a dedicated file
+  CapNhatHoSoRequest,
   CapNhatHoSoResponse,
   AuthResponse,
-} from "@/service/taikhoan.service";
+  XacNhanDoiEmailRequest,
+} from "@/types/taikhoan.types";
 
 const tenKhachHang = ref("");
 const email = ref("");
 const diaChi = ref("");
 const soDienThoai = ref("");
 
-const originalEmail = ref("");
+const originalUserData = ref({
+  tenKhachHang: "",
+  email: "",
+  diaChi: "",
+  soDienThoai: "",
+});
 const isConfirmEmailModalVisible = ref(false);
 const otp = ref("");
-const isLoading = ref(false);
+const isSavingProfile = ref(false); // Trạng thái loading cho việc lưu hồ sơ
+const isConfirmingOtp = ref(false); // Trạng thái loading riêng cho việc xác nhận OTP
 
 const { showToast } = useToast();
 const authStore = useAuthStore();
 
 const fetchUserData = async () => {
-  isLoading.value = true;
+  isSavingProfile.value = true;
   try {
     const userData = await layThongTinTaiKhoan();
     tenKhachHang.value = userData.tenKhachHang;
     email.value = userData.email;
-    originalEmail.value = userData.email; // Lưu lại email ban đầu
     diaChi.value = userData.diaChi || "";
     soDienThoai.value = userData.soDienThoai || "";
+
+    // Lưu lại toàn bộ dữ liệu ban đầu để có thể hoàn tác
+    originalUserData.value = {
+      tenKhachHang: userData.tenKhachHang,
+      email: userData.email,
+      diaChi: userData.diaChi || "",
+      soDienThoai: userData.soDienThoai || "",
+    };
   } catch (error) {
     showToast({
       thongBao: "Không thể tải thông tin tài khoản. Vui lòng thử lại.",
       loai: "loi",
     });
   } finally {
-    isLoading.value = false;
+    isSavingProfile.value = false;
   }
 };
 
 onMounted(fetchUserData);
 
-const luuThayDoi = async () => {
-  isLoading.value = true;
-  try {
-    const payload: Partial<User> = {
-      tenKhachHang: tenKhachHang.value,
-      email: email.value,
-      diaChi: diaChi.value,
-      soDienThoai: soDienThoai.value,
-    };
+const luuThayDoi = () => {
+  isSavingProfile.value = true;
+  const emailDaThayDoi = email.value !== originalUserData.value.email;
 
-    const response: CapNhatHoSoResponse = await capNhatTaiKhoan(payload);
+  const payload: CapNhatHoSoRequest = {
+    tenKhachHang: tenKhachHang.value,
+    emailMoi: email.value,
+    diaChi: diaChi.value,
+    soDienThoai: soDienThoai.value,
+  };
 
-    showToast({
-      thongBao: response.message,
-      loai: "thanhCong",
-    });
+  if (emailDaThayDoi) {
+    // UI Lạc quan: Mở modal ngay lập tức, không chờ API.
+    isConfirmEmailModalVisible.value = true;
 
-    if (response.emailChangeInitiated) {
-      // Luồng thay đổi email đã được kích hoạt, backend đã gửi OTP.
-      // Giờ chỉ cần hiển thị modal để người dùng nhập OTP.
-      isConfirmEmailModalVisible.value = true;
-    } else {
-      // Cập nhật thông tin thành công, không có thay đổi email.
-      // Cập nhật lại email gốc để cho các lần chỉnh sửa sau.
-      originalEmail.value = email.value;
-      // Cập nhật tên người dùng trong store để Header tự động thay đổi
-      authStore.updateUserName(tenKhachHang.value);
-    }
-  } catch (error: any) {
-    const errorMessage =
-      error.response?.data?.message ||
-      "Cập nhật thông tin thất bại. Vui lòng thử lại.";
-    showToast({
-      thongBao: errorMessage,
-      loai: "loi",
-    });
-    // Hoàn tác lại email trên form nếu có lỗi xảy ra
-    email.value = originalEmail.value;
-  } finally {
-    isLoading.value = false;
+    // Gửi yêu cầu API trong nền
+    capNhatTaiKhoan(payload)
+      .then((response) => {
+        // API thành công, backend đã gửi OTP.
+        // Hiển thị thông báo và giữ modal mở để người dùng nhập OTP.
+        showToast({
+          thongBao: response.message,
+          loai: "thanhCong",
+        });
+        // Đã gửi API thành công, kết thúc loading cho form chính.
+        isSavingProfile.value = false;
+      })
+      .catch((error: any) => {
+        // API thất bại (ví dụ: email đã tồn tại).
+        // Đóng modal, hiển thị lỗi và hoàn tác các thay đổi.
+        const errorMessage =
+          error.response?.data?.message || "Yêu cầu thay đổi email thất bại.";
+        showToast({
+          thongBao: errorMessage,
+          loai: "loi",
+        });
+        closeConfirmModal(); // Hàm này sẽ hoàn tác form và reset các trạng thái loading.
+      });
+  } else {
+    // Luồng cập nhật thông thường (không đổi email)
+    capNhatTaiKhoan(payload)
+      .then((response) => {
+        showToast({
+          thongBao: response.message,
+          loai: "thanhCong",
+        });
+        // Cập nhật UI với dữ liệu mới từ backend
+        const { thongTinCapNhat } = response;
+        tenKhachHang.value = thongTinCapNhat.tenKhachHang;
+        email.value = thongTinCapNhat.email;
+        diaChi.value = thongTinCapNhat.diaChi || "";
+        soDienThoai.value = thongTinCapNhat.soDienThoai || "";
+        originalUserData.value = { ...thongTinCapNhat };
+        authStore.updateUserName(thongTinCapNhat.tenKhachHang);
+      })
+      .catch((error: any) => {
+        const errorMessage =
+          error.response?.data?.message ||
+          "Cập nhật thông tin thất bại. Vui lòng thử lại.";
+        showToast({
+          thongBao: errorMessage,
+          loai: "loi",
+        });
+        // Hoàn tác lại các thay đổi trên form nếu có lỗi từ API
+        tenKhachHang.value = originalUserData.value.tenKhachHang;
+        email.value = originalUserData.value.email;
+        diaChi.value = originalUserData.value.diaChi;
+        soDienThoai.value = originalUserData.value.soDienThoai;
+      })
+      .finally(() => {
+        isSavingProfile.value = false;
+      });
   }
 };
 
@@ -220,10 +267,11 @@ const handleConfirmEmailChange = async () => {
     return;
   }
 
-  isLoading.value = true;
+  isConfirmingOtp.value = true;
   try {
     // Gửi OTP lên server để xác nhận
-    const response: AuthResponse = await xacNhanDoiEmail(otp.value);
+    const payload: XacNhanDoiEmailRequest = { otp: otp.value };
+    const response: AuthResponse = await xacNhanDoiEmail(payload);
 
     // Lưu token mới vì thông tin định danh (email) đã thay đổi
     localStorage.setItem("access_token", response.token);
@@ -235,7 +283,7 @@ const handleConfirmEmailChange = async () => {
 
     // Đóng modal và cập nhật lại trạng thái
     isConfirmEmailModalVisible.value = false;
-    originalEmail.value = email.value; // Cập nhật email gốc thành email mới
+    // Không cần cập nhật state ở đây vì trang sẽ được tải lại
     otp.value = "";
 
     // Tải lại trang để cập nhật toàn bộ trạng thái người dùng (ví dụ: ở header)
@@ -249,14 +297,19 @@ const handleConfirmEmailChange = async () => {
       loai: "loi",
     });
   } finally {
-    isLoading.value = false;
+    isConfirmingOtp.value = false;
   }
 };
 
 const closeConfirmModal = () => {
   isConfirmEmailModalVisible.value = false;
-  // Hoàn tác lại thay đổi email nếu người dùng hủy
-  email.value = originalEmail.value;
+  // Hoàn tác lại tất cả các thay đổi trên form nếu người dùng hủy
+  tenKhachHang.value = originalUserData.value.tenKhachHang;
+  email.value = originalUserData.value.email;
+  diaChi.value = originalUserData.value.diaChi;
+  soDienThoai.value = originalUserData.value.soDienThoai;
   otp.value = "";
+  isSavingProfile.value = false;
+  isConfirmingOtp.value = false;
 };
 </script>

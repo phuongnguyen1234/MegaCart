@@ -75,17 +75,12 @@ export interface ThongTinTaiKhoanKhachHang {
 }
 
 /**
- * Dữ liệu gửi lên khi cập nhật thông tin tài khoản khách hàng.
- * Tương ứng với `CapNhatThongTinRequest.java` ở backend.
- */
-export type CapNhatTaiKhoanRequest = Partial<ThongTinTaiKhoanKhachHang>;
-
-/**
  * Phản hồi từ API cập nhật hồ sơ.
  */
 export interface CapNhatHoSoResponse {
   message: string;
   emailChangeInitiated: boolean;
+  thongTinCapNhat: ThongTinTaiKhoanKhachHang;
 }
 
 /**
@@ -115,4 +110,11 @@ export interface DatLaiMatKhauRequest extends XacThucOtpRequest {
  */
 export interface XacNhanDoiEmailRequest {
   otp: string;
+}
+
+export interface CapNhatHoSoRequest {
+  tenKhachHang: string;
+  soDienThoai: string;
+  diaChi: string;
+  emailMoi: string;
 }

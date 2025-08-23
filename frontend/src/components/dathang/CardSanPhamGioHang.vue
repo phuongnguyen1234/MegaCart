@@ -52,7 +52,7 @@
       <div v-else class="mt-2 flex items-center gap-2">
         <button
           @click="giamSoLuong"
-          class="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-lg text-white hover:bg-blue-700"
+          class="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-lg text-white hover:bg-blue-700"
         >
           −
         </button>
@@ -61,7 +61,7 @@
         }}</span>
         <button
           @click="tangSoLuong"
-          class="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-lg text-white hover:bg-blue-700"
+          class="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-lg text-white hover:bg-blue-700"
         >
           +
         </button>

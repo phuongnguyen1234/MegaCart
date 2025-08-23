@@ -167,7 +167,7 @@
 
             <!-- Nút thêm vào giỏ -->
             <button
-              class="w-full bg-[linear-gradient(135deg,_#1E88E5,_#1565C0)] hover:bg-[linear-gradient(135deg,_#42A5F5,_#1E88E5)] text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+              class="cursor-pointer w-full bg-[linear-gradient(135deg,_#1E88E5,_#1565C0)] hover:bg-[linear-gradient(135deg,_#42A5F5,_#1E88E5)] text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
               @click="themVaoGio"
               :disabled="isOutOfStock"
             >

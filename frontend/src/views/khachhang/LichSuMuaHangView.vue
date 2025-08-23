@@ -173,12 +173,15 @@ const timKiemDonHang = () => {
 };
 
 watch(trangThaiDangChon, () => {
-  currentPage.value = 0; // Reset về trang đầu tiên khi đổi tab
-  // Reset toàn bộ bộ lọc khi đổi tab trạng thái
-  tuKhoa.value = "";
-  tuNgay.value = getFirstDayOfMonth();
-  denNgay.value = getISODateString(new Date());
-  fetchLichSuDonHang();
+  // Khi chuyển tab, chỉ cần reset về trang đầu tiên và tìm kiếm lại
+  // Các bộ lọc khác (ngày, từ khóa) sẽ được giữ nguyên.
+  timKiemDonHang();
+});
+
+// Tự động tìm kiếm khi người dùng thay đổi khoảng ngày.
+// Điều này mang lại trải nghiệm lọc tức thì mà không cần nhấn nút "Tìm kiếm".
+watch([tuNgay, denNgay], () => {
+  timKiemDonHang();
 });
 
 onMounted(() => {
