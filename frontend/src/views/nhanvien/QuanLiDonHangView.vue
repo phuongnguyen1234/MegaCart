@@ -74,8 +74,7 @@
       <template #cell-5="{ value }">
         <button
           @click="openModal(value)"
-          class="text-gray-500 hover:text-blue-600 transition-colors duration-200"
-          title="Xem chi tiết"
+          class="text-blue-600 hover:text-blue-800 transition-colors duration-200 cursor-pointer"
         >
           <i class="fi fi-rr-eye text-lg align-middle"></i>
         </button>

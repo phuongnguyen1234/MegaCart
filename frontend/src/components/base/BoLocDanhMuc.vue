@@ -12,7 +12,7 @@
         id="danh-muc-cha-filter"
         v-model="selectedParent"
         :disabled="disabled"
-        class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+        class="cursor-pointer mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
       >
         <option value="">Tất cả</option>
         <option
@@ -37,7 +37,7 @@
         id="danh-muc-con-filter"
         v-model="selectedChild"
         :disabled="!selectedParent || disabled"
-        class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2 disabled:bg-gray-100"
+        class="cursor-pointer mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
       >
         <option value="">Tất cả</option>
         <option

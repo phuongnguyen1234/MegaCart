@@ -9,8 +9,12 @@
       <div class="space-y-4">
         <!-- Tên nhân viên -->
         <div>
-          <label for="ten" class="block text-sm font-medium text-gray-700"
-            >Tên nhân viên</label
+          <label
+            for="ten"
+            class="flex items-center gap-2 text-sm font-medium text-gray-700"
+          >
+            <i class="fi fi-rr-user text-base text-gray-400"></i>
+            <span>Tên nhân viên</span></label
           >
           <input
             id="ten"
@@ -24,8 +28,12 @@
 
         <!-- Email -->
         <div>
-          <label for="email" class="block text-sm font-medium text-gray-700"
-            >Email</label
+          <label
+            for="email"
+            class="flex items-center gap-2 text-sm font-medium text-gray-700"
+          >
+            <i class="fi fi-rr-envelope text-base text-gray-400"></i>
+            <span>Email</span></label
           >
           <input
             id="email"
@@ -41,8 +49,10 @@
         <div>
           <label
             for="soDienThoai"
-            class="block text-sm font-medium text-gray-700"
-            >Số điện thoại</label
+            class="flex items-center gap-2 text-sm font-medium text-gray-700"
+          >
+            <i class="fi fi-rr-phone-call text-base text-gray-400"></i>
+            <span>Số điện thoại</span></label
           >
           <input
             id="soDienThoai"
@@ -56,15 +66,19 @@
 
         <!-- Vị trí -->
         <div>
-          <label for="viTri" class="block text-sm font-medium text-gray-700"
-            >Vị trí</label
+          <label
+            for="viTri"
+            class="flex items-center gap-2 text-sm font-medium text-gray-700"
+          >
+            <i class="fi fi-rr-briefcase text-base text-gray-400"></i>
+            <span>Vị trí</span></label
           >
           <select
             id="viTri"
             v-model="formData.viTri"
             required
             :disabled="isLoading"
-            class="mt-1 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+            class="cursor-pointer mt-1 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
           >
             <option v-for="(label, key) in ViTriLabel" :key="key" :value="key">
               {{ label }}
@@ -74,10 +88,13 @@
 
         <!-- Trạng thái (chỉ khi sửa) -->
         <div v-if="isEditing">
-          <label class="block text-sm font-medium text-gray-700"
-            >Trạng thái tài khoản</label
+          <label
+            class="flex items-center gap-2 text-sm font-medium text-gray-700"
           >
-          <div class="mt-2">
+            <i class="fi fi-rr-user-gear text-base text-gray-400"></i>
+            <span>Trạng thái tài khoản</span></label
+          >
+          <div class="mt-2 pl-6">
             <label
               for="trangThai"
               class="relative inline-flex items-center cursor-pointer"
@@ -106,14 +123,14 @@
           type="button"
           @click="closeModal"
           :disabled="isLoading"
-          class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          class="cursor-pointer px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
         >
           Hủy
         </button>
         <button
           type="submit"
           :disabled="isLoading || (isEditing && !hasChanged)"
-          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          class="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           <span v-if="isLoading">Đang xử lý...</span>
           <span v-else>{{ isEditing ? "Cập nhật" : "Thêm" }}</span>

@@ -241,7 +241,13 @@
           @click="handleSubmit"
           :disabled="isLoading || (isEditMode && !isFormDirty) || !canSubmit"
         >
-          {{ isEditMode ? "Lưu thay đổi" : "Thêm sản phẩm" }}
+          {{
+            isLoading
+              ? "Đang xử lý..."
+              : isEditMode
+              ? "Lưu thay đổi"
+              : "Thêm sản phẩm"
+          }}
         </button>
       </div>
     </template>

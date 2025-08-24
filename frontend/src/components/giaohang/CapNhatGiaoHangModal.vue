@@ -33,11 +33,14 @@
         </div>
         <div class="flex items-start gap-2">
           <i class="fi fi-rr-phone-call mt-1"></i>
-          <span><strong>SĐT:</strong> {{ donHang.sdtNhanHang }}</span>
+          <span><strong>SĐT nhận hàng:</strong> {{ donHang.sdtNhanHang }}</span>
         </div>
         <div class="flex items-start gap-2">
           <i class="fi fi-rr-marker mt-1"></i>
-          <span><strong>Địa chỉ:</strong> {{ donHang.diaChiNhanHang }}</span>
+          <span
+            ><strong>Địa chỉ nhận hàng:</strong>
+            {{ donHang.diaChiNhanHang }}</span
+          >
         </div>
         <div class="flex items-start gap-2">
           <i class="fi fi-rr-credit-card mt-1"></i>
@@ -136,7 +139,7 @@
           class="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:bg-gray-400"
           :disabled="isConfirmButtonDisabled"
         >
-          Xác nhận cập nhật
+          Xác nhận
         </button>
       </div>
     </template>

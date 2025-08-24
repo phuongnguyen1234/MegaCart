@@ -1,5 +1,5 @@
 <template>
-  <div class="border rounded-lg p-4 shadow-sm bg-white">
+  <div class="rounded-lg p-4 shadow-sm bg-white">
     <!-- Dòng tiêu đề -->
     <div class="flex justify-between items-center mb-2 text-sm">
       <div>
@@ -18,7 +18,7 @@
         <div class="flex items-start">
           <i class="fi fi-rr-user mt-1 mr-2 text-gray-600"></i>
           <div>
-            <span class="font-semibold">Người nhận:</span>
+            <span class="font-semibold">Tên người nhận:</span>
             <span class="ml-1">{{ donHang.tenNguoiNhan }}</span>
           </div>
         </div>
@@ -26,7 +26,7 @@
         <div class="flex items-start">
           <i class="fi fi-rr-marker mt-1 mr-2 text-gray-600"></i>
           <div>
-            <span class="font-semibold">Địa chỉ:</span>
+            <span class="font-semibold">Địa chỉ nhận hàng:</span>
             <span class="ml-1">{{ donHang.diaChiNhanHang }}</span>
           </div>
         </div>
@@ -53,14 +53,14 @@
         <div class="flex items-start">
           <i class="fi fi-rr-phone-call mt-1 mr-2 text-gray-600"></i>
           <div>
-            <span class="font-semibold">Số điện thoại:</span>
+            <span class="font-semibold">SĐT nhận hàng:</span>
             <span class="ml-1">{{ donHang.sdtNhanHang }}</span>
           </div>
         </div>
 
         <button
           @click="$emit('doiNguoiGiao', donHang)"
-          class="text-blue-600 text-sm hover:underline mt-2 md:mt-0"
+          class="cursor-pointer text-blue-600 text-sm hover:underline mt-2 md:mt-0"
         >
           Đổi người giao
         </button>

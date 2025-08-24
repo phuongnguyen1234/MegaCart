@@ -16,7 +16,7 @@
       >
         <button
           @click="isMenuVisible = !isMenuVisible"
-          class="p-2 rounded-full hover:bg-gray-200 focus:outline-none"
+          class="cursor-pointer p-2 rounded-full hover:bg-gray-200 focus:outline-none"
         >
           <Icon icon="lucide:menu" class="w-6 h-6 text-gray-700" />
         </button>

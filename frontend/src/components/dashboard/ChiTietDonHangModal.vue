@@ -42,15 +42,22 @@
       <div class="text-sm space-y-2">
         <div class="flex items-start gap-2">
           <i class="fi fi-rr-user mt-1 w-4 text-center"></i>
-          <span><strong>Người nhận:</strong> {{ donHang.tenNguoiNhan }}</span>
+          <span
+            ><strong>Tên Người nhận:</strong> {{ donHang.tenNguoiNhan }}</span
+          >
         </div>
         <div class="flex items-start gap-2">
           <i class="fi fi-rr-phone-call mt-1 w-4 text-center"></i>
-          <span><strong>SĐT: </strong> {{ donHang.sdtNhanHang }}</span>
+          <span
+            ><strong>SĐT nhận hàng: </strong> {{ donHang.sdtNhanHang }}</span
+          >
         </div>
         <div class="flex items-start gap-2">
           <i class="fi fi-rr-marker mt-1 w-4 text-center"></i>
-          <span><strong>Địa chỉ: </strong> {{ donHang.diaChiNhanHang }}</span>
+          <span
+            ><strong>Địa chỉ nhận hàng: </strong>
+            {{ donHang.diaChiNhanHang }}</span
+          >
         </div>
         <div class="flex items-start gap-2">
           <i class="fi fi-rr-info mt-1 w-4 text-center"></i>
@@ -69,28 +76,28 @@
           >
         </div>
         <div class="flex items-start gap-2">
-          <i class="fi fi-rr-truck mt-1 w-4 text-center"></i>
+          <i class="fi fi-rr-box mt-1 w-4 text-center"></i>
           <span
-            ><strong>Giao hàng:</strong>
+            ><strong>Hình thức giao hàng:</strong>
             {{ donHang.hinhThucGiaoHang.label }}</span
           >
         </div>
         <div class="flex items-start gap-2">
-          <i class="fi fi-rr-money-bill mt-1 w-4 text-center"></i>
+          <i class="fi fi-rr-wallet mt-1 w-4 text-center"></i>
           <span
-            ><strong>Thanh toán:</strong>
+            ><strong>Hình thức thanh toán:</strong>
             {{ donHang.hinhThucThanhToan.label }}</span
           >
         </div>
         <div class="flex items-start gap-2">
           <i class="fi fi-rr-credit-card mt-1 w-4 text-center"></i>
           <span
-            ><strong>Tình trạng TT:</strong>
+            ><strong>Trạng thái thanh toán:</strong>
             {{ donHang.trangThaiThanhToan.label }}</span
           >
         </div>
         <div v-if="donHang.duKienGiaoHang" class="flex items-start gap-2">
-          <i class="fi fi-rr-shipping-fast mt-1 w-4 text-center"></i>
+          <i class="fi fi-rr-clock mt-1 w-4 text-center"></i>
           <span
             ><strong>Dự kiến giao:</strong>
             {{ new Date(donHang.duKienGiaoHang).toLocaleString() }}</span
@@ -103,7 +110,7 @@
         <div v-if="donHang.thoiGianThanhToan" class="flex items-start gap-2">
           <i class="fi fi-rr-calendar-check mt-1 w-4 text-center"></i>
           <span
-            ><strong>Đã thanh toán:</strong>
+            ><strong>Thời gian thanh toán:</strong>
             {{ new Date(donHang.thoiGianThanhToan).toLocaleString() }}</span
           >
         </div>

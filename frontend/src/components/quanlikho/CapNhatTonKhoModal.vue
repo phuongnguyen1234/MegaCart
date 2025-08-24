@@ -30,11 +30,11 @@
                 v-model="formData.hinhThuc"
                 type="radio"
                 :value="HinhThucCapNhatKhoKey.THEM_VAO_HIEN_TAI"
-                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                class="h-4 w-4 cursor-pointer border-gray-300 text-blue-600 focus:ring-blue-600"
               />
               <label
                 for="hinh-thuc-them"
-                class="ml-2 block text-sm text-gray-900"
+                class="ml-2 block cursor-pointer text-sm text-gray-900"
               >
                 Thêm vào hiện tại
               </label>
@@ -45,11 +45,11 @@
                 v-model="formData.hinhThuc"
                 type="radio"
                 :value="HinhThucCapNhatKhoKey.GHI_DE"
-                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                class="h-4 w-4 cursor-pointer border-gray-300 text-indigo-600 focus:ring-indigo-600"
               />
               <label
                 for="hinh-thuc-ghi-de"
-                class="ml-2 block text-sm text-gray-900"
+                class="ml-2 block cursor-pointer text-sm text-gray-900"
               >
                 Ghi đè
               </label>
@@ -88,7 +88,7 @@
             v-model="formData.noiDung"
             rows="3"
             placeholder="Ví dụ: Nhập hàng từ NCC A, điều chỉnh kiểm kê,... (không bắt buộc)"
-            class="input mt-1"
+            class="input mt-1 resize-none"
           ></textarea>
         </div>
       </div>
@@ -227,7 +227,7 @@ watch(
 }
 
 .btn {
-  @apply inline-flex justify-center items-center py-2 px-4 border shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors;
+  @apply inline-flex justify-center items-center py-2 px-4 border shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
   /* Kiểu mặc định cho nút "Hủy" */
   @apply border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-400;
 }

@@ -58,31 +58,55 @@
       @close="closeDoiNguoiGiaoModal"
     >
       <div v-if="isLoadingModal">Đang tải thông tin...</div>
-      <div v-if="donHangDangChon" class="space-y-4">
-        <p>
-          Mã đơn hàng:
-          <span class="font-semibold">#{{ donHangDangChon.maDonHang }}</span>
-        </p>
-        <p>
-          Người nhận:
-          <span class="font-semibold">{{ donHangDangChon.tenNguoiNhan }}</span>
-        </p>
-        <p>
-          Địa chỉ:
-          <span class="font-semibold">{{
-            donHangDangChon.diaChiNhanHang
-          }}</span>
-        </p>
+      <div v-else-if="donHangDangChon" class="space-y-5">
+        <!-- Mã đơn hàng -->
+        <div class="flex items-start gap-3">
+          <i
+            class="fi fi-rr-tags text-base text-gray-400 flex-shrink-0 pt-0.5"
+          ></i>
+          <p class="text-sm text-gray-600">
+            <span class="font-semibold text-gray-900">Mã đơn hàng:</span>
+            #{{ donHangDangChon.maDonHang }}
+          </p>
+        </div>
+
+        <!-- Tên người nhận -->
+        <div class="flex items-start gap-3">
+          <i
+            class="fi fi-rr-user text-base text-gray-400 flex-shrink-0 pt-0.5"
+          ></i>
+          <p class="text-sm text-gray-600">
+            <span class="font-semibold text-gray-900">Tên người nhận:</span>
+            {{ donHangDangChon.tenNguoiNhan }}
+          </p>
+        </div>
+
+        <!-- Địa chỉ nhận hàng -->
+        <div class="flex items-start gap-3">
+          <i
+            class="fi fi-rr-marker text-base text-gray-400 flex-shrink-0 pt-0.5"
+          ></i>
+          <p class="text-sm text-gray-600">
+            <span class="font-semibold text-gray-900">Địa chỉ nhận hàng:</span>
+            {{ donHangDangChon.diaChiNhanHang }}
+          </p>
+        </div>
+
+        <!-- Nhân viên giao hàng -->
         <div>
           <label
             for="nguoi-giao-moi"
-            class="block text-sm font-medium text-gray-700"
-            >Người giao</label
+            class="flex items-center gap-3 text-sm font-semibold text-gray-900 mb-2"
           >
+            <i
+              class="fi fi-rr-truck-side text-base text-gray-400 flex-shrink-0"
+            ></i>
+            <span>Nhân viên giao hàng</span>
+          </label>
           <select
             id="nguoi-giao-moi"
             v-model="nguoiGiaoMoiId"
-            class="mt-1 block w-full border border-gray-300 rounded px-2 py-1 shadow-sm"
+            class="mt-1 block w-full cursor-pointer rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           >
             <option
               v-for="shipper in danhSachNhanVienGiaoHang"
@@ -97,17 +121,19 @@
       <template #footer>
         <div class="flex justify-end gap-2">
           <button
+            type="button"
             @click="closeDoiNguoiGiaoModal"
             class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
           >
             Hủy
           </button>
           <button
+            type="button"
             @click="luuNguoiGiaoMoi"
             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             :disabled="!nguoiGiaoMoiId || isSaving"
           >
-            {{ isSaving ? "Đang lưu..." : "Lưu" }}
+            {{ isSaving ? "Đang lưu..." : "Lưu thay đổi" }}
           </button>
         </div>
       </template>

@@ -24,7 +24,7 @@
       </div>
 
       <!-- Footer cho các nút hành động -->
-      <div v-if="$slots.footer" class="mt-4 pt-4 border-t">
+      <div v-if="$slots.footer" class="mt-4 pt-4">
         <slot name="footer" />
       </div>
     </div>

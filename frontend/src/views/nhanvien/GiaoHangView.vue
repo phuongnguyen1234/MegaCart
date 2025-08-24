@@ -5,7 +5,9 @@
       <h1 class="text-2xl font-bold text-gray-800 mb-4">Giao hàng</h1>
 
       <!-- Bộ lọc -->
-      <div class="flex flex-col sm:flex-row sm:items-end sm:gap-4 gap-2 mb-4">
+      <div
+        class="flex flex-wrap items-end gap-4 mb-4 bg-white p-4 rounded-lg shadow"
+      >
         <ThanhTimKiem
           class="w-full sm:w-auto"
           :ds-tieu-chi="[

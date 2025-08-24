@@ -9,7 +9,7 @@
       <select
         id="loai-tim-kiem"
         v-model="localLoaiTimKiem"
-        class="border-r border-gray-300 bg-gray-50 px-2 py-1 focus:outline-none rounded-l"
+        class="cursor-pointer border-r border-gray-300 bg-gray-50 px-2 py-1 focus:outline-none rounded-l"
       >
         <option
           v-for="tieuChi in dsTieuChi"

@@ -29,7 +29,10 @@
             v-model="isDanhMucCha"
             class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
           />
-          <label for="isDanhMucCha" class="ml-2 block text-sm text-gray-900">
+          <label
+            for="isDanhMucCha"
+            class="cursor-pointer ml-2 block text-sm text-gray-900"
+          >
             Đây là danh mục cha
           </label>
         </div>
@@ -40,7 +43,7 @@
           <select
             id="danhMucCha"
             v-model="formData.maDanhMucCha"
-            class="input w-full mt-1"
+            class="cursor-pointer input w-full mt-1"
             :disabled="isDanhMucCha"
             :required="!isDanhMucCha"
           >
@@ -82,10 +85,10 @@
     </form>
     <template #footer>
       <div class="flex justify-end gap-4">
-        <button class="btn" @click="$emit('close')">Hủy</button>
+        <button class="cursor-pointer btn" @click="$emit('close')">Hủy</button>
         <button
           type="submit"
-          class="btn btn-primary"
+          class="cursor-pointer btn btn-primary"
           @click="handleSubmit"
           :disabled="isLoading || (isEditMode && !hasChanged)"
         >

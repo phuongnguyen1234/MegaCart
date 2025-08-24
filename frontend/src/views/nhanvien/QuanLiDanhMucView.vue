@@ -9,7 +9,7 @@
       <!-- Nút thêm danh mục -->
       <button
         @click="openAddModal"
-        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center"
+        class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center"
       >
         <i class="fi fi-rr-plus-small align-middle mr-1 -ml-1"></i>
         <span>Thêm danh mục</span>
@@ -26,7 +26,7 @@
         <select
           id="trang-thai-filter"
           v-model="selectedTrangThai"
-          class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm px-3 py-2"
+          class="cursor-pointer mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm px-3 py-2"
           :disabled="areOtherFiltersDisabled"
           :class="{ 'bg-gray-100 cursor-not-allowed': areOtherFiltersDisabled }"
         >
@@ -65,12 +65,14 @@
           >
         </template>
         <template #cell-4="{ value }">
-          <button
-            @click="handleEditClick(value)"
-            class="text-blue-600 hover:text-blue-800 font-semibold"
-          >
-            Sửa
-          </button>
+          <div class="flex justify-center">
+            <button
+              @click="handleEditClick(value)"
+              class="cursor-pointer p-2 rounded-full text-blue-600 hover:text-blue-800"
+            >
+              <i class="fi fi-rr-pencil text-base"></i>
+            </button>
+          </div>
         </template>
       </DataTable>
     </div>

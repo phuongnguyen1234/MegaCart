@@ -13,12 +13,12 @@
 
     <div class="grid grid-cols-2 gap-4 mt-4 w-full">
       <div class="p-2 bg-gray-50 rounded-xl text-center">
-        <span class="text-xs text-gray-500 block">Mục tiêu</span>
-        <span class="text-sm font-semibold">{{ format(mucTieu) }}</span>
-      </div>
-      <div class="p-2 bg-gray-50 rounded-xl text-center">
         <span class="text-xs text-gray-500 block">Doanh thu</span>
         <span class="text-sm font-semibold">{{ format(tienDoHienTai) }}</span>
+      </div>
+      <div class="p-2 bg-gray-50 rounded-xl text-center">
+        <span class="text-xs text-gray-500 block">Mục tiêu</span>
+        <span class="text-sm font-semibold">{{ format(mucTieu) }}</span>
       </div>
     </div>
   </div>

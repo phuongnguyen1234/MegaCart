@@ -62,12 +62,14 @@
         </template>
         <!-- Tùy chỉnh cột Hành động -->
         <template #cell-7="{ value }">
-          <button
-            @click="handleEdit(value)"
-            class="text-blue-600 hover:text-blue-800 font-semibold"
-          >
-            Sửa
-          </button>
+          <div class="flex justify-center">
+            <button
+              @click="handleEdit(value)"
+              class="cursor-pointer p-2 rounded-full text-blue-600 hover:text-blue-800"
+            >
+              <i class="fi fi-rr-pencil text-base"></i>
+            </button>
+          </div>
         </template>
       </DataTable>
     </div>

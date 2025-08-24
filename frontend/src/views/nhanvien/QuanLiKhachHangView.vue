@@ -14,7 +14,7 @@
         <select
           id="trang-thai"
           v-model="selectedTrangThai"
-          class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+          class="cursor-pointer mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
           :disabled="areOtherFiltersDisabled"
           :class="{ 'bg-gray-100 cursor-not-allowed': areOtherFiltersDisabled }"
         >
@@ -65,9 +65,9 @@
         <template #cell-6="{ value: maKhachHang }">
           <button
             @click="handleEdit(maKhachHang)"
-            class="text-blue-600 hover:text-blue-800 font-semibold"
+            class="cursor-pointer text-blue-600 hover:text-blue-800 font-semibold"
           >
-            Sửa
+            <i class="fi fi-rr-pencil text-base"></i>
           </button>
         </template>
       </DataTable>

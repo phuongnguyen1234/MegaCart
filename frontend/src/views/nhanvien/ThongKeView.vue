@@ -18,7 +18,9 @@
         />
         <StatCard
           tieuDe="Tăng trưởng doanh thu"
-          :giaTri="`${tangTruongDoanhThu}%`"
+          :giaTri="`${
+            tangTruongDoanhThu > 0 ? '+' : '-'
+          }${tangTruongDoanhThu}%`"
           :icon="
             tangTruongDoanhThu > 0 ? 'lucide:arrow-up' : 'lucide:arrow-down'
           "
@@ -68,7 +70,7 @@
           <div class="mt-auto pt-2 text-right">
             <button
               @click="openDoanhThuThangModal"
-              class="text-xs text-blue-600 hover:underline"
+              class="cursor-pointer text-xs text-blue-600 hover:underline"
             >
               Xem chi tiết
             </button>
@@ -83,27 +85,18 @@
           <div ref="menuRef" class="absolute top-2 right-2 z-10">
             <button
               @click="isMenuOpen = !isMenuOpen"
-              class="p-2 text-gray-500 rounded-full hover:bg-gray-100 hover:text-gray-700 focus:outline-none"
+              class="cursor-pointer w-9 h-9 flex items-center justify-center text-gray-500 rounded-full hover:bg-gray-100 hover:text-gray-700 focus:outline-none"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-5 h-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  d="M6 10a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
+              <i class="fi fi-rr-menu-dots-vertical text-lg"></i>
             </button>
             <!-- Nội dung Dropdown -->
             <div
               v-show="isMenuOpen"
-              class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5"
+              class="absolute right-0 mt-2 w-40 rounded-md shadow-lg bg-white"
             >
               <button
                 @click="handleUpdateTarget"
-                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                class="cursor-pointer w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
               >
                 Cập nhật mục tiêu
               </button>
@@ -139,7 +132,7 @@
         />
         <StatCard
           tieuDe="Tăng trưởng đơn hàng"
-          :giaTri="`${tangTruongDonHang}%`"
+          :giaTri="`${tangTruongDonHang > 0 ? '+' : '-'}${tangTruongDonHang}%`"
           :icon="
             tangTruongDonHang > 0
               ? 'lucide:trending-up'
@@ -187,9 +180,9 @@
           <template #cell-5="{ row }">
             <button
               @click="openChiTietDonHangModal(parseInt(row[0]))"
-              class="text-sm font-medium text-blue-600 hover:underline"
+              class="cursor-pointer text-blue-600 hover:text-blue-800"
             >
-              Xem
+              <i class="fi fi-rr-eye text-xl align-middle"></i>
             </button>
           </template>
         </DataTable>
@@ -234,7 +227,7 @@
           <div class="mt-auto pt-2 text-right">
             <button
               @click="openDonHangThangModal"
-              class="text-xs text-blue-600 hover:underline"
+              class="cursor-pointer text-xs text-blue-600 hover:underline"
             >
               Xem chi tiết
             </button>
@@ -276,7 +269,7 @@
           <div class="mt-auto pt-2 text-right">
             <button
               @click="openSanPhamBanChayModal"
-              class="text-xs text-blue-600 hover:underline"
+              class="cursor-pointer text-xs text-blue-600 hover:underline"
             >
               Xem thêm
             </button>
@@ -454,7 +447,6 @@ const thongKeTongQuan = ref<ThongKeTongQuanResponse | null>(null);
 const doanhThuTheoNgay = ref<BieuDoDuongResponse | null>(null);
 const doanhThuTheoThang = ref<BieuDoDuongResponse | null>(null);
 const mucTieuDoanhThu = ref<MucTieuDoanhThuResponse | null>(null);
-//const donHangGanDay = ref<DonHangGanDayResponse[]>([]);
 const donHangTheoNgay = ref<BieuDoDuongResponse | null>(null);
 const donHangTheoThang = ref<BieuDoDuongResponse | null>(null);
 const tiLeDonHang = ref<BieuDoTronResponse[] | null>(null);

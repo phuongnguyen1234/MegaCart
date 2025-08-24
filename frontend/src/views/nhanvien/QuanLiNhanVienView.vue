@@ -9,7 +9,7 @@
       <!-- Nút thêm nhân viên -->
       <button
         @click="openAddModal"
-        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center"
+        class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center"
       >
         <i class="fi fi-rr-plus-small align-middle mr-1 -ml-1"></i>
         <span>Thêm nhân viên</span>
@@ -24,7 +24,7 @@
           <select
             id="vi-tri"
             v-model="selectedViTri"
-            class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+            class="cursor-pointer mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
             :disabled="areOtherFiltersDisabled"
             :class="{
               'bg-gray-100 cursor-not-allowed': areOtherFiltersDisabled,
@@ -48,7 +48,7 @@
           <select
             id="trang-thai"
             v-model="selectedTrangThai"
-            class="mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+            class="cursor-pointer mt-1 block w-48 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
             :disabled="areOtherFiltersDisabled"
             :class="{
               'bg-gray-100 cursor-not-allowed': areOtherFiltersDisabled,
@@ -116,9 +116,9 @@
       <template #cell-6="{ value: nhanVien }">
         <button
           @click="handleEdit(nhanVien)"
-          class="text-indigo-600 hover:text-indigo-900 font-medium"
+          class="cursor-pointer text-blue-600 hover:text-blue-800 font-medium"
         >
-          Sửa
+          <i class="fi fi-rr-pencil text-base"></i>
         </button>
       </template>
     </DataTable>

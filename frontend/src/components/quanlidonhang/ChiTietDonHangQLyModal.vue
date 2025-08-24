@@ -19,12 +19,12 @@
       </div>
 
       <!-- Tổng tiền -->
-      <div class="text-right font-semibold border-t pt-3">
+      <div class="text-right font-semibold">
         Tổng tiền: {{ formatCurrency(tongTien) }}
       </div>
 
       <!-- Thông tin cố định -->
-      <div class="text-sm space-y-3 border-t pt-4">
+      <div class="text-sm space-y-3">
         <div class="flex items-start gap-2">
           <i class="fi fi-rr-user mt-1 text-gray-600"></i>
           <span><strong>Người nhận:</strong> {{ donHang.tenNguoiNhan }}</span>
@@ -45,14 +45,14 @@
           >
         </div>
         <div class="flex items-start gap-2">
-          <i class="fi fi-rr-truck mt-1 text-gray-600"></i>
+          <i class="fi fi-rr-box mt-1 text-gray-600"></i>
           <span
             ><strong>Hình thức giao hàng:</strong>
             {{ donHang.hinhThucGiaoHang?.label }}</span
           >
         </div>
         <div class="flex items-start gap-2">
-          <i class="fi fi-rr-money-bill mt-1 text-gray-600"></i>
+          <i class="fi fi-rr-wallet mt-1 text-gray-600"></i>
           <span
             ><strong>Hình thức thanh toán:</strong>
             {{ donHang.hinhThucThanhToan?.label }}</span
@@ -61,7 +61,7 @@
       </div>
 
       <!-- Form chỉnh sửa (hiển thị có điều kiện) -->
-      <form v-if="laCheDoChinhSua" class="text-sm space-y-4 border-t pt-4">
+      <form v-if="laCheDoChinhSua" class="text-sm space-y-4">
         <!-- Trạng thái đơn hàng -->
         <div>
           <label for="trang-thai-don-hang" class="font-semibold"
@@ -70,7 +70,7 @@
           <select
             id="trang-thai-don-hang"
             v-model="formData.trangThai"
-            class="input w-full mt-1"
+            class="input w-full mt-1 cursor-pointer border border-gray-300 rounded-md px-3 py-2"
           >
             <option
               v-for="(label, key) in TrangThaiDonHangLabel"
@@ -90,7 +90,7 @@
           <select
             id="trang-thai-thanh-toan"
             v-model="formData.trangThaiThanhToan"
-            class="input w-full mt-1"
+            class="input w-full mt-1 cursor-pointer border border-gray-300 rounded-md px-3 py-2"
           >
             <option
               v-for="(label, key) in TrangThaiThanhToanLabel"
@@ -111,7 +111,7 @@
             type="datetime-local"
             id="du-kien-giao"
             v-model="formData.duKienGiaoHang"
-            class="input w-full mt-1"
+            class="input w-full mt-1 cursor-pointer border border-gray-300 rounded-md px-3 py-2"
           />
         </div>
 
@@ -122,13 +122,13 @@
             id="ghi-chu"
             v-model="formData.ghiChu"
             rows="2"
-            class="input w-full mt-1 resize-none"
+            class="input w-full mt-1 cursor-pointer resize-none border border-gray-300 rounded-md px-3 py-2"
           ></textarea>
         </div>
       </form>
 
       <!-- Thông tin chỉ xem (khi không ở chế độ sửa) -->
-      <div v-else class="text-sm space-y-3 border-t pt-4">
+      <div v-else class="text-sm space-y-3">
         <div class="flex items-start gap-2">
           <i class="fi fi-rr-badge-check mt-1 text-gray-600"></i>
           <span
@@ -165,12 +165,15 @@
 
     <template #footer>
       <div class="flex justify-end gap-4">
-        <button class="btn" @click="$emit('close')">
+        <button
+          class="cursor-pointer px-4 py-2 rounded-md font-semibold text-sm bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors"
+          @click="$emit('close')"
+        >
           {{ laCheDoChinhSua ? "Hủy" : "Đóng" }}
         </button>
         <button
           v-if="laCheDoChinhSua"
-          class="btn btn-primary"
+          class="cursor-pointer px-4 py-2 rounded-md font-semibold text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           @click="handleSave"
         >
           Lưu thay đổi

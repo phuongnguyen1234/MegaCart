@@ -8,38 +8,61 @@
     <div class="space-y-4">
       <!-- Tên khách hàng -->
       <div>
-        <label class="block text-sm font-medium text-gray-700">
-          Tên khách hàng
+        <label
+          class="flex items-center gap-2 text-sm font-medium text-gray-700"
+        >
+          <i class="fi fi-rr-user text-base text-gray-400"></i>
+          <span>Tên khách hàng</span>
         </label>
-        <p class="mt-1 text-sm text-gray-900">{{ formData.tenKhachHang }}</p>
+        <p class="mt-1 pl-6 text-sm text-gray-900">
+          {{ formData.tenKhachHang }}
+        </p>
       </div>
 
       <!-- Email -->
       <div>
-        <label class="block text-sm font-medium text-gray-700">Email</label>
-        <p class="mt-1 text-sm text-gray-900">{{ formData.email }}</p>
+        <label
+          class="flex items-center gap-2 text-sm font-medium text-gray-700"
+        >
+          <i class="fi fi-rr-envelope text-base text-gray-400"></i>
+          <span>Email</span>
+        </label>
+        <p class="mt-1 pl-6 text-sm text-gray-900">{{ formData.email }}</p>
       </div>
 
       <!-- Số điện thoại -->
       <div>
-        <label class="block text-sm font-medium text-gray-700">
-          Số điện thoại
+        <label
+          class="flex items-center gap-2 text-sm font-medium text-gray-700"
+        >
+          <i class="fi fi-rr-phone-call text-base text-gray-400"></i>
+          <span>Số điện thoại</span>
         </label>
-        <p class="mt-1 text-sm text-gray-900">{{ formData.soDienThoai }}</p>
+        <p class="mt-1 pl-6 text-sm text-gray-900">
+          {{ formData.soDienThoai }}
+        </p>
       </div>
 
       <!-- Địa chỉ -->
       <div>
-        <label class="block text-sm font-medium text-gray-700">Địa chỉ</label>
-        <p class="mt-1 text-sm text-gray-900">{{ formData.diaChi }}</p>
+        <label
+          class="flex items-center gap-2 text-sm font-medium text-gray-700"
+        >
+          <i class="fi fi-rr-marker text-base text-gray-400"></i>
+          <span>Địa chỉ</span>
+        </label>
+        <p class="mt-1 pl-6 text-sm text-gray-900">{{ formData.diaChi }}</p>
       </div>
 
       <!-- Trạng thái tài khoản -->
       <div>
-        <label class="block text-sm font-medium text-gray-700">
-          Trạng thái tài khoản
+        <label
+          class="flex items-center gap-2 text-sm font-medium text-gray-700"
+        >
+          <i class="fi fi-rr-user-gear text-base text-gray-400"></i>
+          <span>Trạng thái tài khoản</span>
         </label>
-        <div class="mt-2">
+        <div class="mt-2 pl-6">
           <label
             for="trang-thai-toggle"
             class="relative inline-flex items-center cursor-pointer"
@@ -51,7 +74,7 @@
               v-model="trangThaiHoatDong"
             />
             <div
-              class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
+              class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"
             ></div>
             <span class="ml-3 text-sm font-medium text-gray-900">{{
               trangThaiLabel
@@ -67,7 +90,7 @@
         <button
           @click="luuThayDoi"
           :disabled="!hasChanged"
-          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          class="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           Lưu thay đổi
         </button>
