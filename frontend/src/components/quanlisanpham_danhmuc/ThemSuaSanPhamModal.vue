@@ -27,7 +27,7 @@
           <select
             id="danhMucCha"
             v-model="selectedDanhMucCha"
-            class="input w-full mt-1"
+            class="cursor-pointer input w-full mt-1"
           >
             <option :value="null">-- Chọn danh mục cha --</option>
             <option
@@ -46,7 +46,7 @@
           <select
             id="danhMucCon"
             v-model="selectedDanhMucCon"
-            class="input w-full mt-1"
+            class="cursor-pointer input w-full mt-1"
             :disabled="!selectedDanhMucCha || danhMucConOptions.length === 0"
             required
           >
@@ -111,7 +111,11 @@
         <!-- Nhãn -->
         <div>
           <label for="nhan">Nhãn sản phẩm</label>
-          <select id="nhan" v-model="formData.nhan" class="input w-full mt-1">
+          <select
+            id="nhan"
+            v-model="formData.nhan"
+            class="cursor-pointer input w-full mt-1"
+          >
             <option :value="null">-- Không có nhãn --</option>
             <option
               v-for="(label, key) in NhanSanPhamLabel"
@@ -234,10 +238,10 @@
     </form>
     <template #footer>
       <div class="flex justify-end gap-4">
-        <button class="btn" @click="$emit('close')">Hủy</button>
+        <button class="cursor-pointer btn" @click="$emit('close')">Hủy</button>
         <button
           type="submit"
-          class="btn btn-primary"
+          class="cursor-pointer btn btn-primary"
           @click="handleSubmit"
           :disabled="isLoading || (isEditMode && !isFormDirty) || !canSubmit"
         >
