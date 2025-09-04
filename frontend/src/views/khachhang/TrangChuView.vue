@@ -8,19 +8,25 @@
     />
     <BannerSlider />
 
-    <ListSanPham
-      tieuDe="Sản phẩm mới"
-      :dsSanPham="dsSanPhamMoi"
-      linkXemThem="/san-pham-moi"
-      @themVaoGioHang="hienThiThemVaoGioHangModal"
-    />
+    <div v-if="isLoading" class="p-4">
+      <!-- Bạn có thể thay thế bằng component Skeleton Loader cho đẹp mắt hơn -->
+      <p class="text-center text-gray-500">Đang tải sản phẩm...</p>
+    </div>
+    <div v-else>
+      <ListSanPham
+        tieuDe="Sản phẩm mới"
+        :dsSanPham="dsSanPhamMoi"
+        linkXemThem="/san-pham-moi"
+        @themVaoGioHang="hienThiThemVaoGioHangModal"
+      />
 
-    <ListSanPham
-      tieuDe="Bán chạy nhất"
-      :dsSanPham="dsBanChay"
-      linkXemThem="/ban-chay"
-      @themVaoGioHang="hienThiThemVaoGioHangModal"
-    />
+      <ListSanPham
+        tieuDe="Bán chạy nhất"
+        :dsSanPham="dsBanChay"
+        linkXemThem="/ban-chay"
+        @themVaoGioHang="hienThiThemVaoGioHangModal"
+      />
+    </div>
   </CustomerWithNav>
 </template>
 
@@ -49,8 +55,10 @@ const router = useRouter();
 
 const dsSanPhamMoi = ref<SanPhamResponse[]>([]);
 const dsBanChay = ref<SanPhamResponse[]>([]);
+const isLoading = ref(true);
 
 onMounted(async () => {
+  isLoading.value = true;
   try {
     // Lấy 10 sản phẩm mới nhất
     const [resMoi, resBanChay] = await Promise.all([
@@ -65,6 +73,8 @@ onMounted(async () => {
       thongBao: "Không thể tải sản phẩm. Vui lòng thử lại.",
       loai: "loi",
     });
+  } finally {
+    isLoading.value = false;
   }
 });
 
