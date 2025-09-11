@@ -39,7 +39,10 @@ public class SecurityConfig {
                                 // Các API công khai cho tất cả mọi người
                                 "/api/san-pham/**",
                                 "/api/danh-muc/**",
-                                "/api/filter-options/**"
+                                "/api/filter-options/**",
+                                "/", "/index.html",
+                                "/favicon.ico",
+                                "/css/**", "/js/**", "/assets/**", "/static/**"
                         ).permitAll()
                         // Chỉ ADMIN và NHAN_VIEN mới được truy cập vào các API quản trị
                         .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "NHAN_VIEN")
