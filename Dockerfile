@@ -9,8 +9,8 @@ FROM eclipse-temurin:21-jdk AS backend
 WORKDIR /app
 COPY backend/ .
 COPY --from=frontend /app/dist /app/src/main/resources/static
-RUN ./mvnw clean package -DskipTests
-
+# Fix permission cho mvnw
+RUN chmod +x ./mvnw && ./mvnw clean package -DskipTests
 # Run
 FROM eclipse-temurin:21-jdk
 WORKDIR /app
