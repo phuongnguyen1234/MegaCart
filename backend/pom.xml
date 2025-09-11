@@ -126,34 +126,6 @@
 					</excludes>
 				</configuration>
 			</plugin>
-			<!-- Plugin để chạy frontend dev server (npm run dev) song song khi chạy bằng Maven -->
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>3.1.0</version>
-				<executions>
-					<execution>
-						<id>run-frontend</id>
-						<phase>initialize</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<!-- Lệnh này dành cho Windows, nó sẽ mở một cửa sổ cmd mới để chạy server frontend mà không block tiến trình Maven -->
-							<executable>cmd</executable>
-							<arguments>
-								<argument>/c</argument>
-								<argument>start</argument>
-								<argument>"Frontend Dev Server"</argument>
-								<argument>npm</argument>
-								<argument>run</argument>
-								<argument>dev</argument>
-							</arguments>
-							<workingDirectory>${project.basedir}/../frontend</workingDirectory>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
 		</plugins>
 	</build>
 
