@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Tạo instance Axios
 const apiClient = axios.create({
-  baseURL: "http://localhost:8080/api", // Đổi theo backend của bạn
+  baseURL: import.meta.env.VITE_API_URL, // Đổi theo backend của bạn
   timeout: 10000, // 10 giây timeout
 });
 
