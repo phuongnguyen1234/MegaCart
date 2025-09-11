@@ -40,7 +40,7 @@ backend/target/
 backend/build/
 backend/.mvn/wrapper/maven-wrapper.jar
 # Backend configuration files
-backend/src/main/resources/application.properties
+#backend/src/main/resources/application.properties
 
 # Gradle / Maven / STS specific
 .apt_generated
