@@ -7,13 +7,10 @@ COPY frontend/ .
 RUN npm run build
 
 # ---------- Build Backend (Spring Boot) ----------
-FROM maven:3.9.1-eclipse-temurin-21 AS backend
+FROM maven:3.9-eclipse-temurin-21-alpine AS backend
 WORKDIR /app
-COPY backend/pom.xml ./ 
-COPY backend/src ./src
-# Copy frontend build vào Spring Boot resources
-COPY --from=frontend /app/dist ./src/main/resources/static
-# Build backend jar
+COPY backend/ .
+COPY --from=frontend /app/dist /app/src/main/resources/static
 RUN mvn clean package -DskipTests
 
 # ---------- Run ----------
