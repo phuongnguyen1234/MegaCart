@@ -1,17 +1,22 @@
-# Build Frontend
+# ---------- Build Frontend ----------
 FROM node:20-alpine AS frontend
 WORKDIR /app
+COPY frontend/package*.json ./
+RUN npm install
 COPY frontend/ .
-RUN npm install && npm run build
+RUN npm run build
 
-# Build Backend (Spring Boot)
-FROM eclipse-temurin:21-jdk AS backend
+# ---------- Build Backend (Spring Boot) ----------
+FROM maven:3.9.1-eclipse-temurin-21 AS backend
 WORKDIR /app
-COPY backend/ .
-COPY --from=frontend /app/dist /app/src/main/resources/static
-# Fix permission cho mvnw
-RUN chmod +x ./mvnw && ./mvnw clean package -DskipTests
-# Run
+COPY backend/pom.xml ./ 
+COPY backend/src ./src
+# Copy frontend build vào Spring Boot resources
+COPY --from=frontend /app/dist ./src/main/resources/static
+# Build backend jar
+RUN mvn clean package -DskipTests
+
+# ---------- Run ----------
 FROM eclipse-temurin:21-jdk
 WORKDIR /app
 COPY --from=backend /app/target/*.jar app.jar
