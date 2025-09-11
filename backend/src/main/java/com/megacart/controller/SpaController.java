@@ -7,8 +7,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class SpaController {
 
     // Forward tất cả request không chứa dấu chấm (không phải file tĩnh) về index.html
-    @GetMapping("/{path:[^\\.]*}")
-    public String redirect() {
-        return "forward:/index.html";
-    }
+    @GetMapping("/{path:^(?!api).*$}/**")
+public String redirect() {
+    return "forward:/index.html";
+}
+
 }
