@@ -26,6 +26,7 @@ public class JwtService {
             @Value("${application.jwt.secret-key}") String secretKey,
             @Value("${application.jwt.expiration:86400000}") long jwtExpiration // Default: 24 giờ (tính bằng ms)
     ) {
+        System.out.println(">>> secretKey length = " + secretKey.length());
         this.secretKey = secretKey;
         this.jwtExpiration = jwtExpiration;
     }
@@ -71,7 +72,12 @@ public class JwtService {
     }
 
     private Key getSignInKey() {
+    try {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
+    } catch (IllegalArgumentException e) {
+        throw new RuntimeException("Invalid JWT secret key. Check application.properties or environment variable JWT_SECRET_KEY", e);
     }
+}
+
 }
