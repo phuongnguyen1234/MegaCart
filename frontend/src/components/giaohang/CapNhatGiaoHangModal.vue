@@ -130,13 +130,13 @@
       <div class="flex justify-end gap-2">
         <button
           @click="dongModal"
-          class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+          class="cursor-pointerpx-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
         >
           Đóng
         </button>
         <button
           @click="xacNhanGiaoHang"
-          class="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:bg-gray-400"
+          class="cursor-pointer px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:bg-gray-400"
           :disabled="isConfirmButtonDisabled"
         >
           Xác nhận
@@ -163,14 +163,11 @@ import {
 } from "@/types/giaohang.types";
 
 interface Props {
-  visible: boolean;
-  donHang: ChiTietDonHangGiaoHangResponse | null;
+  visible?: boolean;
+  donHang?: ChiTietDonHangGiaoHangResponse | null;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  visible: false,
-  donHang: null,
-});
+const { visible = false, donHang = null } = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: "close"): void;
@@ -210,9 +207,9 @@ const isConfirmButtonDisabled = computed(() => {
 });
 
 const isCODOrder = computed(() => {
-  if (!props.donHang) return false;
+  if (!donHang) return false;
   return (
-    props.donHang.hinhThucThanhToan?.value ===
+    donHang.hinhThucThanhToan?.value ===
     HinhThucThanhToanKey.THANH_TOAN_KHI_NHAN_HANG
   );
 });
@@ -267,14 +264,12 @@ const xacNhanGiaoHang = () => {
 };
 
 const tieuDeModal = computed(() =>
-  props.donHang
-    ? `Chi tiết đơn hàng #${props.donHang.maDonHang}`
-    : "Đang tải..."
+  donHang ? `Chi tiết đơn hàng #${donHang.maDonHang}` : "Đang tải..."
 );
 
 // Reset state khi modal được mở với đơn hàng mới
 watch(
-  () => props.visible,
+  () => visible,
   (isVisible) => {
     if (isVisible) {
       // Mặc định chọn "Thất bại" khi mở modal
@@ -282,13 +277,13 @@ watch(
       lyDoThatBai.value = "";
       // Reset trạng thái thanh toán về giá trị mặc định của đơn hàng khi modal mở
       trangThaiThanhToanCapNhat.value =
-        props.donHang?.trangThaiThanhToan?.value ?? "";
+        donHang?.trangThaiThanhToan?.value ?? "";
     }
   }
 );
 
 watch(
-  () => props.donHang,
+  () => donHang,
   (newDonHang) => {
     if (newDonHang) {
       // Đặt trạng thái thanh toán mặc định là trạng thái hiện tại của đơn hàng

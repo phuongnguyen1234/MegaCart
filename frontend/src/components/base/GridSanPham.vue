@@ -25,17 +25,12 @@ import CardSanPham from "@/components/base/card/CardSanPham.vue";
 import PhanTrang from "@/components/base/PhanTrang.vue";
 import type { SanPhamResponse } from "@/types/sanpham.types";
 
-const props = withDefaults(
-  defineProps<{
-    dsSanPham: SanPhamResponse[];
-    trangHienTai: number;
-    tongSoTrang: number;
-    maxVisiblePages?: number;
-  }>(),
-  {
-    maxVisiblePages: 5,
-  }
-);
+defineProps<{
+  dsSanPham: SanPhamResponse[];
+  trangHienTai: number;
+  tongSoTrang: number;
+  maxVisiblePages?: number;
+}>();
 
 defineEmits<{
   (e: "themVaoGioHang", sanPham: SanPhamResponse): void;

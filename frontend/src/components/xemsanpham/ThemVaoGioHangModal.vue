@@ -70,18 +70,16 @@ import { ref, computed, watch } from "vue";
 import Overlay from "@/components/base/Overlay.vue";
 import type { SanPhamResponse } from "@/types/sanpham.types";
 
-const props = withDefaults(
-  defineProps<{
-    visible: boolean;
-    sanPham: SanPhamResponse | null;
-  }>(),
-  { sanPham: null }
-);
+const { visible, sanPham = null } = defineProps<{
+  visible: boolean;
+  sanPham?: SanPhamResponse | null;
+}>();
 
 const emit = defineEmits(["dong", "them"]);
 
 const soLuong = ref(1);
-const donGia = computed(() => props.sanPham?.donGia || 0);
+
+const donGia = computed(() => sanPham?.donGia || 0);
 
 const tamTinh = computed(() => soLuong.value * donGia.value);
 
@@ -95,13 +93,13 @@ const giamSoLuong = () => {
 
 const themVaoGioHang = () => {
   // Sửa tên sự kiện thành 'them' cho nhất quán
-  emit("them", { sanPham: props.sanPham, soLuong: soLuong.value });
+  emit("them", { sanPham: sanPham, soLuong: soLuong.value });
   emit("dong");
 };
 
 // Theo dõi prop 'visible' để reset số lượng khi modal được mở
 watch(
-  () => props.visible,
+  () => visible,
   (isVisible) => {
     if (isVisible) {
       soLuong.value = 1;

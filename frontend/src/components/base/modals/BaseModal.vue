@@ -34,16 +34,11 @@
 <script setup lang="ts">
 import Overlay from "../Overlay.vue";
 
-withDefaults(
-  defineProps<{
-    visible: boolean;
-    title?: string;
-    widthClass?: string;
-  }>(),
-  {
-    widthClass: "w-[500px]",
-  }
-);
+defineProps<{
+  visible: boolean;
+  title?: string;
+  widthClass?: string;
+}>();
 
 defineEmits<{
   (e: "close"): void;

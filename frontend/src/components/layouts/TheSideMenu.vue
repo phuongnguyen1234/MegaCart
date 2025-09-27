@@ -181,15 +181,14 @@
       tieuDe="Xác nhận đăng xuất"
       noiDung="Bạn có chắc chắn muốn đăng xuất không?"
       @xac-nhan="handleConfirmLogout"
-      @huy="isLogoutModalVisible = false"
+      :dang-tai="isLoggingOut"
+      @huy="hideLogoutConfirm"
     />
-    <!-- Loading overlay -->
-    <Loading :visible="isLoading" />
   </aside>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, withDefaults } from "vue";
+import { reactive, ref, computed } from "vue";
 import { Icon } from "@iconify/vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/store/auth.store";
@@ -202,9 +201,7 @@ interface Props {
   variant?: "full" | "minimal";
 }
 
-const { variant } = withDefaults(defineProps<Props>(), {
-  variant: "full",
-});
+const { variant = "full" } = defineProps<Props>();
 
 const router = useRouter();
 
@@ -215,7 +212,7 @@ const subMenu = reactive({
 
 const authStore = useAuthStore();
 const isLogoutModalVisible = ref(false);
-const isLoading = ref(false);
+const isLoggingOut = ref(false);
 
 /**
  * Lấy payload của nhân viên từ auth store.
@@ -266,20 +263,23 @@ const logout = () => {
   isLogoutModalVisible.value = true;
 };
 
+const hideLogoutConfirm = () => {
+  isLogoutModalVisible.value = false;
+  isLoggingOut.value = false; // Đảm bảo reset trạng thái loading khi hủy
+};
+
 /**
  * Xử lý logic đăng xuất sau khi người dùng xác nhận.
  */
 const handleConfirmLogout = async () => {
-  isLogoutModalVisible.value = false;
-  isLoading.value = true;
+  isLoggingOut.value = true;
   try {
     // Hành động logout trong store sẽ gọi API, xóa token và chuyển hướng
     await authStore.logout();
   } catch (error) {
     console.error("Đăng xuất thất bại:", error);
-    // Tùy chọn: hiển thị thông báo lỗi cho người dùng ở đây
   } finally {
-    isLoading.value = false;
+    hideLogoutConfirm(); // Đóng modal và reset loading state
   }
 };
 </script>

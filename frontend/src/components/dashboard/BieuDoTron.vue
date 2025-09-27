@@ -4,11 +4,27 @@
 
 <script setup lang="ts">
 import colors from "tailwindcss/colors";
-import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement } from "chart.js";
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  type ChartOptions,
+} from "chart.js";
 import { Pie } from "vue-chartjs";
 import { computed } from "vue";
 
-ChartJS.register(Title, Tooltip, Legend, ArcElement);
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  CategoryScale,
+  LinearScale
+);
 
 type Props = {
   labels: string[];
@@ -35,8 +51,13 @@ const chartData = computed(() => ({
   ],
 }));
 
-const chartOptions = {
+const chartOptions: ChartOptions<"pie"> = {
   responsive: true,
   maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: "right",
+    },
+  },
 };
 </script>

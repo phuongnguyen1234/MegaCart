@@ -18,9 +18,7 @@
         />
         <StatCard
           tieuDe="Tăng trưởng doanh thu"
-          :giaTri="`${
-            tangTruongDoanhThu > 0 ? '+' : '-'
-          }${tangTruongDoanhThu}%`"
+          :giaTri="`${tangTruongDoanhThu}%`"
           :icon="
             tangTruongDoanhThu > 0 ? 'lucide:arrow-up' : 'lucide:arrow-down'
           "
@@ -132,7 +130,7 @@
         />
         <StatCard
           tieuDe="Tăng trưởng đơn hàng"
-          :giaTri="`${tangTruongDonHang > 0 ? '+' : '-'}${tangTruongDonHang}%`"
+          :giaTri="`${tangTruongDonHang}%`"
           :icon="
             tangTruongDonHang > 0
               ? 'lucide:trending-up'
@@ -151,7 +149,7 @@
         />
       </div>
 
-      <!--danh sách 20 đơn hàng gần đây, đang bổ sung API để fetch-->
+      <!--danh sách 20 đơn hàng gần đây-->
       <div class="h-96 overflow-y-auto bg-white rounded-2xl shadow">
         <DataTable
           :headers="[
@@ -288,7 +286,20 @@
               :headers="['STT', 'Sản phẩm', 'Tồn kho', 'Đã bán']"
               :rows="sanPhamTonKhoRows"
               :is-loading="isLoading.sanPham"
-            />
+            >
+              <!-- Tùy chỉnh cột Tồn kho (index 2) -->
+              <template #cell-2="{ value }">
+                <span
+                  :class="[
+                    'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                    value >= 100
+                      ? 'bg-red-100 text-red-800' // Tồn kho cao (cảnh báo ế)
+                      : 'bg-green-100 text-green-800', // Tồn kho ổn
+                  ]"
+                  >{{ value }}</span
+                >
+              </template>
+            </DataTable>
           </div>
         </div>
       </div>
@@ -515,8 +526,8 @@ const sanPhamTonKhoRows = computed(() => {
     ? sanPhamTonKhoCao.value.map((item, index) => [
         (index + 1).toString(),
         item.tenSanPham,
-        item.soLuongTon.toString(),
-        item.soLuongDaBan.toString(),
+        item.soLuongTon, // Truyền số để so sánh
+        item.soLuongDaBan,
       ])
     : [];
 });

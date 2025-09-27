@@ -183,6 +183,9 @@ const createDefaultFormData = () => ({
 const formData = reactive(createDefaultFormData());
 const initialFormData = ref<string>("");
 
+// State để theo dõi chế độ trước đó, quyết định có reset form hay không.
+const previousModeWasEdit = ref(false);
+
 const isTrangThaiHoatDong = computed({
   get: () => formData.trangThai === TrangThaiTaiKhoanKey.HOAT_DONG,
   set: (value) => {
@@ -197,26 +200,35 @@ const hasChanged = computed(() => {
   return JSON.stringify(formData) !== initialFormData.value;
 });
 
+const resetForm = () => {
+  Object.assign(formData, createDefaultFormData());
+  initialFormData.value = "";
+};
+
 watch(
   () => props.visible,
   (isVisible) => {
     if (!isVisible) return;
 
-    if (props.nhanVien) {
-      // Chế độ sửa
+    if (isEditing.value && props.nhanVien) {
+      // Chế độ SỬA: Luôn reset và điền dữ liệu mới.
+      resetForm();
       formData.hoTen = props.nhanVien.tenNhanVien;
       formData.email = props.nhanVien.email;
       formData.soDienThoai = props.nhanVien.soDienThoai;
       formData.viTri = props.nhanVien.viTri.value;
       formData.trangThai = props.nhanVien.trangThaiTaiKhoan.value;
       formData.matKhau = ""; // Không cần mật khẩu khi sửa
-
-      // Lưu trạng thái ban đầu để so sánh
       initialFormData.value = JSON.stringify(formData);
+      previousModeWasEdit.value = true; // Ghi nhớ lần này là chế độ Sửa
     } else {
-      // Chế độ thêm mới
-      Object.assign(formData, createDefaultFormData());
-      initialFormData.value = "";
+      // Chế độ THÊM:
+      // Chỉ reset form nếu lần mở trước đó là chế độ Sửa.
+      if (previousModeWasEdit.value) {
+        resetForm();
+      }
+      // Nếu không, giữ nguyên dữ liệu người dùng đã nhập.
+      previousModeWasEdit.value = false; // Ghi nhớ lần này là chế độ Thêm
     }
   }
 );
@@ -249,6 +261,8 @@ const handleSubmit = async () => {
       const payload: ThemNhanVienRequest = { ...formData };
       await themNhanVien(payload);
       showToast({ loai: "thanhCong", thongBao: "Thêm nhân viên thành công." });
+      // Reset form sau khi thêm thành công để chuẩn bị cho lần thêm tiếp theo
+      resetForm();
     }
     isSuccess = true;
   } catch (error: any) {

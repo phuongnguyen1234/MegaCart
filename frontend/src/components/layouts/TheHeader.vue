@@ -135,6 +135,7 @@
       tieuDe="Xác nhận Đăng xuất"
       noiDung="Bạn có chắc chắn muốn đăng xuất không?"
       @xac-nhan="handleLogout"
+      :dang-tai="isLoggingOut"
       @huy="hideLogoutConfirm"
     />
 
@@ -176,6 +177,7 @@ const authStore = useAuthStore();
 const cartStore = useCartStore();
 const isLogoutModalVisible = ref(false);
 const isLoading = ref(false);
+const isLoggingOut = ref(false); // Trạng thái loading cho nút đăng xuất
 
 const showLogoutConfirm = () => {
   isProfileMenuOpen.value = false;
@@ -184,18 +186,19 @@ const showLogoutConfirm = () => {
 
 const hideLogoutConfirm = () => {
   isLogoutModalVisible.value = false;
+  isLoggingOut.value = false; // Reset loading state khi hủy
 };
 
 const handleLogout = async () => {
-  hideLogoutConfirm();
-  isLoading.value = true;
+  isLoggingOut.value = true;
   try {
     // Hành động logout trong store đã xử lý việc xóa dữ liệu và chuyển hướng.
     await authStore.logout();
+    // Nếu thành công, trang sẽ được chuyển hướng, không cần xử lý thêm.
   } catch (error) {
     console.error("Đăng xuất thất bại:", error);
   } finally {
-    isLoading.value = false;
+    hideLogoutConfirm(); // Đóng modal và reset loading state dù thành công hay thất bại
   }
 };
 

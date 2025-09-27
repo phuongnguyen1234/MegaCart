@@ -116,7 +116,7 @@
       <div v-if="dangHuy" class="text-sm">
         <button
           @click="dangHuy = false"
-          class="text-sm mb-2 text-blue-600 flex items-center gap-1"
+          class="cursor-pointer text-sm mb-2 text-blue-600 flex items-center gap-1"
         >
           <i class="fi fi-rr-arrow-left text-sm"></i> Quay về
         </button>
@@ -175,7 +175,7 @@
         <!-- Nút cho chế độ hủy đơn -->
         <template v-if="dangHuy">
           <button
-            class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded"
+            class="cursor-pointer w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded"
             @click="handleHuyDon"
           >
             Xác nhận hủy
@@ -186,13 +186,13 @@
         <template v-else>
           <template v-if="donHang.trangThai.value === 'CHO_XAC_NHAN'">
             <button
-              class="flex-1 bg-gray-700 hover:bg-gray-800 text-white py-2 rounded"
+              class="cursor-pointer flex-1 bg-gray-700 hover:bg-gray-800 text-white py-2 rounded"
               @click="handleGiaoPhanConLai"
             >
               Giao phần còn lại
             </button>
             <button
-              class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded"
+              class="cursor-pointer flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded"
               @click="handleHuyDonHetHang"
             >
               Hủy đơn (do hết hàng)
@@ -204,7 +204,7 @@
             "
           >
             <button
-              class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded"
+              class="cursor-pointer w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded"
               @click="dangHuy = true"
             >
               Hủy đơn
@@ -220,6 +220,7 @@
     :hien-thi="confirmState.visible"
     :tieu-de="confirmState.title"
     :noi-dung="confirmState.content"
+    :dang-tai="isConfirmLoading"
     @xac-nhan="confirmState.onConfirm"
     @huy="hideConfirm"
   />
@@ -259,6 +260,7 @@ const apiError = ref<string | null>(null);
 const dangHuy = ref(false);
 const lyDoHuy = ref("Tôi không muốn mua nữa");
 const ghiChuKhac = ref("");
+const isConfirmLoading = ref(false); // Thêm trạng thái loading cho modal xác nhận
 
 const confirmState = reactive({
   visible: false,
@@ -311,6 +313,7 @@ const fetchData = async () => {
 
 const hideConfirm = () => {
   confirmState.visible = false;
+  isConfirmLoading.value = false; // Reset loading state khi đóng modal
 };
 
 const handleHuyDon = async () => {
@@ -325,12 +328,15 @@ const handleHuyDon = async () => {
     lyDoFinal = ghiChuKhac.value.trim();
   }
 
+  isConfirmLoading.value = true;
   try {
     await huyDonHang(donHang.value.maDonHang, { lyDo: lyDoFinal });
     showToast({ thongBao: "Hủy đơn hàng thành công.", loai: "thanhCong" });
     emit("update");
   } catch (error) {
     showToast({ thongBao: "Hủy đơn hàng thất bại.", loai: "loi" });
+  } finally {
+    isConfirmLoading.value = false;
   }
 };
 
@@ -341,13 +347,16 @@ const handleHuyDonHetHang = () => {
   confirmState.onConfirm = async () => {
     if (!donHang.value) return;
     try {
+      isConfirmLoading.value = true;
       await huyDonHang(donHang.value.maDonHang, { lyDo: "Hủy do hết hàng" });
       showToast({ thongBao: "Hủy đơn hàng thành công.", loai: "thanhCong" });
       emit("update");
     } catch (error) {
       showToast({ thongBao: "Hủy đơn hàng thất bại.", loai: "loi" });
+    } finally {
+      isConfirmLoading.value = false;
+      hideConfirm();
     }
-    hideConfirm();
   };
   confirmState.visible = true;
 };
@@ -360,6 +369,7 @@ const handleGiaoPhanConLai = async () => {
   confirmState.onConfirm = async () => {
     if (!donHang.value) return;
     try {
+      isConfirmLoading.value = true;
       await giaoPhanConLai(donHang.value.maDonHang);
       showToast({
         thongBao: "Yêu cầu giao phần còn lại thành công.",
@@ -368,8 +378,10 @@ const handleGiaoPhanConLai = async () => {
       emit("update");
     } catch (error) {
       showToast({ thongBao: "Yêu cầu thất bại.", loai: "loi" });
+    } finally {
+      isConfirmLoading.value = false;
+      hideConfirm();
     }
-    hideConfirm();
   };
   confirmState.visible = true;
 };

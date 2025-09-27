@@ -87,13 +87,10 @@ import CustomerWithNav from "@/components/layouts/CustomerWithNav.vue";
 import AccordionBoLocDonHang from "@/components/base/AccordionBoLocDonHang.vue";
 import CardDonHang from "@/components/base/card/CardDonHang.vue";
 import ChiTietDonHangModal from "@/components/base/modals/ChiTietDonHangModal.vue";
-import { useToast } from "@/composables/useToast";
 import { getLichSuMuaHang } from "@/service/donhang.service";
 import type { LichSuDonHang } from "@/types/donhang.types";
 import { TrangThaiDonHangFilter } from "@/types/donhang.types";
 import { AxiosError } from "axios";
-
-const { showToast } = useToast();
 
 // --- Helper Functions for Dates ---
 const getISODateString = (date: Date): string => {
@@ -144,7 +141,7 @@ const trangThaiList = [
   },
 ];
 const trangThaiDangChon = ref<TrangThaiDonHangFilter>(
-  TrangThaiDonHangFilter.CHO_XAC_NHAN
+  TrangThaiDonHangFilter.DANG_GIAO
 );
 // --- State for Data & UI ---
 const isLoading = ref(true);

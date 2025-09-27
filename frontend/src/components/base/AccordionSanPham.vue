@@ -221,9 +221,9 @@ const donGiaStep = computed(() => {
     return 1; // Giá trị mặc định nếu không có khoảng giá
   }
   if (props.khoangGia.max <= 1000000) {
-    return 1000;
+    return 10000;
   }
-  return 10000;
+  return 100000;
 });
 
 function toggle(section: keyof typeof isOpen.value) {

@@ -1,33 +1,39 @@
 package com.megacart.service.impl;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.megacart.dto.request.CapNhatSoLuongRequest;
 import com.megacart.dto.request.ThemVaoGioHangRequest;
-import com.megacart.dto.response.ThemVaoGioHangResponse;
-import com.megacart.dto.response.GioHangResponse;
 import com.megacart.dto.response.EnumOptionResponse;
-import com.megacart.dto.response.XoaKhoiGioHangResponse;
+import com.megacart.dto.response.GioHangResponse;
+import com.megacart.dto.response.ThemVaoGioHangResponse;
 import com.megacart.dto.response.ThongTinKhachHangResponse;
 import com.megacart.dto.response.ThongTinThanhToanResponse;
-import com.megacart.exception.ResourceNotFoundException;
-import com.megacart.enumeration.TrangThaiSanPham;
+import com.megacart.dto.response.XoaKhoiGioHangResponse;
 import com.megacart.enumeration.HinhThucNhanHang;
 import com.megacart.enumeration.HinhThucThanhToan;
-import com.megacart.utils.ImageUtils;
-import com.megacart.model.*;
+import com.megacart.enumeration.TrangThaiSanPham;
+import com.megacart.exception.ResourceNotFoundException;
+import com.megacart.model.ChiTietGioHang;
+import com.megacart.model.ChiTietGioHangId;
+import com.megacart.model.GioHang;
+import com.megacart.model.SanPham;
+import com.megacart.model.TaiKhoan;
 import com.megacart.repository.ChiTietGioHangRepository;
 import com.megacart.repository.GioHangRepository;
 import com.megacart.repository.SanPhamRepository;
 import com.megacart.service.GioHangService;
 import com.megacart.service.KhachHangService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.util.Optional;
+import com.megacart.utils.ImageUtils;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Collections;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -91,7 +97,7 @@ public class GioHangServiceImpl implements GioHangService {
                 .sum();
 
         return ThemVaoGioHangResponse.builder()
-                .message("Sản phẩm đã được thêm vào giỏ hàng thành công.")
+                .message("Đã thêm " + request.getSoLuong() + " " + sanPham.getTenSanPham() + " vào giỏ hàng.")
                 .tongSoLuongSanPham(tongSoLuongSanPham)
                 .tongSoLuongDonVi(tongSoLuongDonVi)
                 .build();

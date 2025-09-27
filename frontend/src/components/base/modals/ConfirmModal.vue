@@ -6,15 +6,21 @@
       <div class="flex justify-end space-x-4">
         <button
           @click="huy"
-          class="cursor-pointer px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+          :disabled="dangTai"
+          class="cursor-pointer px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Không
         </button>
         <button
           @click="xacNhan"
-          class="cursor-pointer px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+          :disabled="dangTai"
+          class="cursor-pointer px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition disabled:bg-red-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
         >
-          Đồng ý
+          <span
+            v-if="dangTai"
+            class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"
+          ></span>
+          <span v-else> Đồng ý </span>
         </button>
       </div>
     </div>
@@ -27,6 +33,7 @@ defineProps<{
   hienThi: boolean;
   tieuDe: string;
   noiDung: string;
+  dangTai?: boolean;
 }>();
 
 const emit = defineEmits(["xacNhan", "huy"]);

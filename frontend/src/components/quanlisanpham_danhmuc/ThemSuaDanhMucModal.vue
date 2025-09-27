@@ -140,6 +140,9 @@ const formData = ref<ThemDanhMucRequest>({ ...initialFormData }); // formData v�
 const initialEditData = ref<string>(""); // Lưu trạng thái ban đầu để so sánh
 const initialIsDanhMucCha = ref(false); // Lưu trạng thái checkbox ban đầu
 
+// State để theo dõi chế độ trước đó để quyết định có reset form hay không.
+const previousModeWasEdit = ref(false);
+
 // --- Computed Properties ---
 const isTrangThaiHoatDong = computed({
   get: () => formData.value.trangThai === TrangThaiDanhMucKey.HOAT_DONG,
@@ -253,6 +256,8 @@ const handleSubmit = async () => {
         loai: "thanhCong",
         thongBao: "Thêm danh mục mới thành công!",
       });
+      // Sau khi thêm thành công, reset form để chuẩn bị cho lần thêm tiếp theo.
+      resetFormState();
     }
     emit("success");
     emit("close");
@@ -279,11 +284,19 @@ watch(
       // Việc này đảm bảo dữ liệu luôn có sẵn khi modal được mở.
       await danhMucStore.fetchAllCategoriesFlat();
 
-      // 2. Reset trạng thái form về mặc định
-      resetFormState();
-      // 3. Nếu là chế độ sửa, điền dữ liệu vào form
       if (props.isEditMode && props.danhMucSua) {
+        // Chế độ SỬA: Luôn reset và điền dữ liệu mới.
+        resetFormState();
         populateFormForEdit(props.danhMucSua);
+        previousModeWasEdit.value = true; // Ghi nhớ lần này là chế độ Sửa
+      } else {
+        // Chế độ THÊM:
+        // Chỉ reset form nếu lần mở trước đó là chế độ Sửa.
+        if (previousModeWasEdit.value) {
+          resetFormState();
+        }
+        // Nếu không, giữ nguyên dữ liệu người dùng đã nhập.
+        previousModeWasEdit.value = false; // Ghi nhớ lần này là chế độ Thêm
       }
     }
   }

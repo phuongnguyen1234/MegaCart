@@ -53,8 +53,8 @@
             :class="[
               'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
               value < 10
-                ? 'bg-red-100 text-red-800'
-                : 'bg-green-100 text-green-800',
+                ? 'bg-red-100 text-red-800' // Sắp hết hàng
+                : 'bg-green-100 text-green-800', // Còn hàng
             ]"
           >
             {{ value }}

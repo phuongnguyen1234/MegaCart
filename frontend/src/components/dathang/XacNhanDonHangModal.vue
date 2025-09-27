@@ -57,10 +57,15 @@
     <template #footer>
       <div class="flex justify-end">
         <button
-          class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white py-2 rounded w-full"
+          class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white py-2 rounded w-full flex items-center justify-center disabled:bg-blue-400 disabled:cursor-not-allowed"
+          :disabled="dangTai"
           @click="$emit('xacNhan')"
         >
-          Xác nhận
+          <span
+            v-if="dangTai"
+            class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"
+          ></span>
+          <span v-else> Xác nhận </span>
         </button>
       </div>
     </template>
@@ -75,6 +80,7 @@ import type { ChiTietDonHangItem } from "@/types/donhang.types";
 
 const props = defineProps<{
   visible: boolean;
+  dangTai?: boolean;
   danhSachSanPham: GioHangItem[];
   thongTin: {
     tenNguoiNhan: string;

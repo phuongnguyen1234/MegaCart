@@ -67,31 +67,29 @@ interface TransformedChiTietDonHangItem extends ChiTietDonHangItem {
   anhMinhHoaChinh?: string;
 }
 
-const props = withDefaults(
-  defineProps<{
-    sanPham: ChiTietDonHangItem;
-    isManagementMode?: boolean;
-    isDeliveryStatus?: boolean;
-  }>(),
-  {
-    isManagementMode: false,
-    isDeliveryStatus: false,
-  }
-);
+const {
+  sanPham,
+  isManagementMode = false,
+  isDeliveryStatus = false,
+} = defineProps<{
+  sanPham: ChiTietDonHangItem;
+  isManagementMode?: boolean;
+  isDeliveryStatus?: boolean;
+}>();
 
 // Tạo một computed property để xử lý việc "map" dữ liệu.
 // Việc này giúp giữ cho logic được tập trung và template được sạch sẽ.
 const sanPhamData = computed((): TransformedChiTietDonHangItem => {
   // Nếu ở trạng thái giao hàng, tạo một object mới
   // và map giá trị từ 'anhMinhHoa' sang key mới là 'anhMinhHoaChinh'.
-  if (props.isDeliveryStatus) {
+  if (isDeliveryStatus) {
     return {
-      ...props.sanPham,
-      anhMinhHoaChinh: props.sanPham.anhMinhHoa,
+      ...sanPham,
+      anhMinhHoaChinh: sanPham.anhMinhHoa,
     };
   }
   // Nếu không, trả về object sản phẩm gốc.
-  return props.sanPham;
+  return sanPham;
 });
 
 const displayImage = computed(() => {

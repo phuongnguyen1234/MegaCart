@@ -176,63 +176,51 @@
             class="hidden"
             @change="handleFileChange"
           />
-          <!-- Vùng hiển thị ảnh và nút tải lên -->
-          <div class="mt-1 grid grid-cols-4 gap-4">
-            <!-- Hiển thị ảnh đã có (chế độ sửa) -->
-            <div
-              v-for="image in existingImages"
-              :key="image.maAnh"
-              class="relative group cursor-pointer rounded-lg"
-              @click="setPrimaryImage('existing', image.duongDan)"
-              :class="{
-                'ring-2 ring-offset-2 ring-blue-500':
-                  primaryImageIdentifier === image.duongDan,
-              }"
-            >
-              <img
-                :src="image.duongDan"
-                alt="Ảnh sản phẩm"
-                class="w-full aspect-square object-cover rounded-lg border"
-              />
-              <button
-                @click.stop="removeExistingImage(image)"
-                class="absolute top-1 right-1 bg-black/50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+          <!-- Vùng kéo thả ảnh -->
+          <draggable
+            v-model="draggableImages"
+            item-key="id"
+            class="mt-1 grid grid-cols-4 gap-4"
+            ghost-class="ghost"
+          >
+            <template #item="{ element }">
+              <div
+                class="relative group cursor-move rounded-lg"
+                :class="{
+                  'ring-2 ring-offset-2 ring-blue-500':
+                    primaryImageIdentifier === element.identifier,
+                }"
               >
-                ✕
-              </button>
-            </div>
-            <!-- Hiển thị ảnh mới chọn -->
-            <div
-              v-for="(preview, index) in newImagePreviews"
-              :key="index"
-              class="relative group cursor-pointer rounded-lg"
-              @click="setPrimaryImage('new', index)"
-              :class="{
-                'ring-2 ring-offset-2 ring-blue-500':
-                  primaryImageIdentifier === newImageFiles[index]?.name,
-              }"
-            >
-              <img
-                :src="preview"
-                alt="Ảnh xem trước"
-                class="w-full aspect-square object-cover rounded-lg border"
-              />
-              <button
-                @click.stop="removeNewImage(index)"
-                class="absolute top-1 right-1 bg-black/50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                <img
+                  :src="element.src"
+                  alt="Ảnh sản phẩm"
+                  class="w-full aspect-square object-cover rounded-lg border"
+                />
+                <button
+                  @click.stop="removeImage(element)"
+                  class="absolute top-1 right-1 bg-black/50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                >
+                  ✕
+                </button>
+                <div
+                  v-if="primaryImageIdentifier === element.identifier"
+                  class="absolute bottom-0 left-0 right-0 bg-blue-500 text-white text-center text-[10px] py-0.5 rounded-b-md"
+                >
+                  Ảnh chính
+                </div>
+              </div>
+            </template>
+            <template #footer>
+              <!-- Nút tải ảnh -->
+              <div
+                @click="triggerFileInput"
+                class="flex flex-col justify-center items-center w-full aspect-square border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
               >
-                ✕
-              </button>
-            </div>
-            <!-- Nút tải ảnh -->
-            <div
-              @click="triggerFileInput"
-              class="flex flex-col justify-center items-center w-full aspect-square border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
-            >
-              <i class="fi fi-rr-images text-2xl text-gray-400"></i>
-              <p class="text-xs text-gray-500 mt-1">Tải ảnh lên</p>
-            </div>
-          </div>
+                <i class="fi fi-rr-images text-2xl text-gray-400"></i>
+                <p class="text-xs text-gray-500 mt-1">Tải ảnh lên</p>
+              </div>
+            </template>
+          </draggable>
         </div>
       </div>
     </form>
@@ -260,6 +248,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from "vue";
+import draggable from "vuedraggable";
 import BaseModal from "../base/modals/BaseModal.vue";
 import { useDanhMucStore } from "@/store/danhmuc.store";
 import { useToast } from "@/composables/useToast";
@@ -316,6 +305,13 @@ const initialFormData: ThemSanPhamRequest = {
 };
 const formData = ref<ThemSanPhamRequest>({ ...initialFormData });
 
+interface DraggableImage {
+  id: string; // Unique key for v-for
+  src: string; // URL for display
+  type: "existing" | "new";
+  identifier: string; // URL for existing, File.name for new
+}
+
 // Category selection state
 const selectedDanhMucCha = ref<number | null>(null);
 const selectedDanhMucCon = ref<number | null>(null);
@@ -325,12 +321,15 @@ const existingImages = ref<AnhMinhHoa[]>([]);
 const newImageFiles = ref<File[]>([]);
 const newImagePreviews = ref<string[]>([]);
 const urlsAnhXoaToDelete = ref<string[]>([]);
-const primaryImageIdentifier = ref<string | null>(null);
+const primaryImageIdentifier = ref<string | null>(null); // URL or File.name
 
 // Dirty checking state
 const initialEditData = ref<string>("");
 const initialPrimaryImageIdentifier = ref<string | null>(null);
 const initialExistingImagesCount = ref(0);
+
+// State to track the previous mode to decide whether to reset the form.
+const previousModeWasEdit = ref(false);
 
 // --- Computed Properties ---
 const isDangBan = computed({
@@ -360,6 +359,43 @@ const danhMucConOptions = computed(() => {
   return allCategories.value.filter(
     (dm) => dm.tenDanhMucCha === parent.tenDanhMuc
   );
+});
+
+const draggableImages = computed<DraggableImage[]>({
+  get() {
+    const existingDraggable = existingImages.value.map((img) => ({
+      id: `existing-${img.duongDan}`,
+      src: img.duongDan,
+      type: "existing" as const,
+      identifier: img.duongDan,
+    }));
+    const newDraggable = newImagePreviews.value.map((preview, index) => ({
+      id: `new-${newImageFiles.value[index].name}-${index}`,
+      src: preview,
+      type: "new" as const,
+      identifier: newImageFiles.value[index].name,
+    }));
+    return [...existingDraggable, ...newDraggable];
+  },
+  set(newValue) {
+    // Khi vuedraggable cập nhật, nó sẽ truyền vào một mảng mới (newValue).
+    // Chúng ta cần cập nhật lại các mảng trạng thái gốc dựa trên thứ tự của mảng mới này.
+
+    // 1. Cập nhật mảng ảnh đã có (existingImages)
+    existingImages.value = newValue
+      .filter((img) => img.type === "existing")
+      .map((img) => ({ duongDan: img.identifier, laAnhChinh: false }));
+
+    // 2. Cập nhật mảng ảnh mới (newImageFiles và newImagePreviews)
+    const newFilesReordered = newValue.filter((img) => img.type === "new");
+    newImageFiles.value = newFilesReordered.map(
+      (img) => newImageFiles.value.find((f) => f.name === img.identifier)!
+    );
+    newImagePreviews.value = newFilesReordered.map((img) => img.src);
+
+    // 3. Cập nhật lại ảnh chính sau khi sắp xếp
+    updatePrimaryImage();
+  },
 });
 
 const isFormDirty = computed(() => {
@@ -403,16 +439,25 @@ watch(
   () => props.visible,
   async (isVisible) => {
     if (isVisible) {
+      // Khi modal được mở
       // Lấy danh sách danh mục dạng phẳng, store sẽ cache lại.
       await danhMucStore.fetchAllCategoriesFlat();
 
-      // Nếu là chế độ sửa, điền dữ liệu vào form.
       if (props.isEditMode && props.sanPhamSua) {
+        // Chế độ SỬA: Luôn reset và điền dữ liệu mới.
+        resetFormState();
         await nextTick();
         populateFormForEdit(props.sanPhamSua);
+        previousModeWasEdit.value = true; // Ghi nhớ lần này là chế độ Sửa
+      } else {
+        // Chế độ THÊM:
+        // Chỉ reset form nếu lần mở trước đó là chế độ Sửa.
+        if (previousModeWasEdit.value) {
+          resetFormState();
+        }
+        // Nếu không, giữ nguyên dữ liệu người dùng đã nhập.
+        previousModeWasEdit.value = false; // Ghi nhớ lần này là chế độ Thêm
       }
-      // Nếu là chế độ thêm, không làm gì cả để giữ lại dữ liệu đã nhập.
-      // Việc reset form sẽ do component cha quyết định khi cần.
     }
   }
 );
@@ -507,48 +552,34 @@ const handleFileChange = (event: Event) => {
       newImagePreviews.value.push(previewUrl);
     });
 
-    // Nếu đây là lần tải ảnh đầu tiên, tự động đặt ảnh mới đầu tiên làm ảnh chính
-    if (isFirstUpload && files.length > 0) {
-      // Sử dụng tên file làm định danh, giống như logic trong setPrimaryImage
-      primaryImageIdentifier.value = files[0].name;
-    }
+    // Sau khi thêm ảnh, cập nhật lại ảnh chính nếu cần
+    updatePrimaryImage();
   }
 };
 
-const setPrimaryImage = (
-  type: "existing" | "new",
-  identifier: string | number
-) => {
-  if (type === "existing") {
-    primaryImageIdentifier.value = identifier as string;
+const removeImage = (imageToRemove: DraggableImage) => {
+  if (imageToRemove.type === "existing") {
+    urlsAnhXoaToDelete.value.push(imageToRemove.identifier);
+    existingImages.value = existingImages.value.filter(
+      (img) => img.duongDan !== imageToRemove.identifier
+    );
   } else {
-    const file = newImageFiles.value[identifier as number];
-    if (file) {
-      primaryImageIdentifier.value = file.name;
+    const index = newImageFiles.value.findIndex(
+      (f) => f.name === imageToRemove.identifier
+    );
+    if (index > -1) {
+      URL.revokeObjectURL(newImagePreviews.value[index]);
+      newImageFiles.value.splice(index, 1);
+      newImagePreviews.value.splice(index, 1);
     }
   }
+  // Sau khi xóa, cập nhật lại ảnh chính
+  updatePrimaryImage();
 };
 
-const removeNewImage = (index: number) => {
-  const fileToRemove = newImageFiles.value[index];
-  const urlToRemove = newImagePreviews.value[index];
-  if (primaryImageIdentifier.value === fileToRemove.name) {
-    primaryImageIdentifier.value = null;
-  }
-  URL.revokeObjectURL(urlToRemove);
-  newImageFiles.value.splice(index, 1);
-  newImagePreviews.value.splice(index, 1);
-};
-
-const removeExistingImage = (image: AnhMinhHoa) => {
-  if (!image.duongDan) return;
-  if (primaryImageIdentifier.value === image.duongDan) {
-    primaryImageIdentifier.value = null;
-  }
-  urlsAnhXoaToDelete.value.push(image.duongDan);
-  existingImages.value = existingImages.value.filter(
-    (img) => img.duongDan !== image.duongDan
-  );
+const updatePrimaryImage = () => {
+  // Ảnh đầu tiên trong danh sách kéo thả sẽ là ảnh chính
+  primaryImageIdentifier.value = draggableImages.value[0]?.identifier || null;
 };
 
 const handleSubmit = async () => {
@@ -556,15 +587,15 @@ const handleSubmit = async () => {
     showToast({ loai: "loi", thongBao: "Vui lòng chọn danh mục sản phẩm." });
     return;
   }
-  const totalImages = existingImages.value.length + newImageFiles.value.length;
-  if (totalImages === 0) {
+  if (draggableImages.value.length === 0) {
     showToast({ loai: "loi", thongBao: "Vui lòng tải lên ít nhất một ảnh." });
     return;
   }
+  // Logic ảnh chính đã được tự động xử lý
   if (!primaryImageIdentifier.value) {
     showToast({
       loai: "loi",
-      thongBao: "Vui lòng chọn một ảnh làm ảnh chính.",
+      thongBao: "Không thể xác định ảnh chính. Vui lòng thử lại.",
     });
     return;
   }

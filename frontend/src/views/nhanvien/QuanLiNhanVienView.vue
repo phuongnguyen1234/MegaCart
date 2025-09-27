@@ -123,6 +123,14 @@
       </template>
     </DataTable>
 
+    <!-- Phân trang -->
+    <div class="mt-4 flex justify-center">
+      <PhanTrang
+        v-model:trangHienTai="trangHienTai"
+        :tong-so-trang="tongSoTrang"
+      />
+    </div>
+
     <!-- Modal thêm/sửa nhân viên -->
     <ThemSuaNhanVienModal
       :visible="isModalVisible"
@@ -137,6 +145,7 @@
 import { ref, computed, watch } from "vue";
 import ThanhTimKiem from "@/components/base/ThanhTimKiem.vue";
 import DataTable from "@/components/base/DataTable.vue";
+import PhanTrang from "@/components/base/PhanTrang.vue";
 import ThemSuaNhanVienModal from "@/components/quanlitaikhoan/ThemSuaNhanVienModal.vue";
 import { ViTriLabel, ViTriKey } from "@/types/nhanvien.types";
 import {

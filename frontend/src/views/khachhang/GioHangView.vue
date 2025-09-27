@@ -1,5 +1,26 @@
 <template>
   <CustomerNoNav>
+    <!-- Modal xác nhận xóa sản phẩm -->
+    <ConfirmModal
+      :hien-thi="isDeleteItemConfirmVisible"
+      tieu-de="Xác nhận xóa sản phẩm"
+      noi-dung="Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng không?"
+      :dang-tai="isDeletingItem"
+      @xac-nhan="handleConfirmXoaSanPham"
+      @huy="isDeleteItemConfirmVisible = false"
+    />
+
+    <!-- Modal xác nhận xóa giỏ hàng -->
+    <ConfirmModal
+      :hien-thi="isResetCartConfirmVisible"
+      tieu-de="Xác nhận đặt lại giỏ hàng"
+      noi-dung="Bạn có chắc chắn muốn xóa tất cả sản phẩm khỏi giỏ hàng không?
+        Hành động này không thể hoàn tác."
+      :dang-tai="isResettingCart"
+      @xac-nhan="handleConfirmResetCart"
+      @huy="isResetCartConfirmVisible = false"
+    />
+
     <!-- Modal xác nhận -->
     <XacNhanDonHangModal
       v-if="isConfirmModalVisible"
@@ -7,6 +28,7 @@
       :danhSachSanPham="sanPhamDaChon"
       :thongTin="thongTinXacNhan"
       :tongTien="tongTien"
+      :dang-tai="isPlacingOrder"
       @close="isConfirmModalVisible = false"
       @xacNhan="handleXacNhanDatHang"
     />
@@ -57,7 +79,7 @@
               @thay-doi-so-luong="
                 (soLuong:number) => handleCapNhatSoLuong(sp.maSanPham, soLuong)
               "
-              @xoa="() => handleXoaSanPham(sp.maSanPham)"
+              @xoa="handleXoaSanPham(sp.maSanPham)"
             />
           </div>
 
@@ -206,6 +228,7 @@ import { useToast } from "@/composables/useToast";
 import CustomerNoNav from "@/components/layouts/CustomerNoNav.vue";
 import CardSanPhamGioHang from "@/components/dathang/CardSanPhamGioHang.vue";
 import XacNhanDonHangModal from "@/components/dathang/XacNhanDonHangModal.vue";
+import ConfirmModal from "@/components/base/modals/ConfirmModal.vue";
 import {
   getThongTinThanhToan,
   capNhatSoLuong,
@@ -234,6 +257,12 @@ const isLoading = ref(true);
 const cartItems = ref<GioHangItem[]>([]);
 const thongTinGiaoHangMacDinh = ref<ThongTinGiaoHangMacDinh | null>(null);
 const isConfirmModalVisible = ref(false);
+const isResetCartConfirmVisible = ref(false);
+const isResettingCart = ref(false); // Trạng thái loading cho việc xóa giỏ hàng
+const isDeleteItemConfirmVisible = ref(false);
+const isDeletingItem = ref(false);
+const itemToDeleteId = ref<number | null>(null);
+const isPlacingOrder = ref(false); // Trạng thái loading cho việc đặt hàng
 const selectedItems = ref(new Set<number>());
 
 const thongTinGiaoHangForm = ref({
@@ -358,30 +387,51 @@ const handleCapNhatSoLuong = async (maSanPham: number, soLuong: number) => {
   }
 };
 
-const handleXoaSanPham = async (maSanPham: number) => {
+const handleXoaSanPham = (maSanPham: number) => {
+  itemToDeleteId.value = maSanPham;
+  isDeleteItemConfirmVisible.value = true;
+};
+
+const handleConfirmXoaSanPham = async () => {
+  if (!itemToDeleteId.value) return;
+
+  isDeletingItem.value = true;
   try {
-    const response = await xoaKhoiGioHang(maSanPham);
+    const response = await xoaKhoiGioHang(itemToDeleteId.value);
     // Cập nhật lại state từ frontend để có trải nghiệm mượt hơn
     cartItems.value = cartItems.value.filter(
-      (item) => item.maSanPham !== maSanPham
+      (item) => item.maSanPham !== itemToDeleteId.value
     );
-    selectedItems.value.delete(maSanPham);
+    selectedItems.value.delete(itemToDeleteId.value);
     cartStore.setCartCount(response.tongSoLuongSanPham);
     showToast({ thongBao: response.message, loai: "thanhCong" });
+    isDeleteItemConfirmVisible.value = false;
   } catch (error) {
     showToast({ thongBao: "Xóa sản phẩm thất bại.", loai: "loi" });
+  } finally {
+    isDeletingItem.value = false;
+    itemToDeleteId.value = null;
   }
 };
 
-const datLaiGioHang = async () => {
+const datLaiGioHang = () => {
+  // Chỉ hiển thị modal xác nhận
+  isResetCartConfirmVisible.value = true;
+};
+
+const handleConfirmResetCart = async () => {
+  isResettingCart.value = true;
   try {
     await xoaToanBoGioHang();
     cartItems.value = [];
     selectedItems.value.clear();
     cartStore.clearCartCount();
     showToast({ thongBao: "Đã xóa toàn bộ giỏ hàng.", loai: "thanhCong" });
+    isResetCartConfirmVisible.value = false;
   } catch (error) {
     showToast({ thongBao: "Xóa giỏ hàng thất bại.", loai: "loi" });
+  } finally {
+    isResettingCart.value = false;
   }
 };
 
@@ -422,6 +472,7 @@ const handleDatHang = () => {
 };
 
 const handleXacNhanDatHang = async () => {
+  isPlacingOrder.value = true;
   try {
     const payload: DatHangRequest = {
       items: sanPhamDaChon.value.map((item) => ({
@@ -449,7 +500,8 @@ const handleXacNhanDatHang = async () => {
     const message =
       error.response?.data?.message || "Đặt hàng thất bại. Vui lòng thử lại.";
     showToast({ thongBao: message, loai: "loi" });
-    isConfirmModalVisible.value = false;
+  } finally {
+    isPlacingOrder.value = false;
   }
 };
 

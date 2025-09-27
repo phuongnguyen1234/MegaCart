@@ -38,41 +38,37 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-const props = withDefaults(
-  defineProps<{
-    trangHienTai: number;
-    tongSoTrang: number;
-    maxVisiblePages?: number;
-  }>(),
-  {
-    maxVisiblePages: 5,
-  }
-);
+const {
+  trangHienTai,
+  tongSoTrang,
+  maxVisiblePages = 5,
+} = defineProps<{
+  trangHienTai: number;
+  tongSoTrang: number;
+  maxVisiblePages?: number;
+}>();
 
 const emit = defineEmits<{
   (e: "update:trangHienTai", trang: number): void;
 }>();
 
 const chuyenTrang = (trang: number) => {
-  if (trang >= 0 && trang < props.tongSoTrang) {
+  if (trang >= 0 && trang < tongSoTrang) {
     emit("update:trangHienTai", trang);
   }
 };
 
 const trangBatDau = computed(() => {
-  const mid = Math.floor(props.maxVisiblePages / 2);
-  if (props.tongSoTrang <= props.maxVisiblePages) return 1;
-  if (props.trangHienTai + 1 <= mid + 1) return 1;
-  if (props.trangHienTai + 1 >= props.tongSoTrang - mid)
-    return props.tongSoTrang - props.maxVisiblePages + 1;
-  return props.trangHienTai - mid + 1;
+  const mid = Math.floor(maxVisiblePages / 2);
+  if (tongSoTrang <= maxVisiblePages) return 1;
+  if (trangHienTai + 1 <= mid + 1) return 1;
+  if (trangHienTai + 1 >= tongSoTrang - mid)
+    return tongSoTrang - maxVisiblePages + 1;
+  return trangHienTai - mid + 1;
 });
 
 const trangKetThuc = computed(() => {
-  return Math.min(
-    trangBatDau.value + props.maxVisiblePages - 1,
-    props.tongSoTrang
-  );
+  return Math.min(trangBatDau.value + maxVisiblePages - 1, tongSoTrang);
 });
 
 const soTrangHienThi = computed(() => {
