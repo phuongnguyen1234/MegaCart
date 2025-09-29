@@ -48,12 +48,12 @@
 
         <!-- Product Grid -->
         <main class="flex-1 min-h-[500px]">
-          <!-- Loading State -->
-          <div v-if="isLoading" class="text-center py-20">
-            <div
-              class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"
-            ></div>
-            <p class="mt-4 text-gray-600">Đang tải sản phẩm...</p>
+          <!-- Loading State (Skeleton) -->
+          <div
+            v-if="isLoading"
+            class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+          >
+            <CardSanPhamSkeleton v-for="n in pageSize" :key="n" />
           </div>
 
           <!-- Error State -->
@@ -95,6 +95,7 @@ import CustomerWithNav from "@/components/layouts/CustomerWithNav.vue";
 import AccordionSanPham from "@/components/base/AccordionSanPham.vue";
 import GridSanPham from "@/components/base/GridSanPham.vue";
 import Breadcrumbs from "@/components/base/Breadcrumbs.vue";
+import CardSanPhamSkeleton from "@/components/base/card/CardSanPhamSkeleton.vue";
 import ThemVaoGioHangModal from "@/components/xemsanpham/ThemVaoGioHangModal.vue";
 import { useToast } from "@/composables/useToast";
 import { useCartStore } from "@/store/giohang.store";

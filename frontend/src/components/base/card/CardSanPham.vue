@@ -20,10 +20,12 @@
     </div>
 
     <!-- Ảnh sản phẩm -->
-    <div class="relative overflow-hidden">
+    <div class="relative overflow-hidden bg-gray-100">
       <img
         :src="sanPham.anhMinhHoaChinh"
         :alt="sanPham.tenSanPham"
+        loading="lazy"
+        decoding="async"
         class="w-full h-60 object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
       />
       <!-- Overlay khi hết hàng -->
