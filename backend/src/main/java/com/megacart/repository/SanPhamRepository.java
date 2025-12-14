@@ -1,26 +1,25 @@
 package com.megacart.repository;
 
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import com.megacart.enumeration.NhanSanPham;
 import com.megacart.enumeration.TrangThaiDonHang;
 import com.megacart.enumeration.TrangThaiSanPham;
 import com.megacart.model.SanPham;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import com.megacart.model.AnhMinhHoa;
 import com.megacart.repository.projection.AnhChinhProjection;
 import com.megacart.repository.projection.BestSellingCategoryProjection;
 import com.megacart.repository.projection.PriceRangeProjection;
-import org.springframework.data.repository.query.Param;
-
-import java.util.Optional;
-import java.time.LocalDateTime;
-import java.util.List;
 
 public interface SanPhamRepository extends JpaRepository<SanPham, Integer>, JpaSpecificationExecutor<SanPham> {
 
