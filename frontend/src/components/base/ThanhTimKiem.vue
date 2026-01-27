@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, defineEmits, watch, ref } from "vue";
+import { computed, watch, ref } from "vue";
 
 const props = defineProps<{
   dsTieuChi: { value: string; label: string; isId?: boolean }[];
@@ -51,11 +51,11 @@ const localTuKhoa = ref(props.modelValueTuKhoa);
 // Đồng bộ props với local
 watch(
   () => props.modelValueLoai,
-  (newVal) => (localLoaiTimKiem.value = newVal)
+  (newVal) => (localLoaiTimKiem.value = newVal),
 );
 watch(
   () => props.modelValueTuKhoa,
-  (newVal) => (localTuKhoa.value = newVal)
+  (newVal) => (localTuKhoa.value = newVal),
 );
 
 // Emit khi local thay đổi
@@ -65,7 +65,7 @@ watch(localTuKhoa, (val) => emit("update:modelValueTuKhoa", val));
 // Logic để xác định xem tiêu chí tìm kiếm theo ID có được chọn hay không
 const isIdSearchSelected = computed(() => {
   const selectedOption = props.dsTieuChi.find(
-    (t) => t.value === localLoaiTimKiem.value
+    (t) => t.value === localLoaiTimKiem.value,
   );
   // Kích hoạt ngay khi tiêu chí là ID được chọn
   return !!selectedOption?.isId;
@@ -77,7 +77,7 @@ watch(
   (isActive) => {
     emit("idSearchActive", isActive);
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Placeholder động
